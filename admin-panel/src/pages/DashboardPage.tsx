@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import api from '../services/api';
 import {
   Box,
   Typography,
@@ -6,6 +7,7 @@ import {
   CardContent,
   Grid,
   styled,
+  CircularProgress
 } from '@mui/material';
 import {
   People as PeopleIcon,
@@ -30,12 +32,56 @@ const StatCard = styled(Card)(({ theme }) => ({
 }));
 
 const DashboardPage: React.FC = () => {
-  const stats = [
-    { title: 'Coiffeurs', value: '24', icon: <PeopleIcon fontSize="large" color="primary" /> },
-    { title: 'Salons', value: '12', icon: <StoreIcon fontSize="large" color="secondary" /> },
-    { title: 'Réservations', value: '156', icon: <CalendarIcon fontSize="large" color="success" /> },
-    { title: 'Revenus', value: '2,450 €', icon: <MoneyIcon fontSize="large" color="warning" /> },
-  ];
+  const [stats, setStats] = useState([
+    { title: 'Coiffeurs', value: '...', icon: <PeopleIcon fontSize="large" color="primary" />, loading: true },
+    { title: 'Salons', value: '...', icon: <StoreIcon fontSize="large" color="secondary" />, loading: true },
+    { title: 'Réservations', value: '...', icon: <CalendarIcon fontSize="large" color="success" />, loading: true },
+    { title: 'Revenus', value: '...', icon: <MoneyIcon fontSize="large" color="warning" />, loading: true },
+  ]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await api.get('/admin/dashboard/stats');
+        
+        if (response.data.success) {
+          setStats([
+            { 
+              title: 'Coiffeurs', 
+              value: response.data.data.hairdressersCount.toString(), 
+              icon: <PeopleIcon fontSize="large" color="primary" />,
+              loading: false
+            },
+            { 
+              title: 'Salons', 
+              value: response.data.data.salonsCount.toString(), 
+              icon: <StoreIcon fontSize="large" color="secondary" />,
+              loading: false
+            },
+            { 
+              title: 'Réservations', 
+              value: response.data.data.bookingsCount.toString(), 
+              icon: <CalendarIcon fontSize="large" color="success" />,
+              loading: false
+            },
+            { 
+              title: 'Revenus', 
+              value: `${response.data.data.revenue.toLocaleString('fr-FR')} €`, 
+              icon: <MoneyIcon fontSize="large" color="warning" />,
+              loading: false
+            },
+          ]);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   return (
     <Box
@@ -59,12 +105,18 @@ const DashboardPage: React.FC = () => {
             <StatCard>
               <CardContent>
                 {stat.icon}
-                <Typography
-                  variant="h5"
-                  sx={{ mt: 1, fontWeight: 'bold' }}
-                >
-                  {stat.value}
-                </Typography>
+                {stat.loading ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                ) : (
+                  <Typography
+                    variant="h5"
+                    sx={{ mt: 1, fontWeight: 'bold' }}
+                  >
+                    {stat.value}
+                  </Typography>
+                )}
                 <Typography variant="body1" color="text.secondary">
                   {stat.title}
                 </Typography>
