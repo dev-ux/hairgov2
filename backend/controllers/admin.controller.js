@@ -12,13 +12,13 @@ const getUsersList = async (req, res) => {
         'id',
         'email',
         'phone',
-        'first_name',
-        'last_name',
-        'role',
+        'full_name',
+        'user_type',
         'is_active',
         'created_at',
         'updated_at'
       ],
+      raw: true,
       order: [['created_at', 'DESC']]
     });
 
