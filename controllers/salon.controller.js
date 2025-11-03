@@ -1,0 +1,471 @@
+const db = require('../models');
+const { Op } = require('sequelize');
+
+/**
+ * Créer un nouveau salon
+ */
+exports.createSalon = async (req, res) => {
+  const transaction = await db.sequelize.transaction();
+  
+  try {
+    const { 
+      name, 
+      address, 
+      latitude, 
+      longitude, 
+      description, 
+      phone, 
+      email, 
+      business_hours,
+      photos = []
+    } = req.body;
+
+    // Vérifier si le coiffeur existe et est approuvé
+    const hairdresser = await db.Hairdresser.findOne({
+      where: { 
+        id: req.user.id,
+        registration_status: 'approved'
+      },
+      transaction
+    });
+
+    if (!hairdresser) {
+      await transaction.rollback();
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Coiffeur non trouvé ou non approuvé'
+        }
+      });
+    }
+
+    // Vérifier si le coiffeur a déjà un salon
+    const existingSalon = await db.Salon.findOne({
+      where: { hairdresser_id: req.user.id },
+      transaction
+    });
+
+    if (existingSalon) {
+      await transaction.rollback();
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'SALON_EXISTS',
+          message: 'Vous avez déjà un salon enregistré'
+        }
+      });
+    }
+
+    // Créer le salon
+    const salon = await db.Salon.create({
+      hairdresser_id: req.user.id,
+      name,
+      address,
+      latitude,
+      longitude,
+      description,
+      phone,
+      email,
+      business_hours,
+      photos,
+      is_validated: false // Nécessite une validation par l'admin
+    }, { transaction });
+
+    // Mettre à jour le statut has_salon du coiffeur
+    await hairdresser.update({ has_salon: true }, { transaction });
+
+    await transaction.commit();
+    
+    res.status(201).json({
+      success: true,
+      message: 'Salon créé avec succès. En attente de validation par un administrateur.',
+      data: salon
+    });
+
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Create salon error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SALON_CREATION_ERROR',
+        message: 'Erreur lors de la création du salon',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      }
+    });
+  }
+};
+
+/**
+ * Obtenir les détails d'un salon
+ */
+exports.getSalon = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const salon = await db.Salon.findByPk(id, {
+      include: [
+        {
+          model: db.Hairdresser,
+          as: 'hairdresser',
+          attributes: ['id', 'full_name', 'average_rating', 'total_jobs'],
+          include: [
+            {
+              model: db.Hairstyle,
+              as: 'hairstyles',
+              through: { attributes: [] },
+              attributes: ['id', 'name', 'estimated_duration', 'category']
+            }
+          ]
+        }
+      ]
+    });
+
+    if (!salon) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Salon non trouvé'
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: salon
+    });
+
+  } catch (error) {
+    console.error('Get salon error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SALON_FETCH_ERROR',
+        message: 'Erreur lors de la récupération du salon'
+      }
+    });
+  }
+};
+
+/**
+ * Mettre à jour un salon
+ */
+exports.updateSalon = async (req, res) => {
+  const transaction = await db.sequelize.transaction();
+  
+  try {
+    const { id } = req.params;
+    const updateData = { ...req.body };
+
+    // Vérifier si le salon existe et appartient au coiffeur
+    const salon = await db.Salon.findOne({
+      where: { 
+        id,
+        hairdresser_id: req.user.id
+      },
+      transaction
+    });
+
+    if (!salon) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Salon non trouvé ou accès non autorisé'
+        }
+      });
+    }
+
+    // Mettre à jour le salon
+    await salon.update(updateData, { transaction });
+    
+    // Si le salon est mis à jour après rejet, réinitialiser le statut de validation
+    if (updateData.is_validated === undefined && salon.is_validated === false) {
+      await salon.update({ is_validated: null }, { transaction });
+    }
+
+    await transaction.commit();
+    
+    res.json({
+      success: true,
+      message: 'Salon mis à jour avec succès',
+      data: salon
+    });
+
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Update salon error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SALON_UPDATE_ERROR',
+        message: 'Erreur lors de la mise à jour du salon',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      }
+    });
+  }
+};
+
+/**
+ * Supprimer un salon
+ */
+exports.deleteSalon = async (req, res) => {
+  const transaction = await db.sequelize.transaction();
+  
+  try {
+    const { id } = req.params;
+
+    // Vérifier si le salon existe et appartient au coiffeur
+    const salon = await db.Salon.findOne({
+      where: { 
+        id,
+        hairdresser_id: req.user.id
+      },
+      transaction
+    });
+
+    if (!salon) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Salon non trouvé ou accès non autorisé'
+        }
+      });
+    }
+
+    // Mettre à jour le statut has_salon du coiffeur
+    await db.Hairdresser.update(
+      { has_salon: false },
+      { 
+        where: { id: req.user.id },
+        transaction 
+      }
+    );
+
+    // Supprimer le salon
+    await salon.destroy({ transaction });
+    await transaction.commit();
+    
+    res.json({
+      success: true,
+      message: 'Salon supprimé avec succès'
+    });
+
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Delete salon error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SALON_DELETE_ERROR',
+        message: 'Erreur lors de la suppression du salon'
+      }
+    });
+  }
+};
+
+/**
+ * Rechercher des salons à proximité
+ */
+exports.searchSalons = async (req, res) => {
+  try {
+    const { 
+      latitude, 
+      longitude, 
+      radius = 10, // en kilomètres
+      page = 1, 
+      limit = 10,
+      search,
+      min_rating
+    } = req.query;
+
+    const offset = (page - 1) * limit;
+    const whereClause = {
+      is_validated: true
+    };
+
+    // Filtre par recherche textuelle
+    if (search) {
+      whereClause[Op.or] = [
+        { name: { [Op.iLike]: `%${search}%` } },
+        { address: { [Op.iLike]: `%${search}%` } }
+      ];
+    }
+
+    // Filtre par note minimale
+    if (min_rating) {
+      whereClause['$hairdresser.average_rating$'] = {
+        [Op.gte]: parseFloat(min_rating)
+      };
+    }
+
+    // Requête de base
+    const queryOptions = {
+      where: whereClause,
+      include: [
+        {
+          model: db.Hairdresser,
+          as: 'hairdresser',
+          attributes: ['id', 'user_id', 'average_rating', 'total_jobs'],
+          where: {
+            is_available: true,
+            registration_status: 'approved'
+          },
+          include: [
+            {
+              model: db.User,
+              as: 'user',
+              attributes: ['full_name']
+            }
+          ],
+          required: true
+        }
+      ],
+      order: [],
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      subQuery: false
+    };
+
+    // Si des coordonnées sont fournies, trier par distance
+    if (latitude && longitude) {
+      const point = {
+        type: 'Point',
+        coordinates: [parseFloat(longitude), parseFloat(latitude)],
+        crs: { type: 'name', properties: { name: 'EPSG:4326' } }
+      };
+
+      // Ajouter la condition de distance
+      queryOptions.where.location = db.Sequelize.fn(
+        'ST_DWithin',
+        db.Sequelize.col('location'),
+        db.Sequelize.fn('ST_SetSRID', db.Sequelize.fn('ST_MakePoint', point.coordinates[0], point.coordinates[1]), 4326),
+        radius / 111.12 // Conversion approximative des degrés en kilomètres
+      );
+
+      // Trier par distance
+      queryOptions.order.push([
+        db.Sequelize.fn(
+          'ST_Distance',
+          db.Sequelize.col('location'),
+          db.Sequelize.fn('ST_SetSRID', db.Sequelize.fn('ST_MakePoint', point.coordinates[0], point.coordinates[1]), 4326)
+        )
+      ]);
+    } else {
+      // Trier par note moyenne par défaut
+      queryOptions.order.push([
+        { model: db.Hairdresser, as: 'hairdresser' },
+        'average_rating',
+        'DESC'
+      ]);
+    }
+
+    const { count, rows: salons } = await db.Salon.findAndCountAll(queryOptions);
+
+    res.json({
+      success: true,
+      data: salons,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        total_pages: Math.ceil(count / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error('Search salons error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SALON_SEARCH_ERROR',
+        message: 'Erreur lors de la recherche des salons',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      }
+    });
+  }
+};
+
+/**
+ * Valider un salon (admin)
+ */
+exports.validateSalon = async (req, res) => {
+  const transaction = await db.sequelize.transaction();
+  
+  try {
+    const { id } = req.params;
+    const { is_validated, rejection_reason } = req.body;
+
+    // Vérifier si l'utilisateur est un administrateur
+    if (req.user.user_type !== 'admin') {
+      await transaction.rollback();
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Accès refusé. Réservé aux administrateurs.'
+        }
+      });
+    }
+
+    // Vérifier si le salon existe
+    const salon = await db.Salon.findByPk(id, {
+      include: [
+        {
+          model: db.Hairdresser,
+          as: 'hairdresser',
+          transaction
+        }
+      ],
+      transaction
+    });
+
+    if (!salon) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Salon non trouvé'
+        }
+      });
+    }
+
+    // Mettre à jour le statut de validation
+    await salon.update({ 
+      is_validated,
+      rejection_reason: !is_validated ? rejection_reason : null
+    }, { transaction });
+
+    // Si le salon est validé, mettre à jour le statut du coiffeur
+    if (is_validated && salon.hairdresser) {
+      await salon.hairdresser.update({ has_salon: true }, { transaction });
+    }
+
+    await transaction.commit();
+    
+    // TODO: Envoyer une notification au coiffeur
+
+    res.json({
+      success: true,
+      message: `Salon ${is_validated ? 'validé' : 'rejeté'} avec succès`,
+      data: salon
+    });
+
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Validate salon error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SALON_VALIDATION_ERROR',
+        message: `Erreur lors de la ${req.body.is_validated ? 'validation' : 'rejet'} du salon`,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      }
+    });
+  }
+};
