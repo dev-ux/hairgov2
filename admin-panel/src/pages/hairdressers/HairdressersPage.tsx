@@ -1,4 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale/fr';
+import api from '../../services/api';
 import {
   Box,
   Typography,
@@ -18,6 +22,10 @@ import {
   TextField,
   InputAdornment,
   Badge,
+  CircularProgress,
+  Alert,
+  TableSortLabel,
+  TableFooter
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -28,39 +36,71 @@ import {
   Phone as PhoneIcon,
   Email as EmailIcon,
   Work as WorkIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  Person as PersonIcon,
+  LocationOn as LocationIcon
 } from '@mui/icons-material';
 
-// Données temporaires - À remplacer par un appel API
-const mockHairdressers = [
-  {
-    id: 1,
-    firstName: 'Sophie',
-    lastName: 'Martin',
-    email: 'sophie.martin@example.com',
-    phone: '06 12 34 56 78',
-    specialty: 'Coloration',
-    rating: 4.8,
-    status: 'actif',
-    avatar: '/static/images/avatar/1.jpg',
-  },
-  {
-    id: 2,
-    firstName: 'Thomas',
-    lastName: 'Dubois',
-    email: 'thomas.dubois@example.com',
-    phone: '06 98 76 54 32',
-    specialty: 'Coupe Homme',
-    rating: 4.9,
-    status: 'actif',
-    avatar: '/static/images/avatar/2.jpg',
-  },
-  // Ajoutez plus de coiffeurs selon vos besoins
-];
+interface Hairdresser {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  is_active: boolean;
+  profile_photo?: string;
+  created_at: string;
+  status?: 'active' | 'inactive' | 'pending';
+  specialty?: string;
+  rating?: number;
+  firstName?: string;
+  lastName?: string;
+  avatar?: string;
+  hairdresserProfile?: {
+    profession?: string;
+    residential_address?: string;
+    average_rating?: number;
+    registration_status?: string;
+    is_available?: boolean;
+    total_jobs?: number;
+  };
+}
 
-const HairdressersPage: React.FC = () => {
+type Order = 'asc' | 'desc';
+
+export const HairdressersPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [hairdressers, setHairdressers] = useState<Hairdresser[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
+  const [totalCount, setTotalCount] = useState(0);
+  const [order, setOrder] = useState<Order>('desc');
+  const [orderBy, setOrderBy] = useState<keyof Hairdresser>('created_at');
+
+  useEffect(() => {
+    const fetchHairdressers = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/admin/hairdressers');
+        if (response.data.success) {
+          setHairdressers(response.data.data);
+          setTotalCount(response.data.count);
+        } else {
+          setError('Erreur lors du chargement des coiffeurs');
+        }
+      } catch (err: any) {
+        console.error('Error fetching hairdressers:', err);
+        setError(err.response?.data?.error || 'Une erreur est survenue lors du chargement des coiffeurs');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHairdressers();
+  }, [page, rowsPerPage, searchTerm, order, orderBy]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -76,11 +116,42 @@ const HairdressersPage: React.FC = () => {
     setPage(0);
   };
 
-  const filteredHairdressers = mockHairdressers.filter(
-    (hairdresser) =>
-      `${hairdresser.firstName} ${hairdresser.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      hairdresser.specialty.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredHairdressers = hairdressers.filter((hairdresser) => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      (hairdresser.full_name || '').toLowerCase().includes(searchLower) ||
+      (hairdresser.email || '').toLowerCase().includes(searchLower) ||
+      (hairdresser.phone || '').toLowerCase().includes(searchLower) ||
+      (hairdresser.hairdresserProfile?.profession || '').toLowerCase().includes(searchLower) ||
+      (hairdresser.hairdresserProfile?.registration_status || '').toLowerCase().includes(searchLower)
+    );
+  });
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    try {
+      return format(new Date(dateString), 'dd/MM/yyyy');
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Date invalide';
+    }
+  };
+
+  const getStatusColor = (status?: string) => {
+    switch (status) {
+      case 'active':
+      case 'actif':
+        return 'success';
+      case 'inactive':
+      case 'inactif':
+        return 'error';
+      case 'pending':
+        return 'warning';
+      default:
+        return 'default';
+    }
+  };
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -153,49 +224,46 @@ const HairdressersPage: React.FC = () => {
                         }
                       >
                         <Avatar
-                          src={hairdresser.avatar}
-                          alt={`${hairdresser.firstName} ${hairdresser.lastName}`}
+                          src={hairdresser.profile_photo}
+                          alt={hairdresser.full_name}
                         />
                       </Badge>
                       <Box>
                         <Typography variant="subtitle1" fontWeight="medium">
-                          {hairdresser.firstName} {hairdresser.lastName}
+                          {hairdresser.full_name}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </TableCell>
+                  <TableCell>{hairdresser.hairdresserProfile?.profession || 'Non spécifié'}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <EmailIcon fontSize="small" color="action" />
+                        <Typography variant="body2">{hairdresser.email}</Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <PhoneIcon fontSize="small" color="action" />
+                        <Typography variant="body2">
+                          {hairdresser.phone || 'Non renseigné'}
                         </Typography>
                       </Box>
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Chip
-                      label={hairdresser.specialty}
-                      size="small"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <PhoneIcon color="action" fontSize="small" />
-                        <Typography variant="body2">{hairdresser.phone}</Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <EmailIcon color="action" fontSize="small" />
-                        <Typography variant="body2">{hairdresser.email}</Typography>
-                      </Box>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <StarIcon color="warning" fontSize="small" />
-                      <Typography variant="body1">
-                        {hairdresser.rating.toFixed(1)}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <StarIcon color="warning" />
+                      <Typography>
+                        {hairdresser.hairdresserProfile?.average_rating || '0.00'}
                       </Typography>
                     </Box>
                   </TableCell>
                   <TableCell>
                     <Chip
-                      label={hairdresser.status === 'actif' ? 'Actif' : 'Inactif'}
-                      color={hairdresser.status === 'actif' ? 'success' : 'default'}
+                      label={hairdresser.hairdresserProfile?.registration_status === 'approved' ? 'Approuvé' : 
+                            hairdresser.hairdresserProfile?.registration_status === 'pending' ? 'En attente' : 'Rejeté'}
+                      color={hairdresser.hairdresserProfile?.registration_status === 'approved' ? 'success' : 
+                            hairdresser.hairdresserProfile?.registration_status === 'pending' ? 'warning' : 'error'}
                       size="small"
                     />
                   </TableCell>

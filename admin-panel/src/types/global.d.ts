@@ -1,5 +1,11 @@
 // Déclaration de types globaux
 
+declare module '*/api' {
+  import { AxiosInstance } from 'axios';
+  const api: AxiosInstance;
+  export default api;
+}
+
 declare namespace NodeJS {
   interface ProcessEnv {
     NODE_ENV: 'development' | 'production' | 'test';

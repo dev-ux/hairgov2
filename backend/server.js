@@ -21,12 +21,30 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
+// Configuration CORS
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
+
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
-  credentials: true
+  origin: function (origin, callback) {
+    // Autoriser les requêtes sans origine (comme les applications mobiles ou Postman)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = `Cette origine ${origin} n'est pas autorisée par CORS`;
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
+
+// Gestion des requêtes OPTIONS (pré-vol)
+app.options('*', cors());
 
 // Rate limiting
 const limiter = rateLimit({
