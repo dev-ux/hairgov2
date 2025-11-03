@@ -17,7 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 // Données temporaires - À remplacer par vos données réelles ou un appel API
 const categories = [
   { id: '1', name: 'Coiffure', icon: 'cut' },
-  { id: '2', name: 'Barbier', icon: 'cut' },
+  { id: '2', name: 'Salon', icon: 'home' },
   { id: '3', name: 'Beauté', icon: 'spa' },
   { id: '4', name: 'Soins', icon: 'flower' },
 ];
@@ -37,7 +37,7 @@ const popularSalons = [
     rating: 4.9,
     distance: '1.2 km',
     image: 'https://via.placeholder.com/150',
-    category: 'Barbier'
+    category: 'Salon'
   },
 ];
 
@@ -112,7 +112,16 @@ export const HomeScreen = ({ navigation }: any) => {
             </Text>
             <Text style={styles.title}>Trouvez votre salon</Text>
           </View>
-          <TouchableOpacity style={styles.profileButton}>
+          
+          <TouchableOpacity style={styles.notificationButton}>
+            <Ionicons name="notifications-outline" size={24} color="#6C63FF" />
+            <View style={styles.notificationBadge} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={styles.profileButton}
+            onPress={() => navigation.navigate('Profile')}
+          >
             <Ionicons name="person" size={24} color="#6C63FF" />
           </TouchableOpacity>
         </View>
@@ -210,7 +219,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   title: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#333',
   },
@@ -218,9 +227,29 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
+    marginLeft: 10,
+  },
+  notificationButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 70,
+    position: 'relative',
+  },
+  notificationBadge: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#FF6B6B',
   },
   searchContainer: {
     flexDirection: 'row',
