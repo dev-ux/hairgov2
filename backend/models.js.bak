@@ -1,0 +1,16 @@
+// models.js - Fichier temporaire pour exporter les modèles
+const db = require('./models');
+
+// Exporter les modèles individuellement
+module.exports = {
+  sequelize: db.sequelize,
+  User: db.User,
+  Hairdresser: db.Hairdresser,
+  Booking: db.Booking,
+  Hairstyle: db.Hairstyle,
+  Rating: db.Rating,
+  BalanceTransaction: db.BalanceTransaction,
+  Notification: db.Notification,
+  Complaint: db.Complaint,
+  Salon: db.Salon
+};
