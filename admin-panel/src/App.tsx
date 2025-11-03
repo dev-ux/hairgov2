@@ -1,17 +1,30 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import React, { Suspense } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { SnackbarProvider } from 'notistack';
+import { CircularProgress, Box } from '@mui/material';
 
 // Layout et pages
 import AdminLayout from './components/layout/AdminLayout';
-import DashboardPage from './pages/DashboardPage';
-import SalonsPage from './pages/salons/SalonsPage';
-import HairdressersPage from './pages/hairdressers/HairdressersPage';
-import BookingsPage from './pages/bookings/BookingsPage';
-import UsersPage from './pages/users/UsersPage';
-import SettingsPage from './pages/settings/SettingsPage';
+import LoginPage from './pages/LoginPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+
+// Pages avec chargement paresseux
+const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
+const SalonsPage = React.lazy(() => import('./pages/salons/SalonsPage'));
+const HairdressersPage = React.lazy(() => import('./pages/hairdressers/HairdressersPage'));
+const BookingsPage = React.lazy(() => import('./pages/bookings/BookingsPage'));
+const UsersPage = React.lazy(() => import('./pages/users/UsersPage'));
+const SettingsPage = React.lazy(() => import('./pages/settings/SettingsPage'));
+
+// Composant de chargement
+const Loader = () => (
+  <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh">
+    <CircularProgress />
+  </Box>
+);
 
 // Création du thème personnalisé
 const theme = createTheme({
@@ -38,26 +51,40 @@ const theme = createTheme({
   },
 });
 
+// Composant pour les routes protégées
+const ProtectedRoutes = () => (
+  <ProtectedRoute adminOnly>
+    <AdminLayout>
+      <Suspense fallback={<Loader />}>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/salons" element={<SalonsPage />} />
+          <Route path="/hairdressers" element={<HairdressersPage />} />
+          <Route path="/bookings" element={<BookingsPage />} />
+          <Route path="/users" element={<UsersPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+        </Routes>
+      </Suspense>
+    </AdminLayout>
+  </ProtectedRoute>
+);
+
 const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <SnackbarProvider maxSnack={3}>
-        <Router>
-          <Routes>
-            <Route element={<AdminLayout><Outlet /></AdminLayout>}>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/salons" element={<SalonsPage />} />
-              <Route path="/hairdressers" element={<HairdressersPage />} />
-              {/* Routes supplémentaires pour les autres éléments du menu */}
-              <Route path="/bookings" element={<BookingsPage />} />
-              <Route path="/users" element={<UsersPage />} />
-              <Route path="/settings" element={<SettingsPage />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Route>
-          </Routes>
-        </Router>
+        <AuthProvider>
+          <Router>
+            <Suspense fallback={<Loader />}>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/*" element={<ProtectedRoutes />} />
+              </Routes>
+            </Suspense>
+          </Router>
+        </AuthProvider>
       </SnackbarProvider>
     </ThemeProvider>
   );

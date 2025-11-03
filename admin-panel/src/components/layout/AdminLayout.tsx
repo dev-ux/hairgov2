@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import { 
   Box, 
   CssBaseline, 
@@ -71,9 +72,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     setOpen(false);
   };
 
+  const { logout } = useAuth();
+
   const handleLogout = () => {
-    // TODO: Implémenter la déconnexion
-    navigate('/login');
+    logout();
+    navigate('/login', { replace: true });
   };
 
   return (
