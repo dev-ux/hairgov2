@@ -1,17 +1,17 @@
 import React, { useContext } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { 
-  Box, 
-  CssBaseline, 
-  Toolbar, 
-  AppBar, 
-  Typography, 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemButton, 
-  ListItemIcon, 
+import {
+  Box,
+  CssBaseline,
+  Toolbar,
+  AppBar,
+  Typography,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
   ListItemText,
   IconButton,
   styled
@@ -82,7 +82,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
-      
+
       {/* En-tête */}
       <AppBar position="fixed" sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}>
         <Toolbar>
@@ -98,7 +98,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             Admin - HairGov
           </Typography>
-          <IconButton color="inherit" onClick={handleLogout}>
+          <IconButton color="inherit" onClick={handleLogout} title="Déconnexion">
             <LogoutIcon />
           </IconButton>
         </Toolbar>
@@ -123,11 +123,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         </div>
         <List>
           {menuItems.map((item) => (
-            <ListItem 
-              key={item.text} 
+            <ListItem
+              key={item.text}
               disablePadding
             >
-              <ListItemButton 
+              <ListItemButton
                 selected={location.pathname === item.path}
                 onClick={() => navigate(item.path)}
               >

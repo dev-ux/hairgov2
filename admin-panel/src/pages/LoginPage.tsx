@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { login } from '../services/auth.service';
 import { Box, Button, TextField, Typography, Container, Paper, Alert } from '@mui/material';
 import { LockOutlined } from '@mui/icons-material';
@@ -10,6 +10,7 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,8 +31,12 @@ const LoginPage: React.FC = () => {
         throw new Error('Accès refusé. Seuls les administrateurs peuvent se connecter.');
       }
 
-      // Rediriger vers le tableau de bord
-      navigate('/dashboard');
+      // Attendre que l'état d'authentification soit mis à jour
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Rediriger vers le tableau de bord ou la page précédente
+      const from = (location.state as any)?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
     } catch (err: any) {
       console.error('Login error:', err);
       setError(err.message || 'Échec de la connexion. Veuillez vérifier vos identifiants.');

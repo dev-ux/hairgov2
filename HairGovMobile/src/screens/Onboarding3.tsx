@@ -15,10 +15,14 @@ export const Onboarding3 = () => {
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../assets/images/onboarding3.png')}
-        style={styles.image}
-      />
+      <View style={styles.imageContainer}>
+        <Image
+          source={require('../assets/images/onboarding3.png')}
+          style={styles.image}
+          resizeMode="contain"
+          onError={(error) => console.log('Erreur de chargement de l\'image:', error.nativeEvent.error)}
+        />
+      </View>
       <Text style={styles.title}>Profitez de réductions exclusives</Text>
       <Text style={styles.subtitle}>Bénéficiez d'offres spéciales et de réductions chez vos professionnels préférés</Text>
       
@@ -57,11 +61,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
-  image: {
+  imageContainer: {
     width: 300,
     height: 300,
-    resizeMode: 'contain',
     marginBottom: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'contain',
   },
   title: {
     fontSize: 24,

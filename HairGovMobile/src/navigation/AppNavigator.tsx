@@ -13,6 +13,7 @@ import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import BookingScreen from '../screens/BookingScreen';
 import BarberListScreen from '../screens/BarberListScreen';
+import BarberDetailScreen from '../screens/BarberDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
 // Définition des types pour la navigation
@@ -38,6 +39,7 @@ export type RootStackParamList = {
   Settings: undefined;
   // Autres écrans
   Barber: undefined;
+  BarberDetail: { barberId: string };
   Booking: {
     hairdresserId: string;
     hairdresserName: string;
@@ -88,12 +90,13 @@ const MainTabs = () => {
         name="Barber" 
         component={BarberListScreen} 
         options={{ 
-          title: 'Coiffeurs',
+          title: 'Nos Coiffeurs',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="cut" size={size} color={color} />
           )
         }} 
       />
+    
       <Tab.Screen 
         name="Booking" 
         component={BookingScreen} 
@@ -166,9 +169,15 @@ export const AppNavigator = () => {
           name="Profile" 
           component={ProfileScreen}
           options={{
-            title: 'Mon Profil',
             headerShown: true,
-            headerBackTitle: 'Retour',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="BarberDetail" 
+          component={BarberDetailScreen}
+          options={{
+            headerShown: false,  // Désactive l'en-tête natif
             animation: 'slide_from_right',
           }}
         />

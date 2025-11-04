@@ -29,6 +29,18 @@ const ProfileScreen = () => {
 
   return (
     <View style={styles.container}>
+      {/* En-tête personnalisé avec bouton de retour */}
+      <View style={styles.headerContainer}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Mon Profil</Text>
+        <View style={{ width: 24 }} /> {/* Pour équilibrer le flexbox */}
+      </View>
+      
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
           <Ionicons name="person-circle" size={80} color="#6C63FF" />
@@ -61,9 +73,27 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+    backgroundColor: '#fff',
+  },
+  backButton: {
+    padding: 5,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
   header: {
     alignItems: 'center',
     padding: 20,
+    paddingTop: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
