@@ -990,6 +990,7 @@ exports.searchHairdressers = async (req, res) => {
 exports.getHairdresserDetails = async (req, res) => {
   try {
     const { id } = req.params;
+    console.log('Recherche du coiffeur avec ID:', id);
 
     // Vérifier si l'ID est valide
     if (!id || isNaN(parseInt(id))) {
@@ -1002,80 +1003,126 @@ exports.getHairdresserDetails = async (req, res) => {
       });
     }
 
-    const hairdresser = await Hairdresser.findOne({
-      where: { 
-        id,
-        registration_status: 'approved',
-        is_available: true
-      },
-      include: [
-        {
-          model: User,
-          as: 'user',
-          where: {
-            is_active: true,
-            is_verified: true
-          },
-          attributes: ['id', 'full_name', 'email', 'phone', 'profile_photo'],
-          required: true
+    // Rechercher d'abord l'utilisateur pour obtenir son ID
+    const user = await User.findOne({
+      where: { id },
+      include: [{
+        model: Hairdresser,
+        as: 'hairdresserProfile',
+        where: {
+          registration_status: 'approved',
+          is_available: true
         },
-        {
-          model: Hairstyle,
-          as: 'hairstyles',
-          through: { attributes: [] },
-          attributes: ['id', 'name', 'description', 'price', 'duration', 'photo']
-        }
-      ],
-      attributes: [
-        'id',
-        'profession',
-        'bio',
-        'experience_years',
-        'total_jobs',
-        'is_available',
-        'created_at',
-        [
-          sequelize.literal('(SELECT COALESCE(AVG(rating), 0) FROM ratings WHERE ratings.hairdresser_id = Hairdresser.id)'),
-          'average_rating'
-        ],
-        [
-          sequelize.literal('(SELECT COUNT(*) FROM ratings WHERE ratings.hairdresser_id = Hairdresser.id)'),
-          'rating_count'
-        ]
-      ]
+        required: true
+      }]
     });
 
-    if (!hairdresser) {
+    if (!user || !user.hairdresserProfile) {
       return res.status(404).json({
         success: false,
         error: {
           code: 'HAIRDRESSER_NOT_FOUND',
-          message: 'Coiffeur introuvable ou non approuvé'
+          message: 'Coiffeur introuvable ou non approuvé',
+          details: 'Aucun coiffeur trouvé avec cet ID utilisateur ou le profil n\'est pas approuvé'
         }
       });
     }
 
+    console.log('Profil coiffeur trouvé:', {
+      id: user.hairdresserProfile.id,
+      user_id: user.id,
+      registration_status: user.hairdresserProfile.registration_status,
+      is_available: user.hairdresserProfile.is_available
+    });
+
+    // D'abord, récupérons les détails de base du coiffeur
+    console.log('Tentative de récupération des détails du coiffeur avec l\'ID:', user.hairdresserProfile.id);
+    
+    // 1. Récupération du coiffeur sans relations
+    const hairdresserBasic = await Hairdresser.findByPk(user.hairdresserProfile.id);
+    console.log('Coiffeur de base trouvé:', hairdresserBasic ? 'Oui' : 'Non');
+    
+    if (!hairdresserBasic) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'HAIRDRESSER_NOT_FOUND',
+          message: 'Coiffeur introuvable',
+          details: 'Aucun coiffeur trouvé avec cet ID dans la table hairdressers'
+        }
+      });
+    }
+    
+    // 2. Récupération des détails avec les relations une par une
+    // D'abord, récupérons l'utilisateur associé
+    const userDetails = await User.findByPk(user.id, {
+      attributes: ['id', 'full_name', 'email', 'phone', 'profile_photo']
+    });
+    
+    if (!userDetails) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'Utilisateur associé non trouvé'
+        }
+      });
+    }
+    
+    // Ensuite, récupérons les coiffures associées
+    const hairstyles = await Hairstyle.findAll({
+      include: [{
+        model: Hairdresser,
+        as: 'hairdressers', // Utilisation de l'alias défini dans l'association
+        where: { id: user.hairdresserProfile.id },
+        through: { attributes: [] },
+        required: true
+      }],
+      attributes: ['id', 'name', 'description', 'estimated_duration', 'category', 'photo', 'is_active']
+    });
+    
+    // Calculons la note moyenne et le nombre d'évaluations
+    const ratingData = await Rating.findOne({
+      where: { hairdresser_id: user.hairdresserProfile.id },
+      attributes: [
+        [sequelize.fn('AVG', sequelize.col('rating')), 'average_rating'],
+        [sequelize.fn('COUNT', sequelize.col('id')), 'rating_count']
+      ],
+      raw: true
+    });
+    
+    // Construisons la réponse manuellement
+    const hairdresserDetails = {
+      ...hairdresserBasic.get({ plain: true }),
+      user: userDetails,
+      hairstyles: hairstyles,
+      average_rating: parseFloat(ratingData?.average_rating) || 0,
+      rating_count: parseInt(ratingData?.rating_count) || 0,
+      total_jobs: hairdresserBasic.total_jobs || 0,
+      is_available: hairdresserBasic.is_available || false
+    };
+
+
     // Obtenir quelques évaluations récentes
     const recentRatings = await Rating.findAll({
       where: { 
-        hairdresser_id: id,
-        status: 'approved' // Ne montrer que les avis approuvés
+        hairdresser_id: user.hairdresserProfile.id
       },
       include: [{
         model: User,
         as: 'client',
         attributes: ['full_name', 'profile_photo']
       }],
-      order: [['created_at', 'DESC']],
+      order: [[sequelize.col('Rating.created_at'), 'DESC']],
       limit: 5,
       attributes: [
         'id',
         'rating',
         'comment',
-        'created_at',
+        ['created_at', 'created_at'], // Alias explicite pour éviter l'ambiguïté
         [
           sequelize.fn('to_char', 
-            sequelize.col('created_at'), 
+            sequelize.col('Rating.created_at'), // Spécification de la table
             'DD/MM/YYYY'
           ),
           'formatted_date'
@@ -1083,22 +1130,12 @@ exports.getHairdresserDetails = async (req, res) => {
       ]
     });
 
-    // Formater la réponse
+    // Préparer la réponse
     const response = {
       success: true,
       data: {
-        id: hairdresser.id,
-        user: hairdresser.user,
-        profession: hairdresser.profession,
-        bio: hairdresser.bio,
-        experience_years: hairdresser.experience_years,
-        total_jobs: hairdresser.total_jobs,
-        is_available: hairdresser.is_available,
-        average_rating: parseFloat(hairdresser.get('average_rating')) || 0,
-        rating_count: parseInt(hairdresser.get('rating_count')) || 0,
-        hairstyles: hairdresser.hairstyles,
-        recent_ratings: recentRatings,
-        created_at: hairdresser.created_at
+        ...hairdresserDetails,
+        recent_ratings: recentRatings || []
       }
     };
 

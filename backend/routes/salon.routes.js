@@ -1,17 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const salonController = require('../controllers/salon.controller');
-const { authenticate } = require('../middleware/auth.middleware');
 const { upload } = require('../middleware/upload.middleware');
+const { 
+  createSalon, 
+  getSalon, 
+  updateSalon, 
+  deleteSalon, 
+  searchSalons, 
+  validateSalon,
+  createSalonAsAdmin 
+} = require('../controllers/salon.controller');
+const { authenticate } = require('../middleware/auth.middleware');
 
-// Middleware pour vérifier si l'utilisateur est un coiffeur
+// Middleware pour vérifier si l'utilisateur est un coiffeur ou un administrateur
 const isHairdresser = (req, res, next) => {
-  if (req.user.user_type !== 'hairdresser') {
+  if (req.user.user_type !== 'hairdresser' && req.user.user_type !== 'admin') {
     return res.status(403).json({
       success: false,
       error: {
         code: 'FORBIDDEN',
-        message: 'Accès réservé aux coiffeurs'
+        message: 'Accès réservé aux coiffeurs et administrateurs'
       }
     });
   }
@@ -44,7 +52,7 @@ router.post('/',
     { name: 'photos', maxCount: 10 },
     { name: 'logo', maxCount: 1 }
   ]),
-  salonController.createSalon
+  createSalon
 );
 
 /**
@@ -52,14 +60,14 @@ router.post('/',
  * @desc    Rechercher des salons à proximité
  * @access  Public
  */
-router.get('/search', salonController.searchSalons);
+router.get('/search', searchSalons);
 
 /**
  * @route   GET /api/v1/salons/:id
  * @desc    Obtenir les détails d'un salon
  * @access  Public
  */
-router.get('/:id', salonController.getSalon);
+router.get('/:id', getSalon);
 
 /**
  * @route   PUT /api/v1/salons/:id
@@ -73,7 +81,7 @@ router.put(
     { name: 'photos', maxCount: 10 },
     { name: 'logo', maxCount: 1 }
   ]),
-  salonController.updateSalon
+  updateSalon
 );
 
 /**
@@ -81,7 +89,7 @@ router.put(
  * @desc    Supprimer un salon (propriétaire ou admin)
  * @access  Private
  */
-router.delete('/:id', authenticate, salonController.deleteSalon);
+router.delete('/:id', authenticate, deleteSalon);
 
 /**
  * @route   POST /api/v1/salons/:id/validate
@@ -92,7 +100,7 @@ router.post(
   '/:id/validate',
   authenticate,
   isAdmin,
-  salonController.validateSalon
+  validateSalon
 );
 
 module.exports = router;

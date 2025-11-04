@@ -407,6 +407,45 @@ const Complaint = sequelize.define('Complaint', {
 });
 
 // ==========================================
+// MODELE SALON_PHOTO
+// ==========================================
+const SalonPhoto = sequelize.define('SalonPhoto', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  salon_id: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'salons',
+      key: 'id'
+    }
+  },
+  url: {
+    type: DataTypes.TEXT,
+    allowNull: false
+  },
+  is_primary: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  description: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  order: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  }
+}, {
+  tableName: 'salon_photos',
+  timestamps: true,
+  underscored: true
+});
+
+// ==========================================
 // MODELE SALON
 // ==========================================
 const Salon = sequelize.define('Salon', {
@@ -415,7 +454,14 @@ const Salon = sequelize.define('Salon', {
     defaultValue: DataTypes.UUIDV4,
     primaryKey: true
   },
-  hairdresser_id: DataTypes.UUID,
+  hairdresser_id: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'hairdressers',
+      key: 'id'
+    }
+  },
   name: {
     type: DataTypes.STRING(255),
     allowNull: false
@@ -489,6 +535,7 @@ Complaint.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Complaint.belongsTo(Booking, { foreignKey: 'booking_id', as: 'booking' });
 User.hasMany(Complaint, { foreignKey: 'user_id', as: 'complaints' });
 
+// Relations pour Salon
 Salon.belongsTo(Hairdresser, { foreignKey: 'hairdresser_id', as: 'hairdresser' });
 Hairdresser.hasOne(Salon, { foreignKey: 'hairdresser_id', as: 'salon' });
 
@@ -504,7 +551,8 @@ const models = {
   BalanceTransaction,
   Notification,
   Complaint,
-  Salon
+  Salon,
+  SalonPhoto
 };
 
 // Exporter les modèles et l'instance sequelize

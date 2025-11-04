@@ -44,25 +44,32 @@ import {
 
 interface Hairdresser {
   id: string;
-  full_name: string;
-  email: string;
-  phone: string;
-  is_active: boolean;
-  profile_photo?: string;
+  user_id: string;
+  profession: string | null;
+  residential_address: string | null;
+  date_of_birth: string | null;
+  id_card_number: string | null;
+  id_card_photo: string | null;
+  has_salon: boolean;
+  education_level: string | null;
+  registration_status: 'pending' | 'approved' | 'rejected';
+  balance: string;
+  total_earnings: string;
+  average_rating: string;
+  total_jobs: number;
+  is_available: boolean;
+  current_job_id: string | null;
+  latitude: number | null;
+  longitude: number | null;
   created_at: string;
-  status?: 'active' | 'inactive' | 'pending';
-  specialty?: string;
-  rating?: number;
-  firstName?: string;
-  lastName?: string;
-  avatar?: string;
-  hairdresserProfile?: {
-    profession?: string;
-    residential_address?: string;
-    average_rating?: number;
-    registration_status?: string;
-    is_available?: boolean;
-    total_jobs?: number;
+  updated_at: string;
+  user: {
+    id: string;
+    email: string;
+    full_name: string;
+    phone: string;
+    profile_photo: string | null;
+    is_active: boolean;
   };
 }
 
@@ -120,11 +127,11 @@ export const HairdressersPage: React.FC = () => {
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
     return (
-      (hairdresser.full_name || '').toLowerCase().includes(searchLower) ||
-      (hairdresser.email || '').toLowerCase().includes(searchLower) ||
-      (hairdresser.phone || '').toLowerCase().includes(searchLower) ||
-      (hairdresser.hairdresserProfile?.profession || '').toLowerCase().includes(searchLower) ||
-      (hairdresser.hairdresserProfile?.registration_status || '').toLowerCase().includes(searchLower)
+      (hairdresser.user?.full_name || '').toLowerCase().includes(searchLower) ||
+      (hairdresser.user?.email || '').toLowerCase().includes(searchLower) ||
+      (hairdresser.user?.phone || '').toLowerCase().includes(searchLower) ||
+      (hairdresser.profession || '').toLowerCase().includes(searchLower) ||
+      (hairdresser.registration_status || '').toLowerCase().includes(searchLower)
     );
   });
 
@@ -154,21 +161,11 @@ export const HairdressersPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
+    <Box sx={{ flexGrow: 1, p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" gutterBottom>
           Gestion des Coiffeurs
         </Typography>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={() => {
-            // Logique pour ajouter un nouveau coiffeur
-          }}
-        >
-          Ajouter un Coiffeur
-        </Button>
       </Box>
 
       <Paper sx={{ mb: 3, p: 2 }}>
@@ -193,104 +190,119 @@ export const HairdressersPage: React.FC = () => {
           <TableHead>
             <TableRow>
               <TableCell>Coiffeur</TableCell>
-              <TableCell>Spécialité</TableCell>
               <TableCell>Contact</TableCell>
+              <TableCell>Adresse</TableCell>
               <TableCell>Note</TableCell>
               <TableCell>Statut</TableCell>
+              <TableCell>Date d'inscription</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {filteredHairdressers
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((hairdresser) => (
-                <TableRow key={hairdresser.id} hover>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Badge
-                        overlap="circular"
-                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                        badgeContent={
-                          <WorkIcon
-                            color="primary"
-                            sx={{
-                              width: 20,
-                              height: 20,
-                              borderRadius: '50%',
-                              backgroundColor: 'white',
-                              p: 0.5,
-                            }}
-                          />
-                        }
-                      >
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  <CircularProgress />
+                </TableCell>
+              </TableRow>
+            ) : error ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  <Alert severity="error">{error}</Alert>
+                </TableCell>
+              </TableRow>
+            ) : filteredHairdressers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  Aucun coiffeur trouvé
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredHairdressers
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((hairdresser) => (
+                  <TableRow key={hairdresser.id}>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Avatar
-                          src={hairdresser.profile_photo}
-                          alt={hairdresser.full_name}
-                        />
-                      </Badge>
+                          src={hairdresser.user.profile_photo || undefined}
+                          alt={hairdresser.user.full_name}
+                          sx={{ width: 40, height: 40, mr: 2 }}
+                        >
+                          <PersonIcon />
+                        </Avatar>
+                        <Box>
+                          <Typography variant="subtitle2">{hairdresser.user.full_name}</Typography>
+                          <Typography variant="caption" color="textSecondary">
+                            {hairdresser.profession || 'Non spécifié'}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
                       <Box>
-                        <Typography variant="subtitle1" fontWeight="medium">
-                          {hairdresser.full_name}
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+                          <EmailIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                          <Typography variant="body2">{hairdresser.user.email}</Typography>
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <PhoneIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                          <Typography variant="body2">{hairdresser.user.phone || 'Non renseigné'}</Typography>
+                        </Box>
                       </Box>
-                    </Box>
-                  </TableCell>
-                  <TableCell>{hairdresser.hairdresserProfile?.profession || 'Non spécifié'}</TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <EmailIcon fontSize="small" color="action" />
-                        <Typography variant="body2">{hairdresser.email}</Typography>
-                      </Box>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <PhoneIcon fontSize="small" color="action" />
-                        <Typography variant="body2">
-                          {hairdresser.phone || 'Non renseigné'}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <StarIcon color="warning" />
-                      <Typography>
-                        {hairdresser.hairdresserProfile?.average_rating || '0.00'}
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {hairdresser.residential_address || 'Non renseignée'}
                       </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip
-                      label={hairdresser.hairdresserProfile?.registration_status === 'approved' ? 'Approuvé' : 
-                            hairdresser.hairdresserProfile?.registration_status === 'pending' ? 'En attente' : 'Rejeté'}
-                      color={hairdresser.hairdresserProfile?.registration_status === 'approved' ? 'success' : 
-                            hairdresser.hairdresserProfile?.registration_status === 'pending' ? 'warning' : 'error'}
-                      size="small"
-                    />
-                  </TableCell>
-                  <TableCell align="right">
-                    <Tooltip title="Modifier">
-                      <IconButton
-                        color="primary"
-                        onClick={() => {
-                          // Logique de modification
-                        }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Supprimer">
-                      <IconButton
-                        color="error"
-                        onClick={() => {
-                          // Logique de suppression
-                        }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <StarIcon fontSize="small" color="warning" sx={{ mr: 0.5 }} />
+                        <Typography variant="body2">
+                          {parseFloat(hairdresser.average_rating).toFixed(1) || '0.0'}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={hairdresser.registration_status === 'pending' ? 'En attente' : 
+                               hairdresser.registration_status === 'approved' ? 'Approuvé' : 'Rejeté'}
+                        color={getStatusColor(hairdresser.registration_status)}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2">
+                        {new Date(hairdresser.created_at).toLocaleDateString('fr-FR')}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Tooltip title="Modifier">
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            // Logique de modification
+                          }}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={hairdresser.user.is_active ? 'Désactiver' : 'Activer'}>
+                        <IconButton
+                          size="small"
+                          color={hairdresser.user.is_active ? 'error' : 'success'}
+                          onClick={async () => {
+                            // Logique d'activation/désactivation
+                          }}
+                        >
+                          {hairdresser.user.is_active ? <CancelIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))
+            )}
           </TableBody>
         </Table>
         <TablePagination
