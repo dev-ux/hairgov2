@@ -8,9 +8,17 @@ const {
   deleteSalon, 
   searchSalons, 
   validateSalon,
-  createSalonAsAdmin 
+  createSalonAsAdmin,
+  getAllSalons 
 } = require('../controllers/salon.controller');
 const { authenticate } = require('../middleware/auth.middleware');
+
+/**
+ * @route   GET /api/v1/salons
+ * @desc    Obtenir la liste de tous les salons
+ * @access  Public
+ */
+router.get('/', getAllSalons);
 
 // Middleware pour vérifier si l'utilisateur est un coiffeur ou un administrateur
 const isHairdresser = (req, res, next) => {

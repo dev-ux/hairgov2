@@ -5,12 +5,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { API_URL } from '../config/constants';
 
 // Type pour la navigation
 type BarberListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Barber'>;
-
-// Configuration de l'API (à remplacer par votre URL réelle)
-const API_URL = 'http://localhost:3000';
 
 interface User {
   id: string;
@@ -42,7 +40,7 @@ const BarberListScreen: React.FC = () => {
   // Fonction pour récupérer les coiffeurs actifs (sans nécessiter de droits admin)
   const fetchActiveHairdressers = async (): Promise<Hairdresser[]> => {
     try {
-      const url = `${API_URL}/api/v1/hairdressers`;
+      const url = `${API_URL}/hairdressers`;
       console.log(`Tentative de connexion à: ${url}`);
       
       const response = await fetch(url, {

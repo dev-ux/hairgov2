@@ -1,45 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  SafeAreaView, 
-  ScrollView, 
-  TextInput, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  TextInput,
+  TouchableOpacity,
   Image,
   FlatList,
-  Dimensions
+  Dimensions,
+  ActivityIndicator
 } from 'react-native';
+import { API_URL } from '../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+// Import de l'image par défaut
+const defaultSalonImage = require('../assets/url_de_l_image_1.jpg');
 
-// Données temporaires - À remplacer par vos données réelles ou un appel API
-const categories = [
-  { id: '1', name: 'Coiffure', icon: 'cut' },
-  { id: '2', name: 'Salon', icon: 'home' },
-  { id: '3', name: 'Beauté', icon: 'spa' },
-  { id: '4', name: 'Soins', icon: 'flower' },
-];
+type Salon = {
+  id: string;
+  name: string;
+  address: string;
+  photos: string[];
+  average_rating: number;
+  hairdresser: {
+    id: string;
+    full_name: string;
+    profile_photo: string | null;
+  };
+};
 
-const popularSalons = [
-  {
-    id: '1',
-    name: 'Salon Élégance',
-    rating: 4.8,
-    distance: '0.5 km',
-    image: 'https://via.placeholder.com/150',
-    category: 'Coiffure'
-  },
-  {
-    id: '2',
-    name: 'Le Barbier Moderne',
-    rating: 4.9,
-    distance: '1.2 km',
-    image: 'https://via.placeholder.com/150',
-    category: 'Salon'
-  },
-];
 
 const { width } = Dimensions.get('window');
 
@@ -50,7 +41,87 @@ interface UserData {
 
 export const HomeScreen = ({ navigation }: any) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [salons, setSalons] = useState<Salon[] | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
+  useEffect(() => {
+    const fetchSalons = async () => {
+      try {
+        console.log('Tentative de connexion à:', `${API_URL}/salons`);
+        // Ajout d'un timestamp pour éviter le cache
+        const timestamp = new Date().getTime();
+        const response = await fetch(`${API_URL}/salons?_=${timestamp}`, {
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+        
+        console.log('Réponse du serveur - Status:', response.status);
+        
+        // Vérifier si la réponse est en cache (304) ou si c'est une réponse normale (200)
+        if (response.status === 304) {
+          console.log('Réponse 304 - Utilisation du cache côté client');
+          // Si vous avez un mécanisme de cache côté client, vous pouvez l'utiliser ici
+          // Pour l'instant, on laisse le code continuer pour traiter la réponse en cache
+        } else if (!response.ok) {
+          throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        
+        const data = await response.json().catch(err => {
+          console.error('Erreur lors du parsing de la réponse JSON:', err);
+          throw new Error('Format de réponse invalide du serveur');
+        });
+        
+        console.log('Données des salons reçues:', data);
+
+        if (data && data.success && Array.isArray(data.data)) {
+          console.log(`Nombre de salons reçus: ${data.data.length}`);
+          
+          if (data.data.length === 0) {
+            console.log('Aucun salon disponible dans la réponse');
+          } else {
+            // Ajout d'un log pour chaque salon et ses images
+            data.data.forEach((salon: Salon, index: number) => {
+              console.log(`Salon #${index + 1}:`, {
+                name: salon.name,
+                photos: salon.photos,
+                address: salon.address,
+                hairdresser: salon.hairdresser?.full_name
+              });
+            });
+          }
+          
+          // Vérifier si les données sont différentes avant de mettre à jour l'état
+          setSalons(prevSalons => {
+            const newSalons = data.data;
+            if (JSON.stringify(prevSalons) !== JSON.stringify(newSalons)) {
+              console.log('Mise à jour des salons avec de nouvelles données');
+              return newSalons;
+            }
+            console.log('Les données des salons sont identiques, pas de mise à jour');
+            return prevSalons;
+          });
+          setLastUpdate(new Date());
+        } else {
+          const errorMsg = data?.message || 'Format de réponse inattendu du serveur';
+          console.error('Erreur du serveur:', errorMsg, data);
+          setError(errorMsg);
+        }
+      } catch (err) {
+        setError('Impossible de se connecter au serveur');
+        console.error('Error fetching salons:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSalons();
+  }, []);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -58,12 +129,12 @@ export const HomeScreen = ({ navigation }: any) => {
         console.log('Chargement des données utilisateur depuis AsyncStorage...');
         const userData = await AsyncStorage.getItem('userData');
         console.log('Données brutes de l\'utilisateur:', userData);
-        
+
         if (userData) {
           const parsedData = JSON.parse(userData);
           console.log('Données utilisateur parsées:', parsedData);
           setUser(parsedData);
-          
+
           // Vérification des clés disponibles
           console.log('Clés disponibles dans les données utilisateur:', Object.keys(parsedData));
         } else {
@@ -77,29 +148,6 @@ export const HomeScreen = ({ navigation }: any) => {
     loadUserData();
   }, []);
 
-  const renderCategory = ({ item }: { item: any }) => (
-    <TouchableOpacity style={styles.categoryItem}>
-      <View style={styles.categoryIcon}>
-        <Ionicons name={item.icon} size={24} color="#6C63FF" />
-      </View>
-      <Text style={styles.categoryText}>{item.name}</Text>
-    </TouchableOpacity>
-  );
-
-  const renderSalonCard = ({ item }: { item: any }) => (
-    <TouchableOpacity style={styles.salonCard}>
-      <Image source={{ uri: item.image }} style={styles.salonImage} />
-      <View style={styles.salonInfo}>
-        <Text style={styles.salonName}>{item.name}</Text>
-        <View style={styles.ratingContainer}>
-          <Ionicons name="star" size={16} color="#FFD700" />
-          <Text style={styles.ratingText}>{item.rating}</Text>
-          <Text style={styles.distanceText}>• {item.distance}</Text>
-        </View>
-        <Text style={styles.salonCategory}>{item.category}</Text>
-      </View>
-    </TouchableOpacity>
-  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -112,13 +160,13 @@ export const HomeScreen = ({ navigation }: any) => {
             </Text>
             <Text style={styles.title}>Trouvez votre salon</Text>
           </View>
-          
+
           <TouchableOpacity style={styles.notificationButton}>
             <Ionicons name="notifications-outline" size={24} color="#6C63FF" />
             <View style={styles.notificationBadge} />
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.profileButton}
             onPress={() => navigation.navigate('Profile')}
           >
@@ -138,61 +186,80 @@ export const HomeScreen = ({ navigation }: any) => {
           />
         </View>
 
-        {/* Catégories */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Catégories</Text>
-          <FlatList
-            data={categories}
-            renderItem={renderCategory}
-            keyExtractor={item => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoriesList}
-          />
-        </View>
-
-        {/* Salons à proximité */}
+        {/* Liste des salons */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>À proximité</Text>
+            <Text style={styles.sectionTitle}>Nos Salons</Text>
             <TouchableOpacity>
               <Text style={styles.seeAll}>Voir tout</Text>
             </TouchableOpacity>
           </View>
-          <FlatList
-            data={popularSalons}
-            renderItem={renderSalonCard}
-            keyExtractor={item => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.salonsList}
-          />
+
+          {loading ? (
+            <ActivityIndicator size="large" color="#6C63FF" style={styles.loader} />
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+              <Text style={styles.errorDetail}>Vérifiez que le serveur est en cours d'exécution sur {API_URL}</Text>
+            </View>
+          ) : salons === null ? (
+            <Text style={styles.emptyText}>Chargement des données en cours...</Text>
+          ) : salons.length === 0 ? (
+            <Text style={styles.emptyText}>Aucun salon disponible pour le moment</Text>
+          ) : (
+            <FlatList
+              data={salons}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.salonCard}
+                  onPress={() => navigation.navigate('SalonDetail', { salonId: item.id })}
+                >
+                  <View style={styles.salonImageContainer}>
+                    <Image 
+                      source={item.photos && item.photos.length > 0 
+                        ? { 
+                            uri: item.photos[0],
+                            cache: 'reload' // Force le rechargement de l'image
+                          }
+                        : defaultSalonImage
+                      } 
+                      style={styles.salonImage}
+                      resizeMode="cover"
+                      defaultSource={defaultSalonImage}
+                      onError={(e) => {
+                        console.log('Erreur de chargement de l\'image, utilisation de l\'image par défaut');
+                        // Forcer le rechargement avec l'image par défaut
+                        if (item.photos && item.photos.length > 0) {
+                          item.photos = [];
+                          setSalons([...salons]);
+                        }
+                      }}
+                    />
+                    <View style={styles.ratingContainer}>
+                      <Ionicons name="star" size={14} color="#FFD700" />
+                      <Text style={styles.ratingText}>
+                        {item.average_rating > 0 ? item.average_rating.toFixed(1) : 'Nouveau'}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.salonInfo}>
+                    <Text style={styles.salonName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={styles.salonAddress} numberOfLines={1}>{item.address}</Text>
+                    <Text style={styles.hairdresserName} numberOfLines={1}>
+                      {item.hairdresser?.full_name || 'Coiffeur non spécifié'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.salonsList}
+            />
+          )}
         </View>
 
-        {/* Meilleurs salons */}
-        <View style={[styles.section, { marginBottom: 20 }]}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Les mieux notés</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAll}>Voir tout</Text>
-            </TouchableOpacity>
-          </View>
-          {popularSalons.map((salon) => (
-            <TouchableOpacity key={salon.id} style={styles.popularSalonCard}>
-              <Image source={{ uri: salon.image }} style={styles.popularSalonImage} />
-              <View style={styles.popularSalonInfo}>
-                <Text style={styles.popularSalonName}>{salon.name}</Text>
-                <View style={styles.ratingContainer}>
-                  <Ionicons name="star" size={16} color="#FFD700" />
-                  <Text style={styles.ratingText}>{salon.rating}</Text>
-                  <Text style={styles.distanceText}>• {salon.distance}</Text>
-                </View>
-                <Text style={styles.popularSalonCategory}>{salon.category}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={24} color="#999" />
-            </TouchableOpacity>
-          ))}
-        </View>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -266,9 +333,9 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    marginLeft: 10,
     color: '#333',
-    height: '100%',
+    fontSize: 16,
   },
   section: {
     marginTop: 20,
@@ -288,37 +355,45 @@ const styles = StyleSheet.create({
   seeAll: {
     color: '#6C63FF',
     fontSize: 14,
+    fontWeight: '500',
   },
-  categoriesList: {
-    paddingRight: 20,
+  loader: {
+    marginVertical: 20,
   },
-  categoryItem: {
+  errorContainer: {
+    padding: 20,
     alignItems: 'center',
-    marginRight: 20,
-    width: 70,
-  },
-  categoryIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
   },
-  categoryText: {
-    fontSize: 12,
+  errorText: {
+    color: '#FF6B6B',
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 10,
+  },
+  errorDetail: {
+    color: '#666',
+    textAlign: 'center',
+    fontSize: 14,
+    marginTop: 5,
+  },
+  emptyText: {
     textAlign: 'center',
     color: '#666',
+    fontSize: 16,
+    marginTop: 20,
+    fontStyle: 'italic',
   },
   salonsList: {
-    paddingRight: 20,
+    paddingBottom: 10,
+    paddingHorizontal: 15,
   },
   salonCard: {
-    width: 200,
+    width: 220,
+    marginRight: 15,
     backgroundColor: '#fff',
     borderRadius: 12,
-    marginRight: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -326,9 +401,50 @@ const styles = StyleSheet.create({
     elevation: 3,
     overflow: 'hidden',
   },
+  salonImageContainer: {
+    width: '100%',
+    height: 140,
+    position: 'relative',
+    backgroundColor: '#f0f0f0',
+    overflow: 'hidden',
+    borderRadius: 8,
+  },
   salonImage: {
     width: '100%',
-    height: 120,
+    height: '100%',
+    backgroundColor: '#f5f5f5',
+  },
+  defaultImageContainer: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  defaultImageText: {
+    marginTop: 8,
+    color: '#666',
+    fontSize: 12,
+    textAlign: 'center',
+    paddingHorizontal: 10,
+  },
+  ratingContainer: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  ratingText: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 4,
+    marginRight: 8,
   },
   salonInfo: {
     padding: 12,
@@ -339,20 +455,18 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 5,
   },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  ratingText: {
-    fontSize: 14,
+  salonAddress: {
+    fontSize: 12,
     color: '#666',
-    marginLeft: 4,
-    marginRight: 8,
+    marginBottom: 4,
   },
-  distanceText: {
-    fontSize: 14,
-    color: '#999',
+  hairdresserName: {
+    fontSize: 12,
+    color: '#6C63FF',
+  },
+  categoriesList: {
+    paddingLeft: 20,
+    paddingRight: 10,
   },
   salonCategory: {
     fontSize: 12,
@@ -397,6 +511,25 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  categoryItem: {
+    alignItems: 'center',
+    marginRight: 20,
+    width: 70,
+  },
+  categoryIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  categoryText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,

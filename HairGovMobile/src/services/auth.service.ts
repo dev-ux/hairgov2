@@ -1,6 +1,22 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://localhost:3000/api/v1';
+import { Platform } from 'react-native';
+
+// Configuration de l'URL de l'API en fonction de la plateforme
+const getApiUrl = () => {
+  if (__DEV__) {
+    if (Platform.OS === 'android') {
+      return 'http://10.0.2.2:3001/api/v1'; // Pour émulateur Android
+    } else {
+      return 'http://localhost:3001/api/v1'; // Pour émulateur iOS
+    }
+  } else {
+    return 'https://votre-api-production.com/api/v1'; // Pour la production
+  }
+};
+
+const API_URL = getApiUrl();
+console.log('URL de l\'API utilisée:', API_URL);
 
 interface LoginData {
   phone: string;
@@ -59,20 +75,46 @@ export const AuthService = {
   // Inscription client
   async registerClient(userData: RegisterClientData) {
     try {
-      const response = await fetch(`${API_URL}/auth/register/client`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
+      console.log('Envoi de la requête d\'inscription à:', `${API_URL}/auth/register/client`);
+      console.log('Données envoyées:', userData);
+      
+      let response;
+      try {
+        response = await fetch(`${API_URL}/auth/register/client`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(userData),
+        });
+      } catch (fetchError) {
+        console.error('Erreur lors de l\'appel à l\'API:', fetchError);
+        throw new Error('Impossible de se connecter au serveur. Vérifiez votre connexion Internet.');
+      }
 
-      const data = await response.json();
+      console.log('Réponse du serveur - Status:', response.status);
+      
+      let data;
+      try {
+        data = await response.json();
+        console.log('Réponse du serveur - Données:', data);
+      } catch (jsonError) {
+        console.error('Erreur lors de l\'analyse de la réponse JSON:', jsonError);
+        throw new Error('Réponse du serveur invalide');
+      }
 
       if (!response.ok) {
+        const errorMessage = data?.message || `Erreur serveur (${response.status})`;
+        console.error('Erreur lors de l\'inscription:', errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      if (!data.success) {
+        console.error('Échec de l\'inscription:', data.message || 'Raison inconnue');
         throw new Error(data.message || 'Échec de l\'inscription');
       }
 
+      console.log('Inscription réussie, données reçues:', data);
       return data;
     } catch (error) {
       console.error('Erreur lors de l\'inscription:', error);

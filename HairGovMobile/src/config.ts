@@ -1,5 +1,5 @@
-// Configuration de l'application
-export const API_URL = 'http://localhost:3000';
+// Import de la configuration depuis constants.ts
+export { API_URL } from './config/constants';
 
 // Types pour la navigation
 declare global {

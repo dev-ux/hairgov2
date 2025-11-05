@@ -13,11 +13,12 @@ import {
 } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { useNavigation, useRoute, NavigationProp } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
+import { API_URL } from '../config/constants';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { BookingService, type BookingData } from '../services/booking.service';
-import { useNavigation, useRoute, NavigationProp } from '@react-navigation/native';
 
 interface RouteParams {
   hairdresserId: string;
@@ -141,7 +142,7 @@ const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const loadSalons = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:3000/api/v1/hairdressers');
+      const response = await fetch(`${API_URL}/hairdressers`);
       
       if (!response.ok) {
         throw new Error('Erreur lors du chargement des salons');

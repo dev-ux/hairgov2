@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIn
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
+import { API_URL } from '../config/constants';
 
 // Types
 type RootStackParamList = {
@@ -74,7 +75,7 @@ const BarberDetailScreen = () => {
         
         // Nettoyer l'ID pour s'assurer qu'il est valide pour l'URL
         const cleanedBarberId = barberId.replace(/[^a-zA-Z0-9-]/g, '');
-        const url = `http://localhost:3000/api/v1/hairdressers/${cleanedBarberId}`;
+        const url = `${API_URL}/hairdressers/${cleanedBarberId}`;
         console.log('URL de la requête:', url);
         
         const response = await fetch(url, {
