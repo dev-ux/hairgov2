@@ -6,6 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
   Home: undefined;
+  NotificationDetail: { notification: any };
   // Ajoutez d'autres écrans si nécessaire
 };
 
@@ -45,8 +46,15 @@ const NotificationsScreen = () => {
     },
   ];
 
+  const handleNotificationPress = (notification: Notification) => {
+    navigation.navigate('NotificationDetail', { notification });
+  };
+
   const renderNotificationItem = ({ item }: { item: Notification }) => (
-    <View style={[styles.notificationItem, !item.read && styles.unreadNotification]}>
+    <TouchableOpacity 
+      style={[styles.notificationItem, !item.read && styles.unreadNotification]}
+      onPress={() => handleNotificationPress(item)}
+    >
       <View style={styles.notificationIcon}>
         <Ionicons 
           name="notifications" 
@@ -59,7 +67,7 @@ const NotificationsScreen = () => {
         <Text style={styles.notificationMessage}>{item.message}</Text>
         <Text style={styles.notificationTime}>{item.time}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
