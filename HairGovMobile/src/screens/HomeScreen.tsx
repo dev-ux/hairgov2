@@ -161,7 +161,10 @@ export const HomeScreen = ({ navigation }: any) => {
             <Text style={styles.title}>Trouvez votre salon</Text>
           </View>
 
-          <TouchableOpacity style={styles.notificationButton}>
+          <TouchableOpacity 
+            style={styles.notificationButton}
+            onPress={() => navigation.navigate('Notifications')}
+          >
             <Ionicons name="notifications-outline" size={24} color="#6C63FF" />
             <View style={styles.notificationBadge} />
           </TouchableOpacity>

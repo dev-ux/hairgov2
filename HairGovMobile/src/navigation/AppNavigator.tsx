@@ -25,6 +25,7 @@ import StatisticsScreen from '../screens/StatisticsScreen';
 import BookingsScreen from '../screens/BookingsScreen';
 import PaymentsScreen from '../screens/PaymentsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
 
 // Définition des types pour la navigation
 export type RootStackParamList = {
@@ -60,6 +61,7 @@ export type RootStackParamList = {
   SalonDetail: { salonId: string };
   Map: undefined;
   Notifications: undefined;
+  Notification: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -323,6 +325,25 @@ export const AppNavigator = () => {
           component={SettingsScreen}
           options={({ navigation }) => ({
             title: 'Paramètres',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        <Stack.Screen 
+          name="Notifications" 
+          component={NotificationsScreen}
+          options={({ navigation }) => ({
+            title: 'Notifications',
             animation: 'slide_from_right',
             headerLeft: () => (
               <TouchableOpacity 
