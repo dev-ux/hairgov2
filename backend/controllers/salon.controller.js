@@ -204,22 +204,26 @@ exports.getSalon = async (req, res) => {
     const { id } = req.params;
 
     const salon = await db.Salon.findByPk(id, {
-      include: [
-        {
-          model: db.Hairdresser,
-          as: 'hairdresser',
-          attributes: ['id', 'full_name', 'average_rating', 'total_jobs'],
-          include: [
-            {
-              model: db.Hairstyle,
-              as: 'hairstyles',
-              through: { attributes: [] },
-              attributes: ['id', 'name', 'estimated_duration', 'category']
-            }
-          ]
-        }
+      attributes: [
+        'id', 'name', 'address',
+        'latitude', 'longitude', 'is_validated',
+        'created_at', 'updated_at', 'photos'
       ]
     });
+    
+    // Récupérer les informations du coiffeur séparément
+    let hairdresser = null;
+    if (salon && salon.hairdresser_id) {
+      hairdresser = await db.Hairdresser.findByPk(salon.hairdresser_id, {
+        attributes: ['id', 'first_name', 'last_name', 'email', 'phone', 'profile_photo']
+      });
+    }
+    
+    // Fusionner les données
+    const salonData = salon.get({ plain: true });
+    if (hairdresser) {
+      salonData.hairdresser = hairdresser.get({ plain: true });
+    }
 
     if (!salon) {
       return res.status(404).json({
@@ -231,18 +235,29 @@ exports.getSalon = async (req, res) => {
       });
     }
 
-    res.json({
+    // Formater la réponse
+    const response = {
       success: true,
-      data: salon
-    });
+      data: {
+        ...salon.get({ plain: true }),
+        // S'assurer que photos est toujours un tableau
+        photos: Array.isArray(salon.photos) ? salon.photos : []
+      }
+    };
+
+    res.json(response);
 
   } catch (error) {
-    console.error('Get salon error:', error);
+    console.error('Erreur lors de la récupération du salon:', error);
     res.status(500).json({
       success: false,
       error: {
         code: 'SALON_FETCH_ERROR',
-        message: 'Erreur lors de la récupération du salon'
+        message: 'Erreur lors de la récupération du salon',
+        // En développement, on peut inclure plus de détails
+        ...(process.env.NODE_ENV !== 'production' && {
+          details: error.message
+        })
       }
     });
   }
