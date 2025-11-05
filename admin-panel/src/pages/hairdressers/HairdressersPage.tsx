@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale/fr';
+import fr from 'date-fns/locale/fr';
 import api from '../../services/api';
+import AddHairdresserForm from '../../components/hairdressers/AddHairdresserForm';
 import {
   Box,
   Typography,
@@ -25,7 +26,10 @@ import {
   CircularProgress,
   Alert,
   TableSortLabel,
-  TableFooter
+  TableFooter,
+  Fab,
+  Zoom,
+  useScrollTrigger
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -39,7 +43,8 @@ import {
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
   Person as PersonIcon,
-  LocationOn as LocationIcon
+  LocationOn as LocationIcon,
+  PersonAdd as PersonAddIcon
 } from '@mui/icons-material';
 
 interface Hairdresser {
@@ -86,28 +91,35 @@ export const HairdressersPage: React.FC = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [order, setOrder] = useState<Order>('desc');
   const [orderBy, setOrderBy] = useState<keyof Hairdresser>('created_at');
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
+  const fetchHairdressers = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/admin/hairdressers');
+      if (response.data.success) {
+        setHairdressers(response.data.data);
+        setTotalCount(response.data.count);
+      } else {
+        setError('Erreur lors du chargement des coiffeurs');
+      }
+    } catch (err: any) {
+      console.error('Error fetching hairdressers:', err);
+      setError(err.response?.data?.error || 'Une erreur est survenue lors du chargement des coiffeurs');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchHairdressers = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/admin/hairdressers');
-        if (response.data.success) {
-          setHairdressers(response.data.data);
-          setTotalCount(response.data.count);
-        } else {
-          setError('Erreur lors du chargement des coiffeurs');
-        }
-      } catch (err: any) {
-        console.error('Error fetching hairdressers:', err);
-        setError(err.response?.data?.error || 'Une erreur est survenue lors du chargement des coiffeurs');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchHairdressers();
   }, [page, rowsPerPage, searchTerm, order, orderBy]);
+
+  const handleAddSuccess = () => {
+    // Recharger la liste des coiffeurs après l'ajout
+    fetchHairdressers();
+    setIsAddDialogOpen(false);
+  };
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -166,6 +178,14 @@ export const HairdressersPage: React.FC = () => {
         <Typography variant="h4" gutterBottom>
           Gestion des Coiffeurs
         </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={() => setIsAddDialogOpen(true)}
+        >
+          Ajouter un coiffeur
+        </Button>
       </Box>
 
       <Paper sx={{ mb: 3, p: 2 }}>
@@ -319,6 +339,30 @@ export const HairdressersPage: React.FC = () => {
           }
         />
       </TableContainer>
+      
+      {/* Bouton flottant d'ajout */}
+      <Zoom in={true} style={{ transitionDelay: '200ms' }}>
+        <Fab
+          color="primary"
+          aria-label="Ajouter un coiffeur"
+          sx={{
+            position: 'fixed',
+            bottom: 32,
+            right: 32,
+            zIndex: 1000,
+          }}
+          onClick={() => setIsAddDialogOpen(true)}
+        >
+          <PersonAddIcon />
+        </Fab>
+      </Zoom>
+      
+      {/* Formulaire d'ajout de coiffeur */}
+      <AddHairdresserForm
+        open={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        onSuccess={handleAddSuccess}
+      />
     </Box>
   );
 };

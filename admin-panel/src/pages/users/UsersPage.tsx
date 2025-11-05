@@ -28,7 +28,7 @@ import {
 } from '@mui/icons-material';
 import { getUsers, updateUserStatus } from '../../services/user.service';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale/fr';
+import fr from 'date-fns/locale/fr';
 
 
 interface User {
