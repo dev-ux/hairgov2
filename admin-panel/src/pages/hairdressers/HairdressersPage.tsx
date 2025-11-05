@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { enqueueSnackbar } from 'notistack';
 import { format } from 'date-fns';
 import fr from 'date-fns/locale/fr';
 import api from '../../services/api';
@@ -60,7 +61,7 @@ interface Hairdresser {
   registration_status: 'pending' | 'approved' | 'rejected';
   balance: string;
   total_earnings: string;
-  average_rating: string;
+  average_rating: string | number | null;
   total_jobs: number;
   is_available: boolean;
   current_job_id: string | null;
@@ -83,7 +84,26 @@ type Order = 'asc' | 'desc';
 export const HairdressersPage: React.FC = () => {
   const navigate = useNavigate();
   const [hairdressers, setHairdressers] = useState<Hairdresser[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  // Interface complète pour le type Hairdresser
+  interface Hairdresser {
+    id: string;
+    user: {
+      id: string;
+      full_name: string;
+      email: string;
+      phone: string;
+      is_active: boolean;
+      profile_photo: string | null;
+    };
+    profession: string;
+    registration_status: string;
+    residential_address: string | null;
+    average_rating: number | null;
+    created_at: string;
+    updated_at: string;
+  }
+  const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -119,6 +139,39 @@ export const HairdressersPage: React.FC = () => {
     // Recharger la liste des coiffeurs après l'ajout
     fetchHairdressers();
     setIsAddDialogOpen(false);
+  };
+
+  const toggleHairdresserStatus = async (id: string, currentStatus: boolean) => {
+    try {
+      setUpdatingId(id);
+      const newStatus = !currentStatus;
+      
+      // Appel API pour mettre à jour le statut
+      await api.patch(`/admin/hairdressers/${id}/status`, { is_active: newStatus });
+      
+      // Mise à jour de l'état local
+      setHairdressers(hairdressers.map(hairdresser => 
+        hairdresser.id === id 
+          ? { 
+              ...hairdresser, 
+              user: { ...hairdresser.user, is_active: newStatus } 
+            } 
+          : hairdresser
+      ));
+      
+      enqueueSnackbar(
+        `Coiffeur ${newStatus ? 'activé' : 'désactivé'} avec succès`, 
+        { variant: 'success' }
+      );
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut:', error);
+      enqueueSnackbar(
+        'Une erreur est survenue lors de la mise à jour du statut', 
+        { variant: 'error' }
+      );
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
   const handleChangePage = (event: unknown, newPage: number) => {
@@ -157,7 +210,7 @@ export const HairdressersPage: React.FC = () => {
     }
   };
 
-  const getStatusColor = (status?: string) => {
+  const getStatusColor = (status: string | null) => {
     switch (status) {
       case 'active':
       case 'actif':
@@ -280,7 +333,7 @@ export const HairdressersPage: React.FC = () => {
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <StarIcon fontSize="small" color="warning" sx={{ mr: 0.5 }} />
                         <Typography variant="body2">
-                          {parseFloat(hairdresser.average_rating).toFixed(1) || '0.0'}
+                          {hairdresser.average_rating ? parseFloat(hairdresser.average_rating.toString()).toFixed(1) : '0.0'}
                         </Typography>
                       </Box>
                     </TableCell>
@@ -312,11 +365,18 @@ export const HairdressersPage: React.FC = () => {
                         <IconButton
                           size="small"
                           color={hairdresser.user.is_active ? 'error' : 'success'}
+                          disabled={updatingId === hairdresser.id}
                           onClick={async () => {
-                            // Logique d'activation/désactivation
+                            await toggleHairdresserStatus(hairdresser.id, hairdresser.user.is_active);
                           }}
                         >
-                          {hairdresser.user.is_active ? <CancelIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
+                          {updatingId === hairdresser.id ? (
+                            <CircularProgress size={20} />
+                          ) : hairdresser.user.is_active ? (
+                            <CancelIcon fontSize="small" />
+                          ) : (
+                            <CheckCircleIcon fontSize="small" />
+                          )}
                         </IconButton>
                       </Tooltip>
                     </TableCell>

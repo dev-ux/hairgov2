@@ -19,6 +19,7 @@ const HairdressersPage = React.lazy(() => import('./pages/hairdressers/Hairdress
 const BookingsPage = React.lazy(() => import('./pages/bookings/BookingsPage'));
 const UsersPage = React.lazy(() => import('./pages/users/UsersPage'));
 const SettingsPage = React.lazy(() => import('./pages/settings/SettingsPage'));
+const HairstylesPage = React.lazy(() => import('./pages/hairstyles/HairstylesPage'));
 
 // Composant de chargement
 const Loader = () => (
@@ -66,6 +67,7 @@ const ProtectedRoutes = () => (
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/hairstyles" element={<HairstylesPage />} />
         </Routes>
       </Suspense>
     </AdminLayout>

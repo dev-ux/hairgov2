@@ -22,6 +22,7 @@ import {
   Store as StoreIcon,
   CalendarToday as CalendarIcon,
   Settings as SettingsIcon,
+  ContentCut as HairstyleIcon,
   Menu as MenuIcon,
   ChevronLeft as ChevronLeftIcon,
   Logout as LogoutIcon
@@ -52,6 +53,7 @@ const menuItems = [
   { text: 'Salons', icon: <StoreIcon />, path: '/salons' },
   { text: 'Réservations', icon: <CalendarIcon />, path: '/bookings' },
   { text: 'Utilisateurs', icon: <PeopleIcon />, path: '/users' },
+  { text: 'Hairstyles', icon: <HairstyleIcon />, path: '/hairstyles' },
   { text: 'Paramètres', icon: <SettingsIcon />, path: '/settings' },
 ];
 
@@ -112,6 +114,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
+            paddingTop: '64px',
+            position: 'fixed',
+            height: '100vh',
+            zIndex: (theme) => theme.zIndex.drawer - 1,
+            boxShadow: 3,
+            border: 'none',
           },
         }}
         variant="persistent"

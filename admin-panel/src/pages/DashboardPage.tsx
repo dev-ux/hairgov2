@@ -37,6 +37,7 @@ const DashboardPage: React.FC = () => {
     { title: 'Salons', value: '...', icon: <StoreIcon fontSize="large" color="secondary" />, loading: true },
     { title: 'Réservations', value: '...', icon: <CalendarIcon fontSize="large" color="success" />, loading: true },
     { title: 'Revenus', value: '...', icon: <MoneyIcon fontSize="large" color="warning" />, loading: true },
+
   ]);
   const [loading, setLoading] = useState(true);
 
@@ -88,9 +89,11 @@ const DashboardPage: React.FC = () => {
       sx={{
         flexGrow: 1,
         width: '100%',
-        px: { xs: 2, md: 4 },
-        py: 3,
+        py: 4,
+        px: { xs: 2, md: 6 },
         bgcolor: '#f5f6fa',
+        maxWidth: 'calc(100vw - 200px)',
+        marginLeft: 'auto',
       }}
     >
       {/* Titre principal */}
@@ -99,7 +102,7 @@ const DashboardPage: React.FC = () => {
       </Typography>
 
       {/* Cartes de statistiques */}
-      <Grid container spacing={3} sx={{ mt: 1 }}>
+      <Grid container spacing={4} sx={{ mt: 2 }}>
         {stats.map((stat, index) => (
           <Grid item key={index} xs={12} sm={6} md={3}>
             <StatCard>
@@ -127,8 +130,8 @@ const DashboardPage: React.FC = () => {
       </Grid>
 
       {/* Graphiques */}
-      <Grid container spacing={3} sx={{ mt: 3 }}>
-        <Grid item xs={12} lg={8}>
+      <Grid container spacing={4} sx={{ mt: 4 }}>
+        <Grid item xs={12} lg={8} sx={{ minWidth: 0 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ height: 400 }}>
               <Typography variant="h6" gutterBottom fontWeight="600">
@@ -152,7 +155,7 @@ const DashboardPage: React.FC = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} lg={4}>
+        <Grid item xs={12} lg={4} sx={{ minWidth: 0 }}>
           <Card sx={{ height: '100%' }}>
             <CardContent sx={{ height: 400 }}>
               <Typography variant="h6" gutterBottom fontWeight="600">

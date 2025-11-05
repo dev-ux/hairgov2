@@ -4,7 +4,7 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
 // Créer le dossier d'uploads s'il n'existe pas
-const uploadDir = path.join(__dirname, '../uploads');
+const uploadDir = path.join(__dirname, '../../public/uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -12,7 +12,7 @@ if (!fs.existsSync(uploadDir)) {
 // Configuration du stockage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const type = file.fieldname === 'photos' ? 'photos' : 'documents';
+    const type = 'hairstyles';
     const dir = path.join(uploadDir, type);
     
     // Créer le dossier s'il n'existe pas
@@ -25,7 +25,7 @@ const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     const uniqueSuffix = `${Date.now()}-${uuidv4()}`;
     const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+    cb(null, `hairstyle-${uniqueSuffix}${ext}`);
   }
 });
 
