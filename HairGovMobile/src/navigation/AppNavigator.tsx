@@ -1,6 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
+import { TouchableOpacity } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -16,6 +17,7 @@ import BookingScreen from '../screens/BookingScreen';
 import BarberListScreen from '../screens/BarberListScreen';
 import BarberDetailScreen from '../screens/BarberDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import SalonDetailScreen from '@screens/SalonDetailScreen';
 
 // Définition des types pour la navigation
 export type RootStackParamList = {
@@ -48,6 +50,7 @@ export type RootStackParamList = {
     hairdresserId: string;
     hairdresserName: string;
   };
+  SalonDetail: { salonId: string };
   Map: undefined;
   Notifications: undefined;
 };
@@ -187,11 +190,26 @@ export const AppNavigator = () => {
         />
         <Stack.Screen 
           name="BarberDetail" 
-          component={BarberDetailScreen}
-          options={{
-            headerShown: false,  // Désactive l'en-tête natif
-            animation: 'slide_from_right',
-          }}
+          component={BarberDetailScreen} 
+          options={{ title: 'Détails du coiffeur' }} 
+        />
+        <Stack.Screen 
+          name="SalonDetail" 
+          component={SalonDetailScreen} 
+          options={({ navigation }) => ({
+            title: 'Détails du salon',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })} 
         />
       </Stack.Navigator>
     </NavigationContainer>
