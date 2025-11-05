@@ -18,6 +18,13 @@ import BarberListScreen from '../screens/BarberListScreen';
 import BarberDetailScreen from '../screens/BarberDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import SalonDetailScreen from '@screens/SalonDetailScreen';
+// Import des nouveaux écrans
+import FavoritesScreen from '../screens/FavoritesScreen';
+import HistoryScreen from '../screens/HistoryScreen';
+import StatisticsScreen from '../screens/StatisticsScreen';
+import BookingsScreen from '../screens/BookingsScreen';
+import PaymentsScreen from '../screens/PaymentsScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 
 // Définition des types pour la navigation
 export type RootStackParamList = {
@@ -191,7 +198,10 @@ export const AppNavigator = () => {
         <Stack.Screen 
           name="BarberDetail" 
           component={BarberDetailScreen} 
-          options={{ title: 'Détails du coiffeur' }} 
+        />
+        <Stack.Screen 
+          name="Booking" 
+          component={BookingScreen} 
         />
         <Stack.Screen 
           name="SalonDetail" 
@@ -210,6 +220,122 @@ export const AppNavigator = () => {
               </TouchableOpacity>
             ),
           })} 
+        />
+        
+        {/* Nouveaux écrans */}
+        <Stack.Screen 
+          name="Favorites" 
+          component={FavoritesScreen}
+          options={({ navigation }) => ({
+            title: 'Favoris',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        <Stack.Screen 
+          name="History" 
+          component={HistoryScreen}
+          options={({ navigation }) => ({
+            title: 'Historique',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        <Stack.Screen 
+          name="Statistics" 
+          component={StatisticsScreen}
+          options={({ navigation }) => ({
+            title: 'Statistiques',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        <Stack.Screen 
+          name="Bookings" 
+          component={BookingsScreen}
+          options={({ navigation }) => ({
+            title: 'Réservations',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        <Stack.Screen 
+          name="Payments" 
+          component={PaymentsScreen}
+          options={({ navigation }) => ({
+            title: 'Paiements',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        <Stack.Screen 
+          name="Settings" 
+          component={SettingsScreen}
+          options={({ navigation }) => ({
+            title: 'Paramètres',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
         />
       </Stack.Navigator>
     </NavigationContainer>

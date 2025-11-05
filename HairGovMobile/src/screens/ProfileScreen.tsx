@@ -2,6 +2,14 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Alert } from 'react-native';
+
+type RootStackParamList = {
+  Login: undefined;
+  // Ajoutez d'autres écrans si nécessaire
+};
 
 type MenuItem = {
   id: string;
@@ -17,14 +25,43 @@ const menuItems: MenuItem[] = [
   { id: '4', title: 'Réservations', icon: 'calendar-outline', screen: 'Bookings' },
   { id: '5', title: 'Paiements', icon: 'card-outline', screen: 'Payments' },
   { id: '6', title: 'Paramètres', icon: 'settings-outline', screen: 'Settings' },
+  { id: '7', title: 'Deconnexion', icon: 'log-out-outline', screen: 'Logout' },
 ];
 
 const ProfileScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+    const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('userToken');
+      // Si vous utilisez un contexte d'authentification, ajoutez ici la logique de déconnexion
+      // par exemple: authContext.signOut();
+      
+      // Rediriger vers l'écran de connexion
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion:', error);
+      Alert.alert('Erreur', 'Une erreur est survenue lors de la déconnexion');
+    }
+  };
 
   const handleMenuItemPress = (screen: string) => {
-    // @ts-ignore - Nous gérons la navigation de manière sûre
-    navigation.navigate(screen);
+    if (screen === 'Logout') {
+      Alert.alert(
+        'Déconnexion',
+        'Êtes-vous sûr de vouloir vous déconnecter ?',
+        [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Déconnexion', style: 'destructive', onPress: handleLogout },
+        ]
+      );
+    } else {
+      // @ts-ignore - Nous gérons la navigation de manière sûre
+      navigation.navigate(screen);
+    }
   };
 
   return (
