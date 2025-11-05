@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Box,
   Typography,
@@ -15,9 +16,11 @@ import {
   Tooltip,
   CircularProgress,
   Alert,
+  Avatar,
+  Chip,
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
-import AddHairstyleForm from './AddHairstyleForm';
+import AddHairstyleForm, { HairstyleFormData } from './AddHairstyleForm';
 import { enqueueSnackbar } from 'notistack';
 
 interface Hairstyle {
@@ -32,58 +35,33 @@ interface Hairstyle {
   updated_at: string;
 }
 
+const API_URL = 'http://localhost:3001';
+
 const HairstylesPage: React.FC = () => {
   const [hairstyles, setHairstyles] = useState<Hairstyle[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [openAddForm, setOpenAddForm] = useState<boolean>(false);
+
+  // Récupérer la liste des coiffures
+  const fetchHairstyles = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/api/v1/hairstyles`);
+      setHairstyles(response.data.data || []);
+      setError(null);
+    } catch (err) {
+      console.error('Erreur lors de la récupération des coiffures:', err);
+      setError('Impossible de charger les coiffures. Veuillez réessayer.');
+      enqueueSnackbar('Erreur lors du chargement des coiffures', { variant: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchHairstyles = async () => {
-      try {
-        setLoading(true);
-        // TODO: Remplacer par un appel API réel
-        // const response = await fetch('/api/hairstyles');
-        // const data = await response.json();
-        // setHairstyles(data);
-        
-        // Données factices pour le moment
-        setTimeout(() => {
-          setHairstyles([
-            {
-              id: '1',
-              name: 'Coupe Homme',
-              description: 'Coupe classique pour homme',
-              photo: '/placeholder-hairstyle.jpg',
-              estimated_duration: 30,
-              category: 'Coupe Homme',
-              is_active: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-            {
-              id: '2',
-              name: 'Coupe Femme',
-              description: 'Coupe avec brushing',
-              photo: '/placeholder-hairstyle.jpg',
-              estimated_duration: 60,
-              category: 'Coupe Femme',
-              is_active: true,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            },
-          ]);
-          setLoading(false);
-        }, 500);
-      } catch (err) {
-        setError('Erreur lors du chargement des coiffures');
-        setLoading(false);
-      }
-    };
-
     fetchHairstyles();
   }, []);
 
@@ -96,138 +74,164 @@ const HairstylesPage: React.FC = () => {
     setPage(0);
   };
 
-  const handleEdit = (id: string) => {
-    // TODO: Implémenter la logique d'édition
-    console.log('Modifier la coiffure avec ID:', id);
-  };
-
-  const handleDelete = (id: string) => {
-    // TODO: Implémenter la logique de suppression
-    console.log('Supprimer la coiffure avec ID:', id);
-  };
-
-  const handleAddHairstyle = async (data: Omit<Hairstyle, 'id' | 'created_at' | 'updated_at' | 'photo'> & { photos: File[] }) => {
+  const handleAddHairstyle = async (formData: Omit<HairstyleFormData, 'photoPreviews'>) => {
     try {
-      setIsSubmitting(true);
-      // TODO: Remplacer par un appel API réel
-      console.log('Données du formulaire:', data);
-      
-      // Simulation d'un appel API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Ici, vous devrez implémenter la logique pour uploader les photos
-      // et obtenir l'URL de l'image téléchargée
-      const photoUrl = data.photos.length > 0 ? URL.createObjectURL(data.photos[0]) : '';
-      
-      // Ajouter la nouvelle coiffure à la liste
-      const newHairstyle: Hairstyle = {
-        id: Date.now().toString(),
-        name: data.name,
-        description: data.description,
-        estimated_duration: data.estimated_duration,
-        category: data.category,
-        is_active: data.is_active,
-        photo: photoUrl,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      
-      setHairstyles(prev => [newHairstyle, ...prev]);
-      
-      enqueueSnackbar('Coiffure ajoutée avec succès', { variant: 'success' });
-      setIsAddDialogOpen(false);
-    } catch (err) {
-      console.error('Erreur lors de l\'ajout de la coiffure:', err);
-      enqueueSnackbar('Erreur lors de l\'ajout de la coiffure', { variant: 'error' });
-    } finally {
-      setIsSubmitting(false);
+      await axios.post(`${API_URL}/hairstyles`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      handleCloseAddForm(true);
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de la coiffure:', error);
+      // Vous pourriez ajouter une notification d'erreur ici
     }
   };
+
+  const handleCloseAddForm = (added = false) => {
+    setOpenAddForm(false);
+    if (added) {
+      fetchHairstyles();
+    }
+  };
+
+  const handleDeleteHairstyle = async (id: string) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette coiffure ?')) {
+      try {
+        await axios.delete(`${API_URL}/api/v1/hairstyles/${id}`);
+        enqueueSnackbar('Coiffure supprimée avec succès', { variant: 'success' });
+        fetchHairstyles();
+      } catch (err) {
+        console.error('Erreur lors de la suppression de la coiffure:', err);
+        enqueueSnackbar('Erreur lors de la suppression de la coiffure', { variant: 'error' });
+      }
+    }
+  };
+
+  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - hairstyles.length) : 0;
 
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
         <CircularProgress />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Box mt={4}>
-        <Alert severity="error">{error}</Alert>
+        <Typography variant="body2" sx={{ ml: 2 }}>Chargement des coiffures...</Typography>
       </Box>
     );
   }
 
   return (
     <Box>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
-        <Typography variant="h4" component="h1">
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4" gutterBottom>
           Gestion des Coiffures
         </Typography>
         <Button
           variant="contained"
           color="primary"
           startIcon={<AddIcon />}
-          onClick={() => setIsAddDialogOpen(true)}
+          onClick={() => setOpenAddForm(true)}
         >
           Ajouter une coiffure
         </Button>
       </Box>
 
-      <Paper elevation={3} sx={{ overflow: 'hidden' }}>
-        <TableContainer>
-          <Table>
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
+
+      <Paper sx={{ width: '100%', overflow: 'hidden', mb: 3 }}>
+        <TableContainer sx={{ maxHeight: 600 }}>
+          <Table stickyHeader size="small">
             <TableHead>
               <TableRow>
+                <TableCell>Photo</TableCell>
                 <TableCell>Nom</TableCell>
                 <TableCell>Description</TableCell>
+                <TableCell>Durée (min)</TableCell>
                 <TableCell>Catégorie</TableCell>
-                <TableCell align="right">Durée (min)</TableCell>
-                <TableCell align="center">Statut</TableCell>
+                <TableCell>Statut</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {hairstyles.length > 0 ? (
+              {hairstyles.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                    <Typography variant="body1" color="textSecondary">
+                      Aucune coiffure trouvée
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      startIcon={<AddIcon />}
+                      onClick={() => setOpenAddForm(true)}
+                      sx={{ mt: 2 }}
+                    >
+                      Ajouter votre première coiffure
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ) : (
                 hairstyles
                   .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                   .map((hairstyle) => (
-                    <TableRow key={hairstyle.id} hover>
-                      <TableCell>{hairstyle.name}</TableCell>
-                      <TableCell>{hairstyle.description}</TableCell>
-                      <TableCell>{hairstyle.category}</TableCell>
-                      <TableCell align="right">{hairstyle.estimated_duration}</TableCell>
-                      <TableCell align="center">
-                        <Box
-                          component="span"
-                          sx={{
-                            display: 'inline-block',
-                            width: 12,
-                            height: 12,
-                            borderRadius: '50%',
-                            bgcolor: hairstyle.is_active ? 'success.main' : 'error.main',
-                            mr: 1,
-                          }}
+                    <TableRow hover key={hairstyle.id}>
+                      <TableCell>
+                        <Avatar
+                          src={hairstyle.photo || '/default-hairstyle.jpg'}
+                          alt={hairstyle.name}
+                          variant="rounded"
+                          sx={{ width: 56, height: 56 }}
                         />
-                        {hairstyle.is_active ? 'Actif' : 'Inactif'}
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="subtitle2">{hairstyle.name}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            maxWidth: 300,
+                          }}
+                        >
+                          {hairstyle.description}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>{hairstyle.estimated_duration} min</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={hairstyle.category || 'Non spécifiée'}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={hairstyle.is_active ? 'Actif' : 'Inactif'}
+                          color={hairstyle.is_active ? 'success' : 'default'}
+                          size="small"
+                        />
                       </TableCell>
                       <TableCell align="right">
                         <Tooltip title="Modifier">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEdit(hairstyle.id)}
-                            color="primary"
-                          >
+                          <IconButton size="small">
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
                         <Tooltip title="Supprimer">
                           <IconButton
                             size="small"
-                            onClick={() => handleDelete(hairstyle.id)}
                             color="error"
+                            onClick={() => handleDeleteHairstyle(hairstyle.id)}
                           >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
@@ -235,13 +239,10 @@ const HairstylesPage: React.FC = () => {
                       </TableCell>
                     </TableRow>
                   ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                    <Typography color="textSecondary">
-                      Aucune coiffure trouvée
-                    </Typography>
-                  </TableCell>
+              )}
+              {emptyRows > 0 && (
+                <TableRow style={{ height: 53 * emptyRows }}>
+                  <TableCell colSpan={7} />
                 </TableRow>
               )}
             </TableBody>
@@ -261,13 +262,11 @@ const HairstylesPage: React.FC = () => {
           }
         />
       </Paper>
-      
-      {/* Formulaire d'ajout */}
-      <AddHairstyleForm
-        open={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
+
+      <AddHairstyleForm 
+        open={openAddForm} 
+        onClose={handleCloseAddForm}
         onSubmit={handleAddHairstyle}
-        loading={isSubmitting}
       />
     </Box>
   );

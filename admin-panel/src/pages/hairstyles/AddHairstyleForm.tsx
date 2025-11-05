@@ -29,7 +29,7 @@ import {
 import { styled } from '@mui/material/styles';
 import { SelectChangeEvent } from '@mui/material';
 // Types
-interface HairstyleFormData {
+export interface HairstyleFormData {
   name: string;
   description: string;
   estimated_duration: number;
