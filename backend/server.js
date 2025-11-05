@@ -80,7 +80,7 @@ app.use('/api/v1/clients', clientRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/hairstyles', hairstyleRoutes);
-app.use('/api/salons', salonRoutes);
+app.use('/api/v1/salons', salonRoutes);
 app.use('/api', notificationRoutes);
 
 // 404 handler
