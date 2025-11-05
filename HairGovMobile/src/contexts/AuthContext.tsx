@@ -17,7 +17,7 @@ interface AuthContextData {
   isAuthenticated: boolean;
   error: string | null;
   login: (phone: string, password: string) => Promise<boolean>;
-  registerClient: (userData: any) => Promise<boolean>;
+  registerClient: (userData: any, navigation?: any) => Promise<boolean>;
   registerHairdresser: (userData: any) => Promise<boolean>;
   loginAsGuest: () => Promise<boolean>;
   logout: () => Promise<void>;
@@ -38,29 +38,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [error, setError] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Charger l'utilisateur au démarrage
+  // Initialisation sans charger automatiquement l'utilisateur
   useEffect(() => {
-    const loadUserFromStorage = async () => {
+    const initialize = async () => {
       try {
-        const [userData, token] = await Promise.all([
-          AsyncStorage.getItem('userData'),
-          AsyncStorage.getItem('userToken')
-        ]);
-        
-        if (userData && token) {
-          const parsedUser = JSON.parse(userData);
-          setUser(parsedUser);
-          console.log('Utilisateur chargé depuis le stockage local:', parsedUser);
-        }
+        // Vérifier si l'utilisateur est connecté sans le charger automatiquement
+        const token = await AsyncStorage.getItem('userToken');
+        console.log('Application initialisée. Connexion automatique désactivée.');
       } catch (error) {
-        console.error('Erreur lors du chargement des données utilisateur:', error);
+        console.error('Erreur lors de l\'initialisation:', error);
       } finally {
         setIsLoading(false);
         setIsInitialized(true);
       }
     };
 
-    loadUserFromStorage();
+    initialize();
   }, []);
 
   const login = async (phone: string, password: string) => {
@@ -100,11 +93,61 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const registerClient = async (userData: any): Promise<boolean> => {
+  // Fonction pour générer un code OTP de test (uniquement en développement)
+  const generateTestOtp = (phone: string) => {
+    if (!__DEV__) return;
+    
+    // Générer un code OTP à 4 chiffres
+    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    console.log(`\n=================================`);
+    console.log(`CODE OTP POUR ${phone}: ${otp}`);
+    console.log(`(Ceci est un code de test en mode développement)`);
+    console.log(`=================================\n`);
+    return otp;
+  };
+
+  const registerClient = async (userData: any, navigation?: any): Promise<boolean> => {
     try {
+      console.log('Début de l\'inscription avec les données:', userData);
       setIsLoading(true);
       setError(null);
+      
       const response = await AuthService.registerClient(userData);
+      console.log('Réponse du service d\'inscription:', response);
+      
+      // Si l'inscription est réussie et qu'on a la navigation, on redirige vers la vérification OTP
+      if (response.success && navigation) {
+        console.log('Inscription réussie, redirection vers la vérification OTP');
+        
+        // En mode développement, afficher le code OTP dans la console
+        if (__DEV__ && userData.phone) {
+          generateTestOtp(userData.phone);
+        }
+        
+        // Sauvegarder le token et les informations utilisateur dans le stockage local
+        if (response.data?.token && response.data?.user) {
+          await AsyncStorage.setItem('userToken', response.data.token);
+          await AsyncStorage.setItem('userData', JSON.stringify(response.data.user));
+          
+          // Mettre à jour l'état de l'utilisateur
+          setUser(response.data.user);
+        }
+        
+        // Rediriger vers l'écran de vérification OTP avec les informations nécessaires
+        navigation.navigate('VerifyOtp', { 
+          email: userData.email, 
+          phone: userData.phone,
+          userId: response.data?.user?.id // Ajout de l'ID utilisateur pour la vérification
+        });
+        
+        // Afficher un message à l'utilisateur
+        console.log('Un code de vérification a été envoyé à votre numéro de téléphone');
+      } else {
+        console.log('Échec de l\'inscription ou navigation non disponible');
+        const errorMessage = response?.message || 'Échec de l\'inscription';
+        setError(errorMessage);
+      }
+      
       return response.success;
     } catch (error: any) {
       console.error('Erreur lors de l\'inscription du client:', error);

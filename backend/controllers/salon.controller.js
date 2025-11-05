@@ -1,5 +1,104 @@
 const db = require('../models');
 const { Op } = require('sequelize');
+const { validationResult } = require('express-validator');
+
+/**
+ * Obtenir la liste de tous les salons
+ */
+exports.getAllSalons = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, search } = req.query;
+    const offset = (page - 1) * limit;
+
+    const whereClause = {
+      is_validated: true // Ne retourner que les salons validés
+    };
+
+    if (search) {
+      whereClause[Op.or] = [
+        { name: { [Op.iLike]: `%${search}%` } },
+        { address: { [Op.iLike]: `%${search}%` } }
+      ];
+    }
+
+    const { count, rows: salons } = await db.Salon.findAndCountAll({
+      where: whereClause,
+      include: [
+        {
+          model: db.Hairdresser,
+          as: 'hairdresser',
+          include: [
+            {
+              model: db.User,
+              as: 'user',
+              attributes: ['id', 'full_name', 'profile_photo']
+            },
+            {
+              model: db.Rating,
+              as: 'ratings',
+              attributes: ['rating']
+            }
+          ]
+        }
+      ],
+      limit: parseInt(limit),
+      offset: offset,
+      order: [['created_at', 'DESC']]
+    });
+
+    // Calculer la note moyenne pour chaque salon
+    const formattedSalons = salons.map(salon => {
+      const ratings = salon.hairdresser?.ratings || [];
+      const avgRating = ratings.length > 0 
+        ? ratings.reduce((acc, curr) => acc + curr.rating, 0) / ratings.length 
+        : 0;
+      
+      const hairdresser = salon.hairdresser?.user || {};
+
+      return {
+        id: salon.id,
+        name: salon.name,
+        address: salon.address,
+        latitude: salon.latitude,
+        longitude: salon.longitude,
+        description: salon.description,
+        phone: salon.phone,
+        email: salon.email,
+        photos: salon.photos,
+        status: salon.status,
+        average_rating: parseFloat(avgRating.toFixed(1)),
+        hairdresser: {
+          id: hairdresser.id,
+          full_name: hairdresser.full_name,
+          profile_photo: hairdresser.profile_photo
+        },
+        created_at: salon.created_at,
+        updated_at: salon.updated_at
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: formattedSalons,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        total_pages: Math.ceil(count / limit)
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching salons:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Erreur lors de la récupération des salons',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      }
+    });
+  }
+};
+
 
 /**
  * Créer un nouveau salon

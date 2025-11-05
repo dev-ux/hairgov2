@@ -11,6 +11,7 @@ import { Onboarding3 } from '../screens/Onboarding3';
 import { HomeScreen } from '../screens/HomeScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
+import { VerifyOtpScreen } from '../screens/auth/VerifyOtpScreen';
 import BookingScreen from '../screens/BookingScreen';
 import BarberListScreen from '../screens/BarberListScreen';
 import BarberDetailScreen from '../screens/BarberDetailScreen';
@@ -23,9 +24,12 @@ export type RootStackParamList = {
   Onboarding2: undefined;
   Onboarding3: undefined;
   // Authentification
+  Welcome: undefined;
   Login: undefined;
-  Register: { userType: 'client' | 'coiffeur' };
+  Register: { userType?: 'client' | 'coiffeur' };
+  VerifyOtp: { email?: string; phone: string; userId?: string };
   ForgotPassword: undefined;
+  Main: undefined;
   // Principal
   Home: undefined;
   // Profil
@@ -160,6 +164,14 @@ export const AppNavigator = () => {
         <Stack.Screen 
           name="Register" 
           component={RegisterScreen}
+          options={{
+            animation: 'slide_from_right',
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen 
+          name="VerifyOtp" 
+          component={VerifyOtpScreen}
           options={{
             animation: 'slide_from_right',
             headerShown: false,

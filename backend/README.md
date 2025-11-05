@@ -498,6 +498,128 @@ SELECT * FROM users;  # Vérifier les données
 - [ ] API publique pour partenaires
 - [ ] Support multi-langues
 
+# 📚 Documentation des Endpoints API
+
+## Base URL
+`https://api.hairgo.com/api/v1`
+
+## Authentification
+
+### Inscription & Connexion
+
+| Méthode | Endpoint | Description | Accès |
+|---------|----------|-------------|-------|
+| `POST` | `/auth/register/client` | Inscription client | Public |
+| `POST` | `/auth/register/hairdresser` | Inscription coiffeur (en attente validation) | Public |
+| `POST` | `/auth/login` | Connexion utilisateur | Public |
+| `POST` | `/auth/login/guest` | Connexion invité | Public |
+| `POST` | `/auth/refresh-token` | Rafraîchir le token JWT | Public |
+| `POST` | `/auth/verify-phone` | Vérification numéro de téléphone (OTP) | Public |
+| `POST` | `/auth/resend-otp` | Renvoyer le code OTP | Public |
+| `POST` | `/auth/forgot-password` | Demande de réinitialisation de mot de passe | Public |
+| `POST` | `/auth/reset-password` | Réinitialiser le mot de passe | Public |
+
+### Profil Utilisateur
+
+| Méthode | Endpoint | Description | Accès |
+|---------|----------|-------------|-------|
+| `GET` | `/auth/me` | Profil utilisateur connecté | Privé |
+| `PUT` | `/auth/update-fcm-token` | Mettre à jour le token FCM | Privé |
+| `POST` | `/auth/logout` | Déconnexion | Privé |
+
+## Coiffeurs (Hairdressers)
+
+### Profil Coiffeur
+
+| Méthode | Endpoint | Description | Accès |
+|---------|----------|-------------|-------|
+| `GET` | `/hairdressers` | Liste des coiffeurs | Public |
+| `GET` | `/hairdressers/:id` | Détails d'un coiffeur | Public |
+| `GET` | `/hairdressers/profile` | Profil du coiffeur connecté | Privé (Coiffeur) |
+| `PUT` | `/hairdressers/profile` | Mettre à jour le profil | Privé (Coiffeur) |
+| `PUT` | `/hairdressers/availability` | Mettre à jour les disponibilités | Privé (Coiffeur) |
+| `PUT` | `/hairdressers/location` | Mettre à jour la localisation | Privé (Coiffeur) |
+
+### Gestion du Solde
+
+| Méthode | Endpoint | Description | Accès |
+|---------|----------|-------------|-------|
+| `POST` | `/hairdressers/recharge` | Demande de recharge | Privé (Coiffeur) |
+| `GET` | `/hairdressers/balance/history` | Historique du solde | Privé (Coiffeur) |
+
+### Statistiques & Évaluations
+
+| Méthode | Endpoint | Description | Accès |
+|---------|----------|-------------|-------|
+| `GET` | `/hairdressers/statistics` | Statistiques du coiffeur | Privé (Coiffeur) |
+| `GET` | `/hairdressers/ratings` | Avis et évaluations | Privé (Coiffeur) |
+| `GET` | `/hairdressers/leaderboard` | Classement des coiffeurs | Public |
+| `GET` | `/hairdressers/search` | Recherche de coiffeurs | Public |
+
+## Réservations (Bookings)
+
+### Gestion des Réservations
+
+| Méthode | Endpoint | Description | Accès |
+|---------|----------|-------------|-------|
+| `POST` | `/bookings` | Créer une réservation | Public |
+| `GET` | `/bookings/nearby-hairdressers` | Coiffeurs à proximité | Public |
+| `GET` | `/bookings/estimate-price` | Estimation de prix | Public |
+| `GET` | `/bookings/:id` | Détails d'une réservation | Privé |
+| `GET` | `/bookings/client/history` | Historique client | Privé (Client) |
+| `GET` | `/bookings/hairdresser/history` | Historique coiffeur | Privé (Coiffeur) |
+| `GET` | `/bookings/hairdresser/pending` | Réservations en attente | Privé (Coiffeur) |
+| `PUT` | `/bookings/:id/accept` | Accepter une réservation | Privé (Coiffeur) |
+| `PUT` | `/bookings/:id/reject` | Rejeter une réservation | Privé (Coiffeur) |
+
+## Administration
+
+### Gestion des Utilisateurs
+
+| Méthode | Endpoint | Description | Accès |
+|---------|----------|-------------|-------|
+| `GET` | `/admin/users` | Liste des utilisateurs | Admin |
+| `GET` | `/admin/hairdressers` | Liste des coiffeurs | Admin |
+| `PUT` | `/admin/hairdressers/:id/approve` | Approuver un coiffeur | Admin |
+| `GET` | `/admin/dashboard/stats` | Statistiques du tableau de bord | Admin |
+| `GET` | `/admin/salons` | Liste des salons | Admin |
+| `POST` | `/admin/salons` | Créer un salon | Admin |
+
+## Salons
+
+| Méthode | Endpoint | Description | Accès |
+|---------|----------|-------------|-------|
+| `GET` | `/salons` | Liste des salons | Public |
+| `POST` | `/salons` | Créer un salon | Admin |
+| `GET` | `/salons/:id` | Détails d'un salon | Public |
+| `PUT` | `/salons/:id` | Mettre à jour un salon | Admin |
+| `DELETE` | `/salons/:id` | Supprimer un salon | Admin |
+
+## Coiffures (Hairstyles)
+
+| Méthode | Endpoint | Description | Accès |
+|---------|----------|-------------|-------|
+| `GET` | `/hairstyles` | Liste des coiffures | Public |
+| `GET` | `/hairstyles/:id` | Détails d'une coiffure | Public |
+| `POST` | `/hairstyles` | Créer une coiffure | Admin |
+| `PUT` | `/hairstyles/:id` | Mettre à jour une coiffure | Admin |
+| `DELETE` | `/hairstyles/:id` | Supprimer une coiffure | Admin |
+
+## Clients
+
+| Méthode | Endpoint | Description | Accès |
+|---------|----------|-------------|-------|
+| `GET` | `/clients` | Liste des clients | Admin |
+| `GET` | `/clients/:id` | Détails d'un client | Admin |
+| `PUT` | `/clients/:id` | Mettre à jour un client | Admin |
+
+## Notes d'implémentation
+
+- Toutes les routes nécessitant une authentification utilisent le header `Authorization: Bearer <token>`
+- Les réponses sont au format JSON
+- Les codes de statut HTTP standards sont utilisés pour indiquer le succès ou l'échec des requêtes
+- Les erreurs sont renvoyées au format : `{ success: false, message: 'Message d\'erreur' }`
+
 ---
 
 ## 📞 Support et Contact

@@ -77,11 +77,18 @@ export const RegisterScreen = () => {
 
     try {
       if (userType === 'client') {
-        await registerClient(userData);
+        // Pour les clients, la navigation est gérée dans le contexte d'authentification
+        await registerClient(userData, navigation);
       } else {
-        await registerHairdresser(userData);
+        // Pour les coiffeurs, on gère la navigation ici
+        const result = await registerHairdresser(userData);
+        if (result) {
+          navigation.navigate('VerifyOtp', { 
+            email: userData.email, 
+            phone: userData.phone 
+          });
+        }
       }
-      // La navigation est gérée par le contexte d'authentification
     } catch (error) {
       console.error('Erreur lors de l\'inscription:', error);
       setLocalError('Une erreur est survenue lors de l\'inscription');
@@ -105,9 +112,7 @@ export const RegisterScreen = () => {
             {userType === 'client' ? 'Créer un compte client' : 'Devenir coiffeur'}
           </Text>
           <Text style={styles.subtitle}>
-            {userType === 'client' 
-              ? 'Rejoignez notre communauté de clients' 
-              : 'Rejoignez notre réseau de professionnels'}
+           
           </Text>
         </View>
 
@@ -275,6 +280,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
+    marginTop: 50,
   },
   scrollContainer: {
     flexGrow: 1,
