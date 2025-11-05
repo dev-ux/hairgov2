@@ -17,6 +17,39 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { Salon } from './HomeScreen';
 import { API_URL } from '../config/constants';
 
+// Fonction utilitaire pour formater les URLs d'images
+const formatImageUrl = (url: string) => {
+  try {
+    if (!url) {
+      console.log('Aucune URL fournie');
+      return null;
+    }
+    
+    console.log('URL originale reçue:', url);
+    
+    // Nettoyer l'URL (supprimer les accolades, espaces et / au début)
+    let cleanUrl = url.replace(/[{}]/g, '').trim();
+    
+    // Si l'URL est déjà une URL complète, la retourner telle quelle
+    if (cleanUrl.startsWith('http')) {
+      console.log('URL complète détectée:', cleanUrl);
+      return cleanUrl;
+    }
+    
+    // Extraire le nom du fichier de l'URL
+    const fileName = cleanUrl.split('/').pop();
+    
+    // Construire l'URL complète en utilisant la base de l'API
+    const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+    const fullUrl = `${baseUrl}/uploads/photos/${fileName}`;
+    
+    console.log('URL finale construite:', fullUrl);
+    return fullUrl;
+  } catch (error) {
+    console.error('Erreur lors du formatage de l\'URL:', error);
+    return null;
+  }
+};
 
 const { width } = Dimensions.get('window');
 
@@ -77,20 +110,23 @@ export default function AllSalonsScreen() {
     fetchSalons();
   }, []);
 
-  const renderSalonItem = ({ item }: { item: Salon }) => (
-    <TouchableOpacity
-      style={styles.salonCard}
-      onPress={() => navigation.navigate('SalonDetail', { salonId: item.id })}
-    >
-      <Image 
-        source={imageErrors[item.id] || !item.photos || !item.photos[0] 
-          ? defaultSalonImage 
-          : { uri: item.photos[0] }}
-        style={styles.salonImage} 
-        resizeMode="cover"
-        onError={() => handleImageError(item.id)}
-        defaultSource={defaultSalonImage}
-      />
+  const renderSalonItem = ({ item }: { item: Salon }) => {
+    const imageUrl = item.photos?.[0] ? formatImageUrl(item.photos[0]) : null;
+    
+    return (
+      <TouchableOpacity
+        style={styles.salonCard}
+        onPress={() => navigation.navigate('SalonDetail', { salonId: item.id })}
+      >
+        <Image 
+          source={imageErrors[item.id] || !imageUrl 
+            ? defaultSalonImage 
+            : { uri: imageUrl }}
+          style={styles.salonImage} 
+          resizeMode="cover"
+          onError={() => handleImageError(item.id)}
+          defaultSource={defaultSalonImage}
+        />
       <View style={styles.salonInfo}>
         <Text style={styles.salonName}>{item.name}</Text>
         <Text style={styles.salonAddress} numberOfLines={1}>
@@ -102,9 +138,10 @@ export default function AllSalonsScreen() {
             {item.average_rating ? item.average_rating.toFixed(1) : 'N/A'}
           </Text>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   if (loading) {
     return (
