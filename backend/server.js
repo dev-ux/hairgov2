@@ -15,6 +15,7 @@ const adminRoutes = require('./routes/admin.routes');
 const clientRoutes = require('./routes/client.routes');
 const hairstyleRoutes = require('./routes/hairstyle.routes');
 const salonRoutes = require('./routes/salon.routes');
+const notificationRoutes = require('./routes/notification.routes');
 
 // Import middleware d'erreur
 const errorHandler = require('./middleware/errorHandler');
@@ -79,7 +80,8 @@ app.use('/api/v1/clients', clientRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/hairstyles', hairstyleRoutes);
-app.use('/api/v1/salons', salonRoutes);
+app.use('/api/salons', salonRoutes);
+app.use('/api', notificationRoutes);
 
 // 404 handler
 app.use((req, res) => {
