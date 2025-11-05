@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Onboarding1 } from '../screens/Onboarding1';
 import { Onboarding2 } from '../screens/Onboarding2';
 import { Onboarding3 } from '../screens/Onboarding3';
-import { HomeScreen } from '../screens/HomeScreen';
+import HomeScreen from '../screens/HomeScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import { VerifyOtpScreen } from '../screens/auth/VerifyOtpScreen';
@@ -27,6 +27,7 @@ import PaymentsScreen from '../screens/PaymentsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import NotificationDetailScreen from '../screens/NotificationDetailScreen';
+import AllSalonsScreen from '../screens/AllSalonsScreen';
 
 // Définition des types pour la navigation
 export type RootStackParamList = {
@@ -45,6 +46,8 @@ export type RootStackParamList = {
   Home: undefined;
   // Profil
   Profile: undefined;
+  // Autres écrans
+  AllSalons: undefined;
   // Autres écrans du profil
   Favorites: undefined;
   History: undefined;
@@ -378,6 +381,15 @@ export const AppNavigator = () => {
               </TouchableOpacity>
             ),
           })}
+        />
+        
+        <Stack.Screen 
+          name="AllSalons" 
+          component={AllSalonsScreen}
+          options={{
+            title: 'Tous les salons',
+            animation: 'slide_from_right',
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>

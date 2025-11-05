@@ -12,13 +12,50 @@ import {
   Dimensions,
   ActivityIndicator
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { API_URL } from '../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 // Import de l'image par défaut
 const defaultSalonImage = require('../assets/url_de_l_image_1.jpg');
 
-type Salon = {
+// Fonction utilitaire pour formater les URLs d'images
+const formatImageUrl = (url: string) => {
+  try {
+    if (!url) {
+      console.log('Aucune URL fournie');
+      return null;
+    }
+    
+    console.log('URL originale reçue:', url);
+    
+    // Nettoyer l'URL (supprimer les accolades, espaces et / au début)
+    let cleanUrl = url.replace(/[{}]/g, '').trim();
+    
+    // Si l'URL est déjà une URL complète, la retourner telle quelle
+    if (cleanUrl.startsWith('http')) {
+      console.log('URL complète détectée:', cleanUrl);
+      return cleanUrl;
+    }
+    
+    // Extraire le nom du fichier de l'URL
+    const fileName = cleanUrl.split('/').pop();
+    
+    // Construire l'URL complète en utilisant la base de l'API
+    const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+    const fullUrl = `${baseUrl}/uploads/photos/${fileName}`;
+    
+    console.log('URL finale construite:', fullUrl);
+    return fullUrl;
+  } catch (error) {
+    console.error('Erreur lors du formatage de l\'URL:', error);
+    return null;
+  }
+};
+
+export interface Salon {
   id: string;
   name: string;
   address: string;
@@ -31,7 +68,7 @@ type Salon = {
   };
 };
 
-
+// Dimensions de l'écran
 const { width } = Dimensions.get('window');
 
 interface UserData {
@@ -39,7 +76,10 @@ interface UserData {
   // Ajoutez d'autres propriétés utilisateur si nécessaire
 }
 
-export const HomeScreen = ({ navigation }: any) => {
+export default function HomeScreen() {
+  type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+  const navigation = useNavigation<NavigationProp>();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [salons, setSalons] = useState<Salon[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -60,9 +100,9 @@ export const HomeScreen = ({ navigation }: any) => {
             'Expires': '0'
           }
         });
-        
+
         console.log('Réponse du serveur - Status:', response.status);
-        
+
         // Vérifier si la réponse est en cache (304) ou si c'est une réponse normale (200)
         if (response.status === 304) {
           console.log('Réponse 304 - Utilisation du cache côté client');
@@ -71,17 +111,17 @@ export const HomeScreen = ({ navigation }: any) => {
         } else if (!response.ok) {
           throw new Error(`Erreur HTTP: ${response.status}`);
         }
-        
+
         const data = await response.json().catch(err => {
           console.error('Erreur lors du parsing de la réponse JSON:', err);
           throw new Error('Format de réponse invalide du serveur');
         });
-        
+
         console.log('Données des salons reçues:', data);
 
         if (data && data.success && Array.isArray(data.data)) {
           console.log(`Nombre de salons reçus: ${data.data.length}`);
-          
+
           if (data.data.length === 0) {
             console.log('Aucun salon disponible dans la réponse');
           } else {
@@ -95,7 +135,7 @@ export const HomeScreen = ({ navigation }: any) => {
               });
             });
           }
-          
+
           // Vérifier si les données sont différentes avant de mettre à jour l'état
           setSalons(prevSalons => {
             const newSalons = data.data;
@@ -161,7 +201,7 @@ export const HomeScreen = ({ navigation }: any) => {
             <Text style={styles.title}>Trouvez votre salon</Text>
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.notificationButton}
             onPress={() => navigation.navigate('Notifications')}
           >
@@ -193,7 +233,7 @@ export const HomeScreen = ({ navigation }: any) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Nos Salons</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('AllSalons')}>
               <Text style={styles.seeAll}>Voir tout</Text>
             </TouchableOpacity>
           </View>
@@ -211,31 +251,50 @@ export const HomeScreen = ({ navigation }: any) => {
             <Text style={styles.emptyText}>Aucun salon disponible pour le moment</Text>
           ) : (
             <FlatList
-              data={salons}
+              data={salons.slice(0, 5)} // Afficher seulement les 5 premiers salons
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.salonCard}
                   onPress={() => navigation.navigate('SalonDetail', { salonId: item.id })}
                 >
                   <View style={styles.salonImageContainer}>
-                    <Image 
-                      source={item.photos && item.photos.length > 0 
-                        ? { 
-                            uri: item.photos[0],
-                            cache: 'reload' // Force le rechargement de l'image
+                    <Image
+                      source={(() => {
+                        const imageUrl = item.photos?.[0];
+                        const formattedUrl = imageUrl ? formatImageUrl(imageUrl) : null;
+                        
+                        console.log('Chargement de l\'image pour le salon:', {
+                          nom: item.name,
+                          id: item.id,
+                          urlOriginale: imageUrl,
+                          urlFormatee: formattedUrl,
+                          aDesPhotos: item.photos?.length > 0
+                        });
+                        
+                        if (formattedUrl) {
+                          // Vérifier si l'URL semble valide
+                          if (formattedUrl.includes('undefined') || !formattedUrl.includes('http')) {
+                            console.warn('URL d\'image potentiellement invalide:', formattedUrl);
+                            return defaultSalonImage;
                           }
-                        : defaultSalonImage
-                      } 
+                          return { 
+                            uri: formattedUrl,
+                            cache: 'reload'
+                          };
+                        }
+                        return defaultSalonImage;
+                      })()}
                       style={styles.salonImage}
                       resizeMode="cover"
                       defaultSource={defaultSalonImage}
                       onError={(e) => {
-                        console.log('Erreur de chargement de l\'image, utilisation de l\'image par défaut');
-                        // Forcer le rechargement avec l'image par défaut
-                        if (item.photos && item.photos.length > 0) {
-                          item.photos = [];
-                          setSalons([...salons]);
-                        }
+                        console.error('Erreur de chargement de l\'image:', {
+                          error: e.nativeEvent.error,
+                          salon: item.name,
+                          id: item.id,
+                          photoUrl: item.photos?.[0],
+                          formattedUrl: item.photos?.[0] ? formatImageUrl(item.photos[0]) : null
+                        });
                       }}
                     />
                     <View style={styles.ratingContainer}>

@@ -14,12 +14,12 @@ module.exports = (sequelize, DataTypes) => {
 
   Notification.init({
     id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true
     },
     user_id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       allowNull: false,
       references: {
         model: 'users',
@@ -32,35 +32,37 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING,
       allowNull: false
     },
-    message: {
+    body: {
       type: DataTypes.TEXT,
       allowNull: false
     },
     type: {
-      type: DataTypes.ENUM('promotion', 'appointment', 'system', 'other'),
+      type: DataTypes.STRING,
+      allowNull: false,
       defaultValue: 'other'
     },
     is_read: {
       type: DataTypes.BOOLEAN,
+      allowNull: false,
       defaultValue: false
     },
-    metadata: {
+    data: {
       type: DataTypes.JSONB,
       allowNull: true
+    },
+    sent_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: DataTypes.NOW
     }
   }, {
     sequelize,
     modelName: 'Notification',
     tableName: 'notifications',
-    timestamps: true,
+    timestamps: false,
     underscored: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
     defaultScope: {
-      attributes: { 
-        exclude: ['created_at', 'updated_at'] 
-      },
-      order: [['created_at', 'DESC']]
+      order: [['sent_at', 'DESC']]
     }
   });
 

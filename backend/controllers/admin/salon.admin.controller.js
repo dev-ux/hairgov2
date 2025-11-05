@@ -55,22 +55,7 @@ exports.createSalon = async (req, res) => {
       });
     }
 
-    // Vérifier si le coiffeur a déjà un salon
-    const existingSalon = await db.Salon.findOne({
-      where: { hairdresser_id },
-      transaction
-    });
-
-    if (existingSalon) {
-      await transaction.rollback();
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'DUPLICATE_SALON',
-          message: 'Ce coiffeur a déjà un salon associé'
-        }
-      });
-    }
+    // Un coiffeur peut avoir plusieurs salons, donc on ne vérifie pas s'il en a déjà
 
     // Créer le salon avec uniquement les champs qui existent dans la table
     const salonData = {
@@ -94,9 +79,9 @@ exports.createSalon = async (req, res) => {
     await hairdresser.update({ has_salon: true }, { transaction });
 
     // Gérer les photos si fournies
-    if (photos && Array.isArray(photos) && photos.length > 0) {
-      // Mettre à jour le tableau des photos dans le salon
-      const photoUrls = photos.map(p => p.url);
+    if (req.files && req.files.photos) {
+      const photoFiles = Array.isArray(req.files.photos) ? req.files.photos : [req.files.photos];
+      const photoUrls = photoFiles.map(file => `/uploads/photos/${file.filename}`);
       await salon.update({ photos: photoUrls }, { transaction });
     }
 

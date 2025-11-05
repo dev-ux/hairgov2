@@ -1,5 +1,5 @@
 const db = require('../models');
-const Notification = db.notification;
+const { Notification, User } = db;
 const Op = db.Sequelize.Op;
 
 // Créer et sauvegarder une nouvelle notification
@@ -16,10 +16,11 @@ exports.create = async (req, res) => {
   const notification = {
     user_id: req.body.user_id,
     title: req.body.title,
-    message: req.body.message,
+    body: req.body.body || req.body.message, // Support pour l'ancien champ 'message'
     type: req.body.type || 'other',
     is_read: req.body.is_read || false,
-    metadata: req.body.metadata || null
+    data: req.body.data || req.body.metadata || null, // Support pour l'ancien champ 'metadata'
+    sent_at: new Date()
   };
 
   try {
@@ -38,12 +39,19 @@ exports.create = async (req, res) => {
   }
 };
 
-// Récupérer toutes les notifications d'un utilisateur
+// Récupérer les notifications
+// Si admin: peut voir toutes les notifications
+// Si utilisateur normal: ne voit que ses propres notifications
 exports.findAll = async (req, res) => {
-  const user_id = req.params.userId;
-  const { is_read, type, limit = 20, offset = 0 } = req.query;
+  const { is_read, type, limit = 20, offset = 0, all = 'false' } = req.query;
   
-  const condition = { user_id };
+  // Par défaut, on filtre par l'utilisateur connecté
+  const condition = {};
+  
+  // Si pas de paramètre 'all' ou si 'all' est 'false', on filtre par l'utilisateur connecté
+  if (all !== 'true') {
+    condition.user_id = req.userId; // L'ID de l'utilisateur est défini par le middleware d'authentification
+  }
   
   if (is_read !== undefined) {
     condition.is_read = is_read === 'true';
@@ -54,12 +62,19 @@ exports.findAll = async (req, res) => {
   }
 
   try {
-    const { count, rows } = await Notification.findAndCountAll({
+    const notifications = await Notification.findAndCountAll({
       where: condition,
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [['created_at', 'DESC']]
+      order: [['sent_at', 'DESC']],
+      include: [{
+        model: User,
+        as: 'user',
+        attributes: ['id', 'full_name', 'email']
+      }]
     });
+
+    const { count, rows } = notifications;
 
     res.send({
       success: true,

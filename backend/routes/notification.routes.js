@@ -19,11 +19,24 @@ router.post(
   controller.create
 );
 
-// Route protégée - Récupérer toutes les notifications de l'utilisateur connecté
+// Route protégée - Récupérer les notifications
+// Pour les utilisateurs normaux: leurs propres notifications
+// Pour les admins: possibilité de voir toutes les notifications avec ?all=true
 router.get(
   "/notifications",
   [authenticate],
   controller.findAll
+);
+
+// Route protégée - Récupérer toutes les notifications (admin uniquement)
+router.get(
+  "/admin/notifications",
+  [authenticate, isAdmin],
+  (req, res) => {
+    // On passe all=true dans la query pour indiquer qu'on veut toutes les notifications
+    req.query.all = 'true';
+    return controller.findAll(req, res);
+  }
 );
 
 // Route protégée - Marquer une notification comme lue
