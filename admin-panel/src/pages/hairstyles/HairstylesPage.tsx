@@ -76,7 +76,7 @@ const HairstylesPage: React.FC = () => {
 
   const handleAddHairstyle = async (formData: Omit<HairstyleFormData, 'photoPreviews'>) => {
     try {
-      await axios.post(`${API_URL}/hairstyles`, formData, {
+      await axios.post(`${API_URL}/api/v1/hairstyles`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
