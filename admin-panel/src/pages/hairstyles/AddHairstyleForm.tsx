@@ -256,6 +256,16 @@ const AddHairstyleForm: React.FC<AddHairstyleFormProps> = ({
                 </Grid>
               </Grid>
               
+              <Grid item xs={12}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  multiple
+                  style={{ marginTop: '16px' }}
+                />
+              </Grid>
+              
               <FormControlLabel
                 control={
                   <Switch
@@ -270,56 +280,7 @@ const AddHairstyleForm: React.FC<AddHairstyleFormProps> = ({
               />
             </Grid>
             
-            <Grid item xs={12} md={6}>
-              <input
-                accept="image/*"
-                style={{ display: 'none' }}
-                id="hairstyle-photo-upload"
-                type="file"
-                multiple
-                onChange={handleFileChange}
-              />
-              <label htmlFor="hairstyle-photo-upload">
-                <StyledDropZone>
-                  <AddIcon fontSize="large" color="action" />
-                  <Typography variant="subtitle1" gutterBottom>
-                    Ajouter des photos
-                  </Typography>
-                  <Typography variant="caption" color="textSecondary">
-                    Glissez-déposez des images ici ou cliquez pour sélectionner
-                  </Typography>
-                  {formData.photoPreviews.length > 0 && (
-                    <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                      {formData.photoPreviews.length} photo(s) sélectionnée(s)
-                    </Typography>
-                  )}
-                </StyledDropZone>
-              </label>
-              
-              {formData.photoPreviews.length > 0 && (
-                <PreviewContainer>
-                  {formData.photoPreviews.map((preview, index) => (
-                    <PreviewItem key={index}>
-                      <Avatar
-                        src={preview}
-                        variant="rounded"
-                        sx={{ width: '100%', height: '100%' }}
-                      />
-                      <DeleteButton
-                        className="delete-button"
-                        size="small"
-                        onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                          e.stopPropagation();
-                          removePhoto(index);
-                        }}
-                      >
-                        <DeleteIcon fontSize="small" color="error" />
-                      </DeleteButton>
-                    </PreviewItem>
-                  ))}
-                </PreviewContainer>
-              )}
-            </Grid>
+            
           </Grid>
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 0 }}>

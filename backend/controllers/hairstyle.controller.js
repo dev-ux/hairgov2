@@ -34,15 +34,17 @@ exports.addHairstyle = async (req, res) => {
     const { name, description, estimated_duration, category, is_active } = req.body;
     let photoUrl = '';
 
-    // Gestion de l'upload de la photo si elle existe
+    // Gestion de l'upload de la photo
     if (req.file) {
+      // Cas où on utilise upload.single()
       try {
-        const fileExt = path.extname(req.file.originalname).toLowerCase();
+        const file = req.file;
+        const fileExt = path.extname(file.originalname).toLowerCase();
         const filename = `${uuidv4()}${fileExt}`;
         const filePath = path.join(uploadDir, filename);
         
         // Déplacer le fichier vers le dossier d'uploads
-        fs.renameSync(req.file.path, filePath);
+        fs.renameSync(file.path, filePath);
         
         // Enregistrer le chemin relatif dans la base de données
         photoUrl = `/uploads/hairstyles/${filename}`;
@@ -51,6 +53,34 @@ exports.addHairstyle = async (req, res) => {
         return res.status(500).json({ 
           success: false, 
           message: 'Erreur lors de l\'enregistrement de l\'image' 
+        });
+      }
+    } else if (req.files) {
+      // Cas où on utilise upload.any()
+      try {
+        // Récupérer tous les fichiers qui commencent par 'photo_'
+        const photoFiles = Object.entries(req.files)
+          .filter(([key]) => key.startsWith('photo_'))
+          .map(([_, file]) => file);
+
+        // Traiter uniquement la première photo pour l'instant
+        if (photoFiles.length > 0) {
+          const file = Array.isArray(photoFiles[0]) ? photoFiles[0][0] : photoFiles[0];
+          const fileExt = path.extname(file.originalname).toLowerCase();
+          const filename = `${uuidv4()}${fileExt}`;
+          const filePath = path.join(uploadDir, filename);
+          
+          // Déplacer le fichier vers le dossier d'uploads
+          fs.renameSync(file.path, filePath);
+          
+          // Enregistrer le chemin relatif dans la base de données
+          photoUrl = `/uploads/hairstyles/${filename}`;
+        }
+      } catch (uploadError) {
+        console.error('Erreur lors de l\'enregistrement des images:', uploadError);
+        return res.status(500).json({ 
+          success: false, 
+          message: 'Erreur lors de l\'enregistrement des images' 
         });
       }
     }

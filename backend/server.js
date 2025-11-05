@@ -86,22 +86,22 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Configuration pour servir les fichiers statiques avec CORS
-app.use('/uploads', (req, res, next) => {
-  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  next();
-}, express.static(path.join(__dirname, 'uploads')));
-
-// Créer les dossiers nécessaires s'ils n'existent pas
-const uploadsDir = path.join(__dirname, 'uploads');
-const photosDir = path.join(uploadsDir, 'photos');
-require('fs').mkdirSync(photosDir, { recursive: true });
+// Configuration des dossiers d'uploads
+const uploadsDir = path.join(__dirname, '../public/uploads');
+const hairstylesDir = path.join(uploadsDir, 'hairstyles');
+require('fs').mkdirSync(hairstylesDir, { recursive: true });
 
 console.log('Dossier des uploads:', uploadsDir);
-console.log('Dossier des photos:', photosDir);
+console.log('Dossier des coiffures:', hairstylesDir);
+
+// Configuration pour servir les fichiers statiques
+app.use('/uploads', (req, res, next) => {
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
+
+// Servir les fichiers statiques depuis le dossier racine /public/uploads
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Logging
 app.use(morgan('combined'));

@@ -17,7 +17,8 @@ import {
   Chip, 
   Avatar,
   IconButton,
-  Tooltip
+  Tooltip,
+  TablePagination
 } from '@mui/material';
 import { 
   People as PeopleIcon, 
@@ -46,6 +47,8 @@ const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -93,6 +96,15 @@ const UsersPage: React.FC = () => {
       client: 'Client'
     };
     return types[type] || type;
+  };
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
   };
 
   if (loading) {
@@ -149,7 +161,9 @@ const UsersPage: React.FC = () => {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  users.map((user) => (
+                  users
+                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                    .map((user) => (
                     <TableRow key={user.id} hover>
                       <TableCell>
                         <Box display="flex" alignItems="center">
@@ -213,6 +227,21 @@ const UsersPage: React.FC = () => {
                     </TableRow>
                   ))
                 )}
+                <TableRow>
+                  <TablePagination
+                    rowsPerPageOptions={[5, 10, 25]}
+                    colSpan={7}
+                    count={users.length}
+                    rowsPerPage={rowsPerPage}
+                    page={page}
+                    onPageChange={handleChangePage}
+                    onRowsPerPageChange={handleChangeRowsPerPage}
+                    labelRowsPerPage="Lignes par page :"
+                    labelDisplayedRows={({ from, to, count }) => 
+                      `${from}-${to} sur ${count !== -1 ? count : `plus de ${to}`}`
+                    }
+                  />
+                </TableRow>
               </TableBody>
             </Table>
           </TableContainer>

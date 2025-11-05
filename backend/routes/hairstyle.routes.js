@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const hairstyleController = require('../controllers/hairstyle.controller');
-const { upload, handleUploadErrors } = require('../middleware/upload.middleware');
+const { uploadSingle, handleUploadErrors } = require('../middleware/upload.middleware');
 const { verifyToken, isAdmin } = require('../middleware/auth.middleware');
 
 // Routes pour les coiffures
@@ -9,7 +9,7 @@ router.post(
   '/',
   verifyToken,
   isAdmin,
-  upload.single('photo'),
+  uploadSingle,
   handleUploadErrors,
   hairstyleController.addHairstyle
 );

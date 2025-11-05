@@ -76,16 +76,31 @@ const HairstylesPage: React.FC = () => {
 
   const handleAddHairstyle = async (formData: Omit<HairstyleFormData, 'photoPreviews'>) => {
     try {
-      await axios.post(`${API_URL}/api/v1/hairstyles`, formData, {
+      const formDataToSend = new FormData();
+      
+      // Ajouter les champs du formulaire
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('estimated_duration', formData.estimated_duration.toString());
+      formDataToSend.append('category', formData.category);
+      formDataToSend.append('is_active', formData.is_active.toString());
+      
+      // Ajouter le premier fichier comme 'photo'
+      if (formData.photos && formData.photos.length > 0) {
+        formDataToSend.append('photo', formData.photos[0]);
+      }
+      
+      await axios.post(`${API_URL}/api/v1/hairstyles`, formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
+      
       handleCloseAddForm(true);
     } catch (error) {
       console.error('Erreur lors de l\'ajout de la coiffure:', error);
-      // Vous pourriez ajouter une notification d'erreur ici
+      enqueueSnackbar('Erreur lors de l\'ajout de la coiffure', { variant: 'error' });
     }
   };
 
@@ -181,7 +196,7 @@ const HairstylesPage: React.FC = () => {
                     <TableRow hover key={hairstyle.id}>
                       <TableCell>
                         <Avatar
-                          src={hairstyle.photo || '/default-hairstyle.jpg'}
+                          src={hairstyle.photo ? `${API_URL}${hairstyle.photo}` : '/default-hairstyle.jpg'}
                           alt={hairstyle.name}
                           variant="rounded"
                           sx={{ width: 56, height: 56 }}

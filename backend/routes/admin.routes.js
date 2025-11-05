@@ -9,7 +9,7 @@ const {
   getHairdressers: getHairdressersAdmin,
   toggleHairdresserStatus 
 } = require('../controllers/admin/hairdresser.admin.controller');
-const { upload } = require('../middleware/upload.middleware');
+const { uploadFields, handleUploadErrors } = require('../middleware/upload.middleware');
 const db = require('../models');
 const { Op } = require('sequelize');
 
@@ -146,10 +146,7 @@ router.get('/salons', async (req, res) => {
  */
 router.post(
   '/salons',
-  upload.fields([
-    { name: 'photos', maxCount: 10 },
-    { name: 'logo', maxCount: 1 }
-  ]),
+  uploadFields,
   createSalon
 );
 

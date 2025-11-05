@@ -28,22 +28,26 @@ import {
   Logout as LogoutIcon
 } from '@mui/icons-material';
 
-const drawerWidth = 200; // Largeur du menu latéral
+const drawerWidth = 300; // Largeur du menu latéral
 
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
   open?: boolean;
 }>(({ theme, open }) => ({
   flexGrow: 1,
   padding: theme.spacing(3),
-  marginLeft: 0,
-  width: `calc(100% - ${drawerWidth - 40}px)`,
-  transition: theme.transitions.create(['width', 'margin'], {
+  transition: theme.transitions.create(['margin', 'width'], {
     easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.enteringScreen,
+    duration: theme.transitions.duration.leavingScreen,
   }),
+  marginLeft: `-${drawerWidth}px`,
+  width: `calc(100% - ${drawerWidth}px)`,
   ...(open && {
-    marginLeft: `${drawerWidth - 40}px`,
-    width: `calc(100% - ${drawerWidth - 40}px)`,
+    transition: theme.transitions.create(['margin', 'width'], {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+    marginLeft: 0,
+    width: '100%',
   }),
 }));
 
