@@ -40,7 +40,7 @@ interface Hairdresser {
   distance?: string;
 }
 
-const BookingScreen = () => {
+const BookingScreen = ({ route, navigation }: { route: any, navigation: any }) => {
   type RootStackParamList = {
   Home: undefined;
   Barber: undefined;
@@ -55,8 +55,6 @@ const BookingScreen = () => {
   };
 };
 
-const navigation = useNavigation<NavigationProp<RootStackParamList>>();
-  const route = useRoute();
   const { hairdresserId, hairdresserName, clientName, clientPhone } = route.params as RouteParams;
 
   // États pour le formulaire
@@ -414,8 +412,18 @@ const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollView}>
-        <Text style={styles.title}>Prendre un rendez-vous</Text>
-        <Text style={styles.hairdresserName}>Chez {hairdresserName}</Text>
+        <View style={styles.headerContainer}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Ionicons name="arrow-back" size={24} color="#000" />
+          </TouchableOpacity>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.title}>Prendre un rendez-vous</Text>
+            <Text style={styles.hairdresserName}>Chez {hairdresserName}</Text>
+          </View>
+        </View>
 
         {/* Sélection de la coupe */}
         <View style={styles.section}>
@@ -698,16 +706,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
     marginTop: 70,
   },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  headerTextContainer: {
+    flex: 1,
+  },
+  backButton: {
+    marginRight: 15,
+    padding: 5,
+  },
   scrollView: {
-    flexGrow: 1,
     padding: 20,
+    paddingTop: 20,
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
+    marginBottom: 5,
     color: '#333',
-    marginBottom: 10,
-    textAlign: 'center',
+    marginLeft: 10,
+    marginTop: 0,
   },
   hairdresserName: {
     fontSize: 18,
