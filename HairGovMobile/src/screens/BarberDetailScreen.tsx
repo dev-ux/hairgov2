@@ -1,20 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, ActivityIndicator, ImageStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import type { NativeStackNavigationProp, NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { API_URL } from '../config/constants';
 
-// Types
-type RootStackParamList = {
-  // ... autres écrans
-  Barber: undefined;
-  BarberDetail: { barberId: string };
-  // ... autres écrans
-};
+// Import du type de navigation global
+import { RootStackParamList } from '../navigation/AppNavigator';
 
-type BarberDetailScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'BarberDetail'>;
-type BarberDetailScreenRouteProp = NativeStackScreenProps<RootStackParamList, 'BarberDetail'>['route'];
+type BarberDetailScreenNavigationProp = StackNavigationProp<RootStackParamList, 'BarberDetail'>;
+type BarberDetailScreenRouteProp = RouteProp<RootStackParamList, 'BarberDetail'>;
 
 interface User {
   id: string;
@@ -181,6 +176,7 @@ const BarberDetailScreen = () => {
 
   return (
     <View style={styles.container}>
+      
       {/* En-tête personnalisé avec bouton de retour */}
       <View style={styles.headerContainer}>
         <TouchableOpacity 
@@ -255,8 +251,10 @@ const BarberDetailScreen = () => {
         style={[styles.button, !barber.is_available && styles.buttonDisabled]}
         disabled={!barber.is_available}
         onPress={() => {
-          // Navigation vers l'écran de prise de rendez-vous
-          // navigation.navigate('BookAppointment', { barberId: barber.id });
+          navigation.navigate('Booking', { 
+            hairdresserId: barber.id,
+            hairdresserName: barber.user?.full_name || 'le coiffeur'
+          });
         }}
       >
         <Text style={styles.buttonText}>
