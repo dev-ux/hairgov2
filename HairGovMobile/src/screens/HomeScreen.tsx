@@ -28,25 +28,33 @@ const formatImageUrl = (url: string) => {
       console.log('Aucune URL fournie');
       return null;
     }
-    
+
     console.log('URL originale reçue:', url);
-    
+
     // Nettoyer l'URL (supprimer les accolades, espaces et / au début)
     let cleanUrl = url.replace(/[{}]/g, '').trim();
-    
+
     // Si l'URL est déjà une URL complète, la retourner telle quelle
     if (cleanUrl.startsWith('http')) {
       console.log('URL complète détectée:', cleanUrl);
       return cleanUrl;
     }
-    
+
+    // Si l'URL commence par /uploads/, on la concatène directement avec la base
+    if (cleanUrl.startsWith('/uploads/')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      const fullUrl = `${baseUrl}${cleanUrl}`;
+      console.log('URL uploads détectée, URL finale:', fullUrl);
+      return fullUrl;
+    }
+
     // Extraire le nom du fichier de l'URL
     const fileName = cleanUrl.split('/').pop();
-    
+
     // Construire l'URL complète en utilisant la base de l'API
     const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
     const fullUrl = `${baseUrl}/uploads/photos/${fileName}`;
-    
+
     console.log('URL finale construite:', fullUrl);
     return fullUrl;
   } catch (error) {
@@ -55,7 +63,15 @@ const formatImageUrl = (url: string) => {
   }
 };
 
-export interface Salon {
+export interface Hairstyle {
+  id: string;
+  name: string;
+  photo: string;
+  estimated_duration: number;
+  price: number;
+}
+
+interface Salon {
   id: string;
   name: string;
   address: string;
@@ -82,7 +98,9 @@ export default function HomeScreen() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [salons, setSalons] = useState<Salon[] | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [hairstyles, setHairstyles] = useState<Hairstyle[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingHairstyles, setLoadingHairstyles] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
@@ -160,7 +178,32 @@ export default function HomeScreen() {
       }
     };
 
+    const fetchHairstyles = async () => {
+      try {
+        setLoadingHairstyles(true);
+        console.log('Tentative de récupération des coiffures depuis:', `${API_URL}/hairstyles`);
+        const response = await fetch(`${API_URL}/hairstyles`);
+        const responseData = await response.json();
+        console.log('Réponse de l\'API pour les coiffures:', { status: response.status, data: responseData });
+        if (response.ok && responseData.success) {
+          const hairstylesData = responseData.data || [];
+          console.log('Coiffures chargées avec succès:', hairstylesData);
+          setHairstyles(Array.isArray(hairstylesData) ? hairstylesData : []);
+        } else {
+          const errorMessage = responseData?.message || 'Erreur inconnue lors du chargement des coiffures';
+          console.error('Erreur lors du chargement des coiffures:', errorMessage);
+          setError(`Impossible de charger les coiffures: ${errorMessage}`);
+        }
+      } catch (err) {
+        console.error('Erreur API:', err);
+        setError('Erreur de connexion au serveur');
+      } finally {
+        setLoadingHairstyles(false);
+      }
+    };
+
     fetchSalons();
+    fetchHairstyles();
   }, []);
 
   useEffect(() => {
@@ -262,7 +305,7 @@ export default function HomeScreen() {
                       source={(() => {
                         const imageUrl = item.photos?.[0];
                         const formattedUrl = imageUrl ? formatImageUrl(imageUrl) : null;
-                        
+
                         console.log('Chargement de l\'image pour le salon:', {
                           nom: item.name,
                           id: item.id,
@@ -270,14 +313,14 @@ export default function HomeScreen() {
                           urlFormatee: formattedUrl,
                           aDesPhotos: item.photos?.length > 0
                         });
-                        
+
                         if (formattedUrl) {
                           // Vérifier si l'URL semble valide
                           if (formattedUrl.includes('undefined') || !formattedUrl.includes('http')) {
                             console.warn('URL d\'image potentiellement invalide:', formattedUrl);
                             return defaultSalonImage;
                           }
-                          return { 
+                          return {
                             uri: formattedUrl,
                             cache: 'reload'
                           };
@@ -321,7 +364,52 @@ export default function HomeScreen() {
           )}
         </View>
 
+        {/* Section des coiffures */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Nos Coiffures</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Hairstyles')}>
+              <Text style={styles.seeAll}>Voir tout</Text>
+            </TouchableOpacity>
+          </View>
 
+          {loadingHairstyles ? (
+            <ActivityIndicator size="large" color="#6C63FF" style={styles.loader} />
+          ) : error ? (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          ) : !hairstyles || hairstyles.length === 0 ? (
+            <Text style={styles.emptyText}>Aucune coiffure disponible</Text>
+          ) : (
+            <FlatList
+              data={hairstyles ? hairstyles.slice(0, 5) : []}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.hairstyleCard}
+                  onPress={() => navigation.navigate('HairstyleDetail', { hairstyleId: item.id })}
+                >
+                  <Image
+                    source={item.photo ? { uri: `${API_URL}/uploads/hairstyles/${item.photo}` } : require('../assets/url_de_l_image_1.jpg')}
+                    style={styles.hairstyleImage}
+                    resizeMode="cover"
+                    onError={(e) => console.error('Erreur de chargement de l\'image:', e.nativeEvent.error)}
+                  />
+                  <View style={styles.hairstyleInfo}>
+                    <Text style={styles.hairstyleName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={styles.hairstyleDuration} numberOfLines={1}>
+                      {item.estimated_duration} min • {item.price}€
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.hairstylesList}
+            />
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -347,6 +435,35 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
+  hairstyleCard: {
+    width: 220,
+    height: 220,
+    marginRight: 16,
+    backgroundColor: '#F0F0F0',
+    borderRadius: 10,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  hairstyleImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  hairstyleInfo: {
+    padding: 16,
+    alignItems: 'center',
+  },
+  hairstyleName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  hairstyleDuration: {
+    fontSize: 14,
+    color: '#666',
+  },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
@@ -360,6 +477,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 10,
+  },
+  hairstylesList: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 20,
+    marginVertical: 10,
   },
   notificationButton: {
     width: 40,
@@ -448,8 +572,8 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   salonsList: {
-    paddingBottom: 10,
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   salonCard: {
     width: 220,
