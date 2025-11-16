@@ -10,6 +10,7 @@ import { Onboarding1 } from '../screens/Onboarding1';
 import { Onboarding2 } from '../screens/Onboarding2';
 import { Onboarding3 } from '../screens/Onboarding3';
 import HomeScreen from '../screens/HomeScreen';
+import MapScreen from '../screens/MapScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import { VerifyOtpScreen } from '../screens/auth/VerifyOtpScreen';
@@ -48,8 +49,15 @@ export type RootStackParamList = {
   Profile: undefined;
   // Autres écrans
   AllSalons: undefined;
+  // Réservation
+  Booking: {
+    hairdresserId: string;
+    hairdresserName: string;
+  };
   // Autres écrans du profil
   Favorites: undefined;
+  Hairstyles: undefined;
+  HairstyleDetail: { hairstyleId: string };
   History: undefined;
   Statistics: undefined;
   Bookings: undefined;
@@ -58,10 +66,6 @@ export type RootStackParamList = {
   // Autres écrans
   Barber: undefined;
   BarberDetail: { barberId: string };
-  Booking: {
-    hairdresserId: string;
-    hairdresserName: string;
-  };
   SalonDetail: { salonId: string };
   Map: undefined;
   Notifications: undefined;
@@ -132,7 +136,16 @@ const MainTabs = () => {
           hairdresserName: 'Coiffeur', // Nom par défaut
         }}
       />
-      <Tab.Screen name="Map" component={HomeScreen} options={{ title: 'Carte' }} />
+      <Tab.Screen 
+        name="Map" 
+        component={MapScreen} 
+        options={{ 
+          title: 'Carte',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="map" size={size} color={color} />
+          )
+        }} 
+      />
     </Tab.Navigator>
   );
 };
