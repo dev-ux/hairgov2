@@ -24,26 +24,55 @@ const formatImageUrl = (url: string) => {
       console.log('Aucune URL fournie');
       return null;
     }
-    
+
     console.log('URL originale reçue:', url);
-    
-    // Nettoyer l'URL (supprimer les accolades, espaces et / au début)
-    let cleanUrl = url.replace(/[{}]/g, '').trim();
-    
+
+    // Nettoyer l'URL (supprimer les accolades, espaces, guillemets et autres caractères invalides)
+    let cleanUrl = url.replace(/[{}"']/g, '').trim();
+
     // Si l'URL est déjà une URL complète, la retourner telle quelle
     if (cleanUrl.startsWith('http')) {
       console.log('URL complète détectée:', cleanUrl);
       return cleanUrl;
     }
-    
-    // Extraire le nom du fichier de l'URL
-    const fileName = cleanUrl.split('/').pop();
-    
-    // Construire l'URL complète en utilisant la base de l'API
+
+    // Si l'URL commence par /uploads/photos/, la nettoyer et construire l'URL complète
+    if (cleanUrl.startsWith('/uploads/photos/')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      const fullUrl = `${baseUrl}${cleanUrl}`;
+      console.log('URL uploads/photos détectée, URL finale:', fullUrl);
+      return fullUrl;
+    }
+
+    // Si l'URL commence par /uploads/, la nettoyer et construire l'URL complète
+    if (cleanUrl.startsWith('/uploads/')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      const fullUrl = `${baseUrl}${cleanUrl}`;
+      console.log('URL uploads détectée, URL finale:', fullUrl);
+      return fullUrl;
+    }
+
+    // Si l'URL commence par photos-, construire l'URL complète
+    if (cleanUrl.startsWith('photos-')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      const fullUrl = `${baseUrl}/uploads/photos/${cleanUrl}`;
+      console.log('Nom de fichier photos- détecté, URL finale:', fullUrl);
+      return fullUrl;
+    }
+
+    // Si l'URL ne contient que le nom du fichier sans préfixe
+    if (!cleanUrl.includes('/')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      const fullUrl = `${baseUrl}/uploads/photos/${cleanUrl}`;
+      console.log('Nom de fichier simple détecté, URL finale:', fullUrl);
+      return fullUrl;
+    }
+
+    // Pour tout autre cas, essayer de construire avec /uploads/photos/
     const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+    const fileName = cleanUrl.split('/').pop();
     const fullUrl = `${baseUrl}/uploads/photos/${fileName}`;
-    
-    console.log('URL finale construite:', fullUrl);
+    console.log('Cas par défaut, URL finale:', fullUrl);
     return fullUrl;
   } catch (error) {
     console.error('Erreur lors du formatage de l\'URL:', error);
