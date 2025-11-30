@@ -67,7 +67,7 @@ export const homeScreenStyles = StyleSheet.create({
     borderRadius: 16,
     padding: 24,
     justifyContent: 'center',
-    marginRight: 20,
+    marginRight: 0,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,

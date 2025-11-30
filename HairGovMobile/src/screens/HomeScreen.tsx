@@ -153,11 +153,12 @@ export default function HomeScreen() {
     const interval = setInterval(() => {
       setCurrentPromoIndex((prevIndex) => {
         const nextIndex = prevIndex === promotions.length - 1 ? 0 : prevIndex + 1;
-        // Faire défiler vers la slide suivante
+        // Faire défiler vers la slide suivante avec un meilleur centrage
         if (promoFlatListRef.current) {
           promoFlatListRef.current.scrollToIndex({ 
             index: nextIndex, 
-            animated: true 
+            animated: true,
+            viewPosition: 0.5 // Centre la slide parfaitement
           });
         }
         return nextIndex;
@@ -369,9 +370,11 @@ export default function HomeScreen() {
             contentContainerStyle={homeScreenStyles.promoCarousel}
             getItemLayout={(data, index) => ({
               length: width - 40,
-              offset: (width - 40) * index,
+              offset: (width - 40) * index + 20, // Ajout du padding initial
               index,
             })}
+            snapToInterval={width - 40} // Assure le snap parfait
+            decelerationRate="fast" // Défilement plus rapide et précis
           />
         </View>
 
