@@ -123,6 +123,7 @@ app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/hairstyles', hairstyleRoutes);
 app.use('/api/v1/salons', salonRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1', uploadRoutes);
 app.use('/api', notificationRoutes);
 

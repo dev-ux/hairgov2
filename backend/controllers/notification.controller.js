@@ -2,6 +2,105 @@ const db = require('../models');
 const { Notification, User } = db;
 const Op = db.Sequelize.Op;
 
+// Marquer une notification comme lue (publique pour développement)
+exports.markAsReadPublic = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const notification = await Notification.findByPk(id);
+    if (!notification) {
+      return res.status(404).send({
+        success: false,
+        message: "Notification non trouvée"
+      });
+    }
+
+    await notification.update({ is_read: true });
+
+    res.send({
+      success: true,
+      message: "Notification marquée comme lue avec succès",
+      data: notification
+    });
+  } catch (err) {
+    res.status(500).send({
+      success: false,
+      message: err.message || "Une erreur s'est produite lors du marquage comme lu."
+    });
+  }
+};
+
+// Marquer toutes les notifications comme lues (publique pour développement)
+exports.markAllAsReadPublic = async (req, res) => {
+  try {
+    await Notification.update(
+      { is_read: true },
+      { where: { is_read: false } }
+    );
+
+    res.send({
+      success: true,
+      message: "Toutes les notifications ont été marquées comme lues"
+    });
+  } catch (err) {
+    res.status(500).send({
+      success: false,
+      message: err.message || "Une erreur s'est produite lors du marquage de toutes comme lues."
+    });
+  }
+};
+
+// Récupérer toutes les notifications publiquement (pour développement)
+exports.findAllPublic = async (req, res) => {
+  try {
+    const notifications = await Notification.findAll({
+      order: [['sent_at', 'DESC']],
+      limit: 50 // Limiter à 50 pour éviter de surcharger
+    });
+
+    // Formater les données pour correspondre à ce que le frontend attend
+    const formattedNotifications = notifications.map(notification => ({
+      id: notification.id,
+      title: notification.title,
+      message: notification.body,
+      time: formatTimeAgo(notification.sent_at),
+      read: notification.is_read
+    }));
+
+    res.send({
+      success: true,
+      data: formattedNotifications,
+      total: notifications.length
+    });
+  } catch (err) {
+    res.status(500).send({
+      success: false,
+      message: err.message || "Une erreur s'est produite lors de la récupération des notifications."
+    });
+  }
+};
+
+// Formater la date relative
+function formatTimeAgo(date) {
+  const now = new Date();
+  const notificationDate = new Date(date);
+  const diffInMs = now - notificationDate;
+  const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+  const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+  if (diffInHours < 1) {
+    return "Il y a quelques minutes";
+  } else if (diffInHours < 24) {
+    return `Il y a ${diffInHours}h`;
+  } else if (diffInDays === 1) {
+    return "Hier";
+  } else if (diffInDays < 7) {
+    return `Il y a ${diffInDays} jours`;
+  } else {
+    return `Il y a ${Math.floor(diffInDays / 7)} semaines`;
+  }
+}
+
 // Créer et sauvegarder une nouvelle notification
 exports.create = async (req, res) => {
   // Valider la requête

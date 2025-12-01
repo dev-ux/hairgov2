@@ -12,6 +12,13 @@ router.use(function(req, res, next) {
   next();
 });
 
+// Route publique - Récupérer toutes les notifications (pour développement)
+// TODO: À remplacer par une route authentifiée en production
+router.get(
+  "/",
+  controller.findAllPublic
+);
+
 // Route protégée - Créer une notification (pour les administrateurs)
 router.post(
   "/notifications",
@@ -39,11 +46,25 @@ router.get(
   }
 );
 
+// Route publique - Marquer une notification comme lue (pour développement)
+// TODO: À remplacer par une route authentifiée en production
+router.put(
+  "/:id/read",
+  controller.markAsReadPublic
+);
+
 // Route protégée - Marquer une notification comme lue
 router.put(
   "/notifications/:id/read",
   [authenticate],
   controller.markAsRead
+);
+
+// Route publique - Marquer toutes les notifications comme lues (pour développement)
+// TODO: À remplacer par une route authentifiée en production
+router.put(
+  "/read-all",
+  controller.markAllAsReadPublic
 );
 
 // Route protégée - Marquer toutes les notifications comme lues

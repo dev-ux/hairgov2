@@ -13,6 +13,179 @@ const sequelize = db.sequelize;
 const geolocationService = require('../services/geolocation.service');
 const notificationService = require('../services/notification.service');
 
+// Récupérer toutes les réservations publiquement (pour développement)
+exports.findAllPublic = async (req, res) => {
+  try {
+    const bookings = await Booking.findAll({
+      include: [
+        {
+          model: Hairdresser,
+          as: 'hairdresser',
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'full_name', 'profile_photo']
+            }
+          ]
+        },
+        {
+          model: Hairstyle,
+          as: 'hairstyle',
+          attributes: ['id', 'name', 'description', 'estimated_duration', 'category']
+        }
+      ],
+      order: [['created_at', 'DESC']],
+      limit: 50
+    });
+
+    // Formater les données pour correspondre à ce que le frontend attend
+    const formattedBookings = bookings.map(booking => ({
+      id: booking.id,
+      client_name: booking.client_name,
+      client_phone: booking.client_phone,
+      hairdresser: booking.hairdresser ? {
+        id: booking.hairdresser.id,
+        full_name: booking.hairdresser.user?.full_name || 'Coiffeur inconnu',
+        profile_photo: booking.hairdresser.user?.profile_photo
+      } : null,
+      hairstyle: booking.hairstyle,
+      service_type: booking.service_type,
+      service_fee: booking.service_fee,
+      client_price: booking.client_price,
+      status: booking.status,
+      location_address: booking.location_address,
+      latitude: booking.latitude,
+      longitude: booking.longitude,
+      estimated_duration: booking.estimated_duration,
+      scheduled_time: booking.scheduled_time,
+      started_at: booking.started_at,
+      completed_at: booking.completed_at,
+      cancelled_at: booking.cancelled_at,
+      cancellation_reason: booking.cancellation_reason,
+      created_at: booking.created_at,
+      updated_at: booking.updated_at
+    }));
+
+    res.send({
+      success: true,
+      data: formattedBookings,
+      total: bookings.length
+    });
+  } catch (err) {
+    res.status(500).send({
+      success: false,
+      message: err.message || "Une erreur s'est produite lors de la récupération des réservations."
+    });
+  }
+};
+
+// Créer une réservation publiquement (pour développement)
+exports.createBookingPublic = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  
+  try {
+    const {
+      client_name,
+      client_phone,
+      hairstyle_id,
+      service_type,
+      location_address,
+      latitude,
+      longitude,
+      scheduled_time,
+      client_id,
+      salon_id, // Ajouté pour récupérer le hairdresser du salon
+      service_fee = 25,
+      client_price,
+      estimated_duration
+    } = req.body;
+
+    // Vérifier que la coiffure existe
+    const hairstyle = await Hairstyle.findByPk(hairstyle_id);
+    if (!hairstyle) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'HAIRSTYLE_NOT_FOUND',
+          message: 'Coiffure introuvable'
+        }
+      });
+    }
+
+    let hairdresser_id = null;
+    
+    // Si salon_id est fourni, récupérer le hairdresser_id du salon
+    if (salon_id) {
+      const { Salon } = require('../models');
+      const salon = await Salon.findByPk(salon_id);
+      if (salon && salon.hairdresser_id) {
+        hairdresser_id = salon.hairdresser_id;
+      }
+    }
+
+    // Créer la réservation
+    const booking = await Booking.create({
+      client_name,
+      client_phone,
+      hairdresser_id, // Utiliser le coiffeur du salon ou null
+      hairstyle_id,
+      service_type,
+      service_fee,
+      client_price: client_price || (estimated_duration * 0.5),
+      estimated_duration: estimated_duration || hairstyle.estimated_duration,
+      scheduled_time,
+      location_address,
+      latitude,
+      longitude,
+      status: 'pending',
+      client_id
+    }, { transaction });
+
+    await transaction.commit();
+
+    // Récupérer la réservation créée avec les associations
+    const createdBooking = await Booking.findByPk(booking.id, {
+      include: [
+        {
+          model: Hairdresser,
+          as: 'hairdresser',
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'full_name', 'profile_photo']
+            }
+          ]
+        },
+        {
+          model: Hairstyle,
+          as: 'hairstyle',
+          attributes: ['id', 'name', 'description', 'estimated_duration', 'category']
+        }
+      ]
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Réservation créée avec succès',
+      data: createdBooking
+    });
+
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Erreur lors de la création de la réservation:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'BOOKING_CREATION_ERROR',
+        message: 'Erreur lors de la création de la réservation'
+      }
+    });
+  }
+};
+
 /**
  * Créer une nouvelle réservation
  */

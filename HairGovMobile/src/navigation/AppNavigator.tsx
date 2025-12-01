@@ -15,6 +15,8 @@ import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import { VerifyOtpScreen } from '../screens/auth/VerifyOtpScreen';
 import BookingScreen from '../screens/BookingScreen';
+import CreateBookingScreen from '../screens/CreateBookingScreen';
+import BookingFormScreen from '../screens/BookingFormScreen';
 import BarberListScreen from '../screens/BarberListScreen';
 import BarberDetailScreen from '../screens/BarberDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -54,6 +56,8 @@ export type RootStackParamList = {
     hairdresserId: string;
     hairdresserName: string;
   };
+  CreateBooking: undefined;
+  BookingForm: { salon: { id: string; name: string; address: string; latitude: number; longitude: number } };
   // Autres écrans du profil
   Favorites: undefined;
   Hairstyles: undefined;
@@ -112,6 +116,16 @@ const MainTabs = () => {
         }} 
       />
       <Tab.Screen 
+        name="Map" 
+        component={MapScreen} 
+        options={{ 
+          title: 'Carte',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="location" size={size} color={color} />
+          )
+        }} 
+      />
+      <Tab.Screen 
         name="Barber" 
         component={BarberListScreen} 
         options={{ 
@@ -135,16 +149,6 @@ const MainTabs = () => {
           hairdresserId: '1', // ID par défaut, à remplacer par la logique de votre application
           hairdresserName: 'Coiffeur', // Nom par défaut
         }}
-      />
-      <Tab.Screen 
-        name="Map" 
-        component={MapScreen} 
-        options={{ 
-          title: 'Carte',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="map" size={size} color={color} />
-          )
-        }} 
       />
     </Tab.Navigator>
   );
@@ -222,6 +226,24 @@ export const AppNavigator = () => {
         <Stack.Screen 
           name="Booking" 
           component={BookingScreen} 
+        />
+        <Stack.Screen 
+          name="CreateBooking" 
+          component={CreateBookingScreen} 
+          options={{
+            title: 'Créer une réservation',
+            headerShown: true,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="BookingForm" 
+          component={BookingFormScreen} 
+          options={{
+            title: 'Formulaire de réservation',
+            headerShown: true,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen 
           name="SalonDetail" 

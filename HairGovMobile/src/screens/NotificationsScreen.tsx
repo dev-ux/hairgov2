@@ -1,8 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { API_URL } from '../config/constants';
 
 type RootStackParamList = {
   Home: undefined;
@@ -20,34 +21,87 @@ type Notification = {
 
 const NotificationsScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Données factices pour les notifications
-  const notifications: Notification[] = [
-    {
-      id: '1',
-      title: 'Nouvelle offre',
-      message: 'Réduction de 20% sur votre prochaine coupe de cheveux',
-      time: 'Il y a 2h',
-      read: false,
-    },
-    {
-      id: '2',
-      title: 'Rappel de rendez-vous',
-      message: 'Vous avez un rendez-vous demain à 14h30 chez Coiffeur Elite',
-      time: 'Hier',
-      read: true,
-    },
-    {
-      id: '3',
-      title: 'Avis demandé',
-      message: 'Comment s\'est passé votre dernière visite chez Coiffeur Elite ?',
-      time: 'Il y a 2 jours',
-      read: true,
-    },
-  ];
+  // Récupérer les notifications depuis l'API
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
-  const handleNotificationPress = (notification: Notification) => {
-    navigation.navigate('NotificationDetail', { notification });
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch(`${API_URL}/notifications`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setNotifications(result.data);
+      } else {
+        setError('Erreur lors de la récupération des notifications');
+      }
+    } catch (err) {
+      console.error('Erreur API notifications:', err);
+      setError('Impossible de charger les notifications');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Séparer les notifications lues et non lues
+  const unreadNotifications = notifications.filter(notif => !notif.read);
+  const readNotifications = notifications.filter(notif => notif.read);
+
+  const handleNotificationPress = async (notification: Notification) => {
+    try {
+      // Marquer comme lu dans la base de données
+      if (!notification.read) {
+        const response = await fetch(`${API_URL}/notifications/${notification.id}/read`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          // Marquer comme lu localement si l'API a réussi
+          setNotifications(prev => 
+            prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
+          );
+        }
+      }
+      
+      // Naviguer vers les détails
+      navigation.navigate('NotificationDetail', { notification });
+    } catch (error) {
+      console.error('Erreur lors du marquage comme lu:', error);
+      // Même en cas d'erreur, on navigue vers les détails
+      navigation.navigate('NotificationDetail', { notification });
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      // Marquer toutes comme lu dans la base de données
+      const response = await fetch(`${API_URL}/notifications/read-all`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        // Marquer toutes comme lu localement
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      }
+    } catch (error) {
+      console.error('Erreur lors du marquage de toutes comme lues:', error);
+      // En cas d'erreur, on fait quand même la mise à jour locale
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    }
   };
 
   const renderNotificationItem = ({ item }: { item: Notification }) => (
@@ -67,8 +121,45 @@ const NotificationsScreen = () => {
         <Text style={styles.notificationMessage}>{item.message}</Text>
         <Text style={styles.notificationTime}>{item.time}</Text>
       </View>
+      {!item.read && (
+        <View style={styles.unreadDot} />
+      )}
     </TouchableOpacity>
   );
+
+  const renderSectionHeader = (title: string, count: number) => (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.sectionCount}>{count}</Text>
+    </View>
+  );
+
+  const renderNotificationList = () => {
+    const data = [];
+    
+    if (unreadNotifications.length > 0) {
+      data.push(
+        { key: 'unread-header', type: 'header', title: 'Non lues', count: unreadNotifications.length },
+        ...unreadNotifications.map(notif => ({ key: notif.id, type: 'notification', data: notif }))
+      );
+    }
+    
+    if (readNotifications.length > 0) {
+      data.push(
+        { key: 'read-header', type: 'header', title: 'Lues', count: readNotifications.length },
+        ...readNotifications.map(notif => ({ key: notif.id, type: 'notification', data: notif }))
+      );
+    }
+    
+    return data;
+  };
+
+  const renderItem = ({ item }: { item: any }) => {
+    if (item.type === 'header') {
+      return renderSectionHeader(item.title, item.count);
+    }
+    return renderNotificationItem({ item: item.data });
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -80,23 +171,40 @@ const NotificationsScreen = () => {
           <Ionicons name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
-        <TouchableOpacity style={styles.markAllButton}>
-          <Text style={styles.markAllText}>Tout marquer comme lu</Text>
-        </TouchableOpacity>
+        {unreadNotifications.length > 0 && (
+          <TouchableOpacity style={styles.markAllButton} onPress={handleMarkAllAsRead}>
+            <Text style={styles.markAllText}>Tout marquer comme lu</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
-      <FlatList
-        data={notifications}
-        renderItem={renderNotificationItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.notificationList}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Ionicons name="notifications-off-outline" size={64} color="#ccc" />
-            <Text style={styles.emptyText}>Aucune notification</Text>
-          </View>
-        }
-      />
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6C63FF" />
+          <Text style={styles.loadingText}>Chargement des notifications...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color="#ff6b6b" />
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchNotifications}>
+            <Text style={styles.retryButtonText}>Réessayer</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={renderNotificationList()}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.key}
+          contentContainerStyle={styles.notificationList}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons name="notifications-off-outline" size={64} color="#ccc" />
+              <Text style={styles.emptyText}>Aucune notification</Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -136,6 +244,30 @@ const styles = StyleSheet.create({
   notificationList: {
     padding: 10,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 5,
+    paddingVertical: 10,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+  },
+  sectionCount: {
+    fontSize: 12,
+    color: '#6C63FF',
+    backgroundColor: '#f0f5ff',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    fontWeight: '600',
+  },
   notificationItem: {
     flexDirection: 'row',
     padding: 15,
@@ -147,6 +279,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    alignItems: 'center',
   },
   unreadNotification: {
     backgroundColor: '#f8f5ff',
@@ -170,6 +303,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginBottom: 4,
+    lineHeight: 20,
   },
   notificationTime: {
     fontSize: 12,
@@ -177,6 +311,13 @@ const styles = StyleSheet.create({
   },
   boldText: {
     fontWeight: 'bold',
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    backgroundColor: '#6C63FF',
+    borderRadius: 4,
+    marginLeft: 8,
   },
   emptyContainer: {
     flex: 1,
@@ -189,6 +330,42 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#999',
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  errorText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#ff6b6b',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#6C63FF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 
