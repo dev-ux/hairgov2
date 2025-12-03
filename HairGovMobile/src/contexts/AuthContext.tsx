@@ -8,6 +8,7 @@ interface User {
   email: string;
   phone: string;
   user_type: 'client' | 'hairdresser' | 'guest';
+  profile_picture?: string;
   // Ajoutez d'autres champs utilisateur si nécessaire
 }
 

@@ -22,27 +22,32 @@ import {
   Store as StoreIcon,
   CalendarToday as CalendarIcon,
   Settings as SettingsIcon,
+  ContentCut as HairstyleIcon,
   Menu as MenuIcon,
   ChevronLeft as ChevronLeftIcon,
   Logout as LogoutIcon
 } from '@mui/icons-material';
 
-const drawerWidth = 200; // Largeur du menu latéral
+const drawerWidth = 300; // Largeur du menu latéral
 
 const Main = styled('main', { shouldForwardProp: (prop) => prop !== 'open' })<{
   open?: boolean;
 }>(({ theme, open }) => ({
   flexGrow: 1,
   padding: theme.spacing(3),
-  marginLeft: 0,
-  width: `calc(100% - ${drawerWidth - 40}px)`,
-  transition: theme.transitions.create(['width', 'margin'], {
+  transition: theme.transitions.create(['margin', 'width'], {
     easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.enteringScreen,
+    duration: theme.transitions.duration.leavingScreen,
   }),
+  marginLeft: `-${drawerWidth}px`,
+  width: `calc(100% - ${drawerWidth}px)`,
   ...(open && {
-    marginLeft: `${drawerWidth - 40}px`,
-    width: `calc(100% - ${drawerWidth - 40}px)`,
+    transition: theme.transitions.create(['margin', 'width'], {
+      easing: theme.transitions.easing.easeOut,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+    marginLeft: 0,
+    width: '100%',
   }),
 }));
 
@@ -52,6 +57,7 @@ const menuItems = [
   { text: 'Salons', icon: <StoreIcon />, path: '/salons' },
   { text: 'Réservations', icon: <CalendarIcon />, path: '/bookings' },
   { text: 'Utilisateurs', icon: <PeopleIcon />, path: '/users' },
+  { text: 'Hairstyles', icon: <HairstyleIcon />, path: '/hairstyles' },
   { text: 'Paramètres', icon: <SettingsIcon />, path: '/settings' },
 ];
 
@@ -112,6 +118,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
           '& .MuiDrawer-paper': {
             width: drawerWidth,
             boxSizing: 'border-box',
+            paddingTop: '64px',
+            position: 'fixed',
+            height: '100vh',
+            zIndex: (theme) => theme.zIndex.drawer - 1,
+            boxShadow: 3,
+            border: 'none',
           },
         }}
         variant="persistent"

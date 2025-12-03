@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api/v1';
+import api from '../config/api';
 
 interface LoginCredentials {
   phone?: string;
@@ -24,7 +23,7 @@ interface ApiResponse {
 
 export const login = async (credentials: LoginCredentials): Promise<{ token: string; user: any }> => {
   try {
-    const response = await axios.post<ApiResponse>(`${API_URL}/auth/login`, credentials);
+    const response = await api.post<ApiResponse>('/auth/login', credentials);
     
     if (response.data.success && response.data.data) {
       const { token, user } = response.data.data;

@@ -5,6 +5,22 @@ const bookingController = require('../controllers/booking.controller');
 const { authenticate, isHairdresser, isClient } = require('../middleware/auth.middleware');
 const { validateBooking } = require('../validators/booking.validator');
 
+// Middleware pour les en-têtes CORS
+router.use(function(req, res, next) {
+  res.header(
+    "Access-Control-Allow-Headers",
+    "x-access-token, Origin, Content-Type, Accept"
+  );
+  next();
+});
+
+// Route publique pour créer une réservation (pour développement)
+router.post('/public', bookingController.createBookingPublic);
+
+// Route publique - Récupérer toutes les réservations (pour développement)
+// TODO: À remplacer par des routes authentifiées en production
+router.get('/', bookingController.findAllPublic);
+
 /**
  * @route   POST /api/v1/bookings
  * @desc    Créer une nouvelle réservation

@@ -113,12 +113,17 @@ exports.registerHairdresser = async (req, res) => {
       password,
       profession,
       residential_address,
-      date_of_birth,
-      id_card_number,
-      has_salon,
-      education_level,
-      hairstyle_ids
+      date_of_birth = '',
+      id_card_number = '',
+      has_salon = false,
+      education_level = '',
+      hairstyle_ids = [],
+      is_active = true
     } = req.body;
+
+    // Vérifier si c'est une création par un administrateur
+    const isAdminCreation = req.query.is_admin_creation === 'true';
+    const autoApprove = req.query.auto_approve === 'true';
 
     // Vérifier si le téléphone existe déjà
     const existingUser = await User.findOne({ where: { phone } });
@@ -153,7 +158,8 @@ exports.registerHairdresser = async (req, res) => {
       password_hash: password,
       user_type: 'hairdresser',
       profile_photo,
-      is_verified: false
+      is_verified: isAdminCreation, // Vérification automatique si création par admin
+      is_active: isAdminCreation ? is_active : false // Activer le compte si création par admin
     });
 
     // Créer le profil coiffeur
@@ -166,7 +172,8 @@ exports.registerHairdresser = async (req, res) => {
       id_card_photo,
       has_salon: has_salon === 'true' || has_salon === true,
       education_level,
-      registration_status: 'pending'
+      registration_status: isAdminCreation && autoApprove ? 'approved' : 'pending',
+      is_available: isAdminCreation && autoApprove // Rendre disponible si approuvé par admin
     });
 
     // Associer les coiffures
@@ -177,15 +184,20 @@ exports.registerHairdresser = async (req, res) => {
       await hairdresser.addHairstyles(hairstyles);
     }
 
-    res.status(201).json({
+    const response = {
       success: true,
-      message: 'Demande d\'inscription envoyée. Un administrateur va vérifier votre profil.',
+      message: isAdminCreation 
+        ? 'Le coiffeur a été créé avec succès.' 
+        : 'Demande d\'inscription envoyée. Un administrateur va vérifier votre profil.',
       data: {
         hairdresser_id: hairdresser.id,
         user_id: user.id,
-        registration_status: 'pending'
+        registration_status: hairdresser.registration_status,
+        is_active: user.is_active
       }
-    });
+    };
+
+    res.status(201).json(response);
 
   } catch (error) {
     console.error('Register hairdresser error:', error);

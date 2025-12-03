@@ -15,6 +15,8 @@ const adminRoutes = require('./routes/admin.routes');
 const clientRoutes = require('./routes/client.routes');
 const hairstyleRoutes = require('./routes/hairstyle.routes');
 const salonRoutes = require('./routes/salon.routes');
+const notificationRoutes = require('./routes/notification.routes');
+const uploadRoutes = require('./routes/upload.routes');
 
 // Import middleware d'erreur
 const errorHandler = require('./middleware/errorHandler');
@@ -22,23 +24,50 @@ const errorHandler = require('./middleware/errorHandler');
 const app = express();
 
 // Configuration CORS
-const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [];
+const allowedOrigins = [
+  'http://localhost:3000', // Panel admin
+  'http://localhost:3001', // Backend (si nécessaire)
+  ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [])
+];
+
+// Configuration CORS pour les fichiers statiques
+const staticCors = {
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'HEAD', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
+};
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
+
+// CORS pour les API
 app.use(cors({
   origin: function (origin, callback) {
     // Autoriser les requêtes sans origine (comme les applications mobiles ou Postman)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = `Cette origine ${origin} n'est pas autorisée par CORS`;
-      return callback(new Error(msg), false);
+    // Vérifier si l'origine est dans la liste blanche
+    if (allowedOrigins.some(allowedOrigin => 
+      origin === allowedOrigin || 
+      origin.startsWith(allowedOrigin.replace('http', 'https'))
+    )) {
+      return callback(null, true);
     }
-    return callback(null, true);
+    
+    console.log('Tentative de connexion non autorisée depuis l\'origine:', origin);
+    return callback(new Error(`Cette origine n'est pas autorisée par CORS: ${origin}`), false);
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['Content-Range', 'X-Content-Range']
 }));
@@ -57,8 +86,22 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Servir les fichiers statiques
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Configuration des dossiers d'uploads
+const uploadsDir = path.join(__dirname, '../public/uploads');
+const hairstylesDir = path.join(uploadsDir, 'hairstyles');
+require('fs').mkdirSync(hairstylesDir, { recursive: true });
+
+console.log('Dossier des uploads:', uploadsDir);
+console.log('Dossier des coiffures:', hairstylesDir);
+
+// Configuration pour servir les fichiers statiques
+app.use('/uploads', (req, res, next) => {
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+});
+
+// Servir les fichiers statiques depuis le dossier racine /public/uploads
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 // Logging
 app.use(morgan('combined'));
@@ -80,6 +123,9 @@ app.use('/api/v1/bookings', bookingRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/hairstyles', hairstyleRoutes);
 app.use('/api/v1/salons', salonRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1', uploadRoutes);
+app.use('/api', notificationRoutes);
 
 // 404 handler
 app.use((req, res) => {

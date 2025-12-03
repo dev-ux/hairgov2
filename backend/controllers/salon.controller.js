@@ -2,6 +2,10 @@ const db = require('../models');
 const { Op } = require('sequelize');
 const { validationResult } = require('express-validator');
 
+// Récupérer les modèles
+const Notification = db.notification;
+const User = db.users;  // Assurez-vous que c'est le bon nom de modèle (peut être 'user' ou 'users')
+
 /**
  * Obtenir la liste de tous les salons
  */
@@ -122,7 +126,7 @@ exports.createSalon = async (req, res) => {
     // Vérifier si le coiffeur existe et est approuvé
     const hairdresser = await db.Hairdresser.findOne({
       where: { 
-        id: req.user.id,
+        id: req.body.hairdresser_id || req.user.id,  // Prend hairdresser_id du body ou user.id du token
         registration_status: 'approved'
       },
       transaction
@@ -134,31 +138,33 @@ exports.createSalon = async (req, res) => {
         success: false,
         error: {
           code: 'UNAUTHORIZED',
-          message: 'Coiffeur non trouvé ou non approuvé'
+          message: 'Coiffeur non trouvé ou non approuvé. Assurez-vous que le hairdresser_id est valide et que le compte est approuvé.'
         }
       });
     }
+    
+    const hairdresserId = hairdresser.id;  // Utiliser l'ID du hairdresser trouvé
 
     // Vérifier si le coiffeur a déjà un salon
-    const existingSalon = await db.Salon.findOne({
-      where: { hairdresser_id: req.user.id },
-      transaction
-    });
+    // const existingSalon = await db.Salon.findOne({
+    //   where: { hairdresser_id: req.user.id },
+    //   transaction
+    // });
 
-    if (existingSalon) {
-      await transaction.rollback();
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'SALON_EXISTS',
-          message: 'Vous avez déjà un salon enregistré'
-        }
-      });
-    }
+    // if (existingSalon) {
+    //   await transaction.rollback();
+    //   return res.status(400).json({
+    //     success: false,
+    //     error: {
+    //       code: 'SALON_EXISTS',
+    //       message: 'Vous avez déjà un salon enregistré'
+    //     }
+    //   });
+    // }
 
     // Créer le salon
     const salon = await db.Salon.create({
-      hairdresser_id: req.user.id,
+      hairdresser_id: hairdresserId,  // Utiliser l'ID du hairdresser validé
       name,
       address,
       latitude,
@@ -170,6 +176,91 @@ exports.createSalon = async (req, res) => {
       photos,
       is_validated: false // Nécessite une validation par l'admin
     }, { transaction });
+
+    // Créer une notification pour tous les utilisateurs
+    try {
+      console.log('Début de la création des notifications...');
+      
+      // Récupérer tous les utilisateurs actifs sauf celui qui a créé le salon
+      console.log('Recherche des utilisateurs actifs...');
+      const users = await db.User.findAll({
+        attributes: ['id'],
+        where: {
+          is_active: true,
+          id: { [Op.ne]: req.user.id }
+        },
+        raw: true,
+        transaction
+      });
+
+      console.log(`Nombre d'utilisateurs trouvés: ${users.length}`);
+      
+      if (users.length > 0) {
+        const notifications = users.map(user => ({
+          user_id: user.id,
+          title: 'Nouveau salon ajouté',
+          body: `Un nouveau salon "${name}" a été ajouté à proximité de chez vous.`,  // Utiliser body au lieu de message
+          type: 'new_salon',
+          metadata: JSON.stringify({
+            salon_id: salon.id,
+            salon_name: name,
+            address: address
+          }),
+          is_read: false,
+          created_at: new Date(),
+          updated_at: new Date()
+        }));
+
+        console.log(`Prêt à créer ${notifications.length} notifications`);
+        
+        // Créer les notifications en une seule requête
+        if (notifications.length > 0) {
+          console.log('Tentative de création de', notifications.length, 'notifications');
+          
+          // Essayer différentes variantes du nom du modèle
+          const notificationModel = db.notifications || db.Notification || db.notification;
+          if (!notificationModel) {
+            throw new Error('Modèle de notification non trouvé dans db');
+          }
+          
+          try {
+            const createdNotifications = await notificationModel.bulkCreate(notifications, { 
+              transaction,
+              returning: true
+            });
+            console.log('Notifications créées avec succès:', createdNotifications);
+          } catch (bulkCreateError) {
+            console.error('Erreur lors du bulkCreate:', bulkCreateError);
+            throw bulkCreateError;
+          }
+        } else {
+          console.log('Aucune notification à créer');
+        }
+      } else {
+        console.log('Aucun utilisateur trouvé pour envoyer des notifications');
+      }
+    } catch (notificationError) {
+      console.error('Erreur lors de la création des notifications:', notificationError);
+      console.error('Détails de l\'erreur:', {
+        message: notificationError.message,
+        stack: notificationError.stack,
+        name: notificationError.name,
+        // Ajouter des informations supplémentaires pour le débogage
+        modelNames: Object.keys(db),
+        notificationModel: db.notifications ? 'Existe' : 'Non défini',
+        notificationModelKeys: db.notifications ? Object.keys(db.notifications) : []
+      });
+      // Annuler la transaction en cas d'erreur
+      await transaction.rollback();
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'NOTIFICATION_ERROR',
+          message: 'Erreur lors de la création des notifications',
+          details: notificationError.message
+        }
+      });
+    }
 
     // Mettre à jour le statut has_salon du coiffeur
     await hairdresser.update({ has_salon: true }, { transaction });

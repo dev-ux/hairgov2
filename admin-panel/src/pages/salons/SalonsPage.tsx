@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -21,6 +22,7 @@ import {
   Avatar,
   Badge
 } from '@mui/material';
+import AddSalonForm from '../../components/salons/AddSalonForm';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -95,35 +97,36 @@ const SalonsPage: React.FC = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const fetchSalons = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await api.get<ApiResponse>('/admin/salons', {
+        params: {
+          page: page + 1,
+          limit: rowsPerPage,
+          search: searchTerm
+        },
+      });
+
+      if (response.data.success) {
+        setSalons(response.data.data);
+      } else {
+        setError('Erreur lors du chargement des salons');
+      }
+    } catch (err) {
+      console.error('Error fetching salons:', err);
+      setError('Une erreur est survenue lors du chargement des salons');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, rowsPerPage, searchTerm]);
 
   useEffect(() => {
-    const fetchSalons = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get<ApiResponse>('/admin/salons', {
-          params: {
-            page: page + 1,
-            limit: rowsPerPage,
-            search: searchTerm
-          }
-        });
-        
-        if (response.data.success) {
-          setSalons(response.data.data);
-          // La pagination est déjà gérée côté serveur
-        } else {
-          setError('Erreur lors du chargement des salons');
-        }
-      } catch (err) {
-        console.error('Error fetching salons:', err);
-        setError('Une erreur est survenue lors du chargement des salons');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchSalons();
-  }, [page, rowsPerPage, searchTerm]);
+  }, [fetchSalons]);
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -134,9 +137,22 @@ const SalonsPage: React.FC = () => {
     setPage(0);
   };
 
-  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(event.target.value);
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
     setPage(0);
+  };
+
+  const handleAddClick = () => {
+    setAddDialogOpen(true);
+  };
+
+  const handleAddDialogClose = () => {
+    setAddDialogOpen(false);
+  };
+
+  const handleAddSuccess = () => {
+    setAddDialogOpen(false);
+    fetchSalons(); // Rafraîchir la liste des salons
   };
 
   const filteredSalons = salons.filter((salon) => {
@@ -160,11 +176,10 @@ const SalonsPage: React.FC = () => {
           variant="contained"
           color="primary"
           startIcon={<AddIcon />}
-          onClick={() => {
-            // Logique pour ajouter un nouveau salon
-          }}
+          onClick={handleAddClick}
+          sx={{ mb: 2 }}
         >
-          Ajouter un Salon
+          Ajouter un salon
         </Button>
       </Box>
 
@@ -221,7 +236,17 @@ const SalonsPage: React.FC = () => {
               filteredSalons
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((salon) => (
-                  <TableRow key={salon.id} hover>
+                  <TableRow 
+                    key={salon.id} 
+                    hover
+                    onClick={() => navigate(`/salons/${salon.id}`)}
+                    sx={{
+                      cursor: 'pointer',
+                      '&:hover': {
+                        backgroundColor: 'action.hover',
+                      },
+                    }}
+                  >
                     <TableCell>
                       <Typography variant="subtitle1" fontWeight="medium">
                         {salon.name}
@@ -318,6 +343,13 @@ const SalonsPage: React.FC = () => {
           }
         />
       </TableContainer>
+
+      {/* Formulaire d'ajout de salon */}
+      <AddSalonForm
+        open={addDialogOpen}
+        onClose={handleAddDialogClose}
+        onSuccess={handleAddSuccess}
+      />
     </Box>
   );
 };

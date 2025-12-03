@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 
 const SettingItem = ({ 
   icon, 
@@ -65,9 +66,20 @@ export const SettingsScreen = () => {
       ]
     );
   };
+  const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
+      {/* En-tête personnalisé avec bouton de retour */}
+      <View style={styles.headerContainer}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Paramètres</Text>
+      </View> 
       <ScrollView>
         <Text style={styles.sectionHeader}>Compte</Text>
         <View style={styles.sectionContainer}>
@@ -165,6 +177,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+    paddingTop: 60,
   },
   sectionHeader: {
     fontSize: 14,
@@ -175,6 +188,19 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  backButton: {
+    marginRight: 16,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
   },
   sectionContainer: {
     backgroundColor: '#fff',

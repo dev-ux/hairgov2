@@ -107,10 +107,7 @@ export const BookingsScreen = () => {
         </View>
       )}
       
-      <TouchableOpacity style={styles.newBookingButton}>
-        <Ionicons name="add" size={24} color="#fff" />
-        <Text style={styles.newBookingButtonText}>Nouvelle réservation</Text>
-      </TouchableOpacity>
+      
     </View>
   );
 };

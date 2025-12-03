@@ -17,6 +17,55 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import MapView, { Marker } from 'react-native-maps';
 import { API_URL } from '../config/constants';
 
+// Fonction utilitaire pour formater les URLs d'images
+const formatImageUrl = (url: string) => {
+  try {
+    if (!url) {
+      return null;
+    }
+
+    // Nettoyer l'URL (supprimer les accolades, espaces, guillemets et autres caractères invalides)
+    let cleanUrl = url.replace(/[{}"']/g, '').trim();
+
+    // Si l'URL est déjà une URL complète, la retourner telle quelle
+    if (cleanUrl.startsWith('http')) {
+      return cleanUrl;
+    }
+
+    // Si l'URL commence par /uploads/photos/, la nettoyer et construire l'URL complète
+    if (cleanUrl.startsWith('/uploads/photos/')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      return `${baseUrl}${cleanUrl}`;
+    }
+
+    // Si l'URL commence par /uploads/, la nettoyer et construire l'URL complète
+    if (cleanUrl.startsWith('/uploads/')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      return `${baseUrl}${cleanUrl}`;
+    }
+
+    // Si l'URL commence par photos-, construire l'URL complète
+    if (cleanUrl.startsWith('photos-')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      return `${baseUrl}/uploads/photos/${cleanUrl}`;
+    }
+
+    // Si l'URL ne contient que le nom du fichier sans préfixe
+    if (!cleanUrl.includes('/')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      return `${baseUrl}/uploads/photos/${cleanUrl}`;
+    }
+
+    // Pour tout autre cas, essayer de construire avec /uploads/photos/
+    const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+    const fileName = cleanUrl.split('/').pop();
+    return `${baseUrl}/uploads/photos/${fileName}`;
+  } catch (error) {
+    console.error('Erreur lors du formatage de l\'URL:', error);
+    return null;
+  }
+};
+
 type RootStackParamList = {
     Home: undefined;
     SalonDetail: { salonId: string };
@@ -241,6 +290,38 @@ const SalonDetailScreen = () => {
                                 )}
                             </View>
                         </View>
+                    </View>
+                )}
+
+                {/* Photos du salon */}
+                {salon.photos && salon.photos.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Photos</Text>
+                        <ScrollView 
+                            horizontal 
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.photosContainer}
+                        >
+                            {salon.photos.map((photo, index) => {
+                                const imageUrl = formatImageUrl(photo);
+                                return (
+                                    <View key={index} style={styles.photoItem}>
+                                        <Image
+                                            source={imageUrl ? { uri: imageUrl, cache: 'reload' } : require('../assets/url_de_l_image_1.jpg')}
+                                            style={styles.photoImage}
+                                            resizeMode="cover"
+                                            onError={(e) => {
+                                                console.error('Erreur de chargement de la photo du salon:', {
+                                                    error: e.nativeEvent.error,
+                                                    photo: photo,
+                                                    formattedUrl: imageUrl
+                                                });
+                                            }}
+                                        />
+                                    </View>
+                                );
+                            })}
+                        </ScrollView>
                     </View>
                 )}
 
@@ -503,6 +584,23 @@ const styles = StyleSheet.create({
     retryButtonText: {
         color: '#fff',
         fontWeight: '600',
+    },
+    // Styles pour les photos
+    photosContainer: {
+        paddingLeft: 0,
+        paddingRight: 16,
+    },
+    photoItem: {
+        marginRight: 12,
+        borderRadius: 8,
+        overflow: 'hidden',
+        width: 200,
+        height: 150,
+    },
+    photoImage: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#f5f5f5',
     },
 });
 

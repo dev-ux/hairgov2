@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert } from 'react-native';
+import { useAuth } from '../contexts/AuthContext';
 
 type RootStackParamList = {
   Login: undefined;
@@ -30,6 +31,7 @@ const menuItems: MenuItem[] = [
 
 const ProfileScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { user } = useAuth();
 
     const handleLogout = async () => {
     try {
@@ -80,10 +82,23 @@ const ProfileScreen = () => {
       
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
-          <Ionicons name="person-circle" size={80} color="#6C63FF" />
+          {user?.profile_picture ? (
+            <Image 
+              source={{ uri: user.profile_picture }}
+              style={styles.avatarImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <Image 
+              source={require('../assets/profil.png')}
+              style={styles.avatarImage}
+              resizeMode="cover"
+            />
+          )}
         </View>
-        <Text style={styles.userName}>John Doe</Text>
-        <Text style={styles.userEmail}>john.doe@example.com</Text>
+        <Text style={styles.userName}>
+          {user?.full_name || 'Utilisateur'}
+        </Text>
       </View>
 
       <ScrollView style={styles.menuContainer}>
@@ -135,7 +150,21 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
   },
   avatarContainer: {
-    marginBottom: 10,
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 3,
+    borderColor: '#6C63FF',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 60,
   },
   userName: {
     fontSize: 22,

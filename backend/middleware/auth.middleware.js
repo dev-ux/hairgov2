@@ -104,6 +104,22 @@ const isClient = (req, res, next) => {
 };
 
 /**
+ * Middleware pour vérifier que l'utilisateur est un administrateur
+ */
+const isAdmin = (req, res, next) => {
+  if (req.userType !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      error: {
+        code: 'FORBIDDEN',
+        message: 'Accès réservé aux administrateurs'
+      }
+    });
+  }
+  next();
+};
+
+/**
  * Middleware pour vérifier que l'utilisateur est un coiffeur
  */
 const isHairdresser = (req, res, next) => {
@@ -113,22 +129,6 @@ const isHairdresser = (req, res, next) => {
       error: {
         code: 'FORBIDDEN',
         message: 'Accès réservé aux coiffeurs'
-      }
-    });
-  }
-  next();
-};
-
-/**
- * Middleware pour vérifier que l'utilisateur est un admin
- */
-const isAdmin = (req, res, next) => {
-  if (req.userType !== 'admin') {
-    return res.status(403).json({
-      success: false,
-      error: {
-        code: 'FORBIDDEN',
-        message: 'Accès réservé aux administrateurs'
       }
     });
   }
@@ -167,8 +167,12 @@ const optionalAuth = async (req, res, next) => {
   }
 };
 
+// Alias pour la compatibilité avec le code existant
+const verifyToken = (req, res, next) => authenticate(req, res, next);
+
 module.exports = {
   authenticate,
+  verifyToken,
   isClient,
   isHairdresser,
   isAdmin,

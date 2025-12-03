@@ -8,16 +8,18 @@ import { CircularProgress, Box } from '@mui/material';
 // Layout et pages
 import AdminLayout from './components/layout/AdminLayout';
 import LoginPage from './pages/LoginPage';
+import SalonsPage from './pages/salons/SalonsPage';
+import DetailSalon from './pages/salons/DetailSalon';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // Pages avec chargement paresseux
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
-const SalonsPage = React.lazy(() => import('./pages/salons/SalonsPage'));
 const HairdressersPage = React.lazy(() => import('./pages/hairdressers/HairdressersPage'));
 const BookingsPage = React.lazy(() => import('./pages/bookings/BookingsPage'));
 const UsersPage = React.lazy(() => import('./pages/users/UsersPage'));
 const SettingsPage = React.lazy(() => import('./pages/settings/SettingsPage'));
+const HairstylesPage = React.lazy(() => import('./pages/hairstyles/HairstylesPage'));
 
 // Composant de chargement
 const Loader = () => (
@@ -60,10 +62,12 @@ const ProtectedRoutes = () => (
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/salons" element={<SalonsPage />} />
+          <Route path="/salons/:id" element={<DetailSalon />} />
           <Route path="/hairdressers" element={<HairdressersPage />} />
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/hairstyles" element={<HairstylesPage />} />
         </Routes>
       </Suspense>
     </AdminLayout>
