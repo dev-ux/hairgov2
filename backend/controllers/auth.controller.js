@@ -162,16 +162,25 @@ exports.registerHairdresser = async (req, res) => {
       is_active: isAdminCreation ? is_active : false // Activer le compte si création par admin
     });
 
+    // Convertir la date de naissance du format DD/MM/YYYY vers YYYY-MM-DD si nécessaire
+    let formattedDateOfBirth = date_of_birth;
+    if (date_of_birth && date_of_birth.includes('/')) {
+      const parts = date_of_birth.split('/');
+      if (parts.length === 3) {
+        formattedDateOfBirth = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
+    }
+
     // Créer le profil coiffeur
     const hairdresser = await Hairdresser.create({
       user_id: user.id,
       profession,
       residential_address,
-      date_of_birth,
-      id_card_number,
+      date_of_birth: formattedDateOfBirth && formattedDateOfBirth.trim() !== '' ? formattedDateOfBirth : null,
+      id_card_number: id_card_number && id_card_number.trim() !== '' ? id_card_number : null,
       id_card_photo,
       has_salon: has_salon === 'true' || has_salon === true,
-      education_level,
+      education_level: education_level && education_level.trim() !== '' ? education_level : null,
       registration_status: isAdminCreation && autoApprove ? 'approved' : 'pending',
       is_available: isAdminCreation && autoApprove // Rendre disponible si approuvé par admin
     });
@@ -184,6 +193,28 @@ exports.registerHairdresser = async (req, res) => {
       await hairdresser.addHairstyles(hairstyles);
     }
 
+    // Envoyer OTP (code de vérification) si pas création par admin
+    let otp = null;
+    let token = null;
+    let refreshToken = null;
+
+    if (!isAdminCreation) {
+      otp = await smsService.sendOTP(phone);
+
+      // Générer JWT
+      token = jwt.sign(
+        { userId: user.id, userType: 'hairdresser' },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN }
+      );
+
+      refreshToken = jwt.sign(
+        { userId: user.id },
+        process.env.JWT_REFRESH_SECRET,
+        { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+      );
+    }
+
     const response = {
       success: true,
       message: isAdminCreation 
@@ -193,7 +224,10 @@ exports.registerHairdresser = async (req, res) => {
         hairdresser_id: hairdresser.id,
         user_id: user.id,
         registration_status: hairdresser.registration_status,
-        is_active: user.is_active
+        is_active: user.is_active,
+        ...(token && { token }),
+        ...(refreshToken && { refreshToken }),
+        ...(otp && { otp_sent: true })
       }
     };
 

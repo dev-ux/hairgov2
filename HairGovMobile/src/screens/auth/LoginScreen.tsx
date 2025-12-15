@@ -17,6 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { useAuth } from '../../contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const LoginScreen = () => {
   const [phone, setPhone] = useState('');
@@ -53,7 +54,17 @@ const LoginScreen = () => {
       if (success) {
         console.log('Login réussi, navigation vers l\'accueil...');
         // La navigation est gérée par le contexte d'authentification
-        navigation.replace('Home');
+        const userData = await AsyncStorage.getItem('userData');
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          if (parsedUser.user_type === 'hairdresser') {
+            navigation.replace('BarberHome');
+          } else {
+            navigation.replace('Home');
+          }
+        } else {
+          navigation.replace('Home');
+        }
       } else {
         setLocalError('Échec de la connexion. Veuillez réessayer.');
       }

@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "0421a07f-b47c-4c41-92dd-392f4d0880db"
+      }
+    },
+    "android": {
+      "package": "com.marvinj0r.hairgov2"
+    }
+  }
+}

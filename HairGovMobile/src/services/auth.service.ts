@@ -6,7 +6,7 @@ import { Platform } from 'react-native';
 const getApiUrl = () => {
   if (__DEV__) {
     if (Platform.OS === 'android') {
-      return 'http://10.0.2.2:3001/api/v1'; // Pour émulateur Android
+      return 'http://10.0.2.2:3000/api/v1'; // Pour émulateur Android
     } else {
       return 'http://localhost:3001/api/v1'; // Pour émulateur iOS
     }
@@ -31,9 +31,14 @@ interface RegisterClientData {
 }
 
 interface RegisterHairdresserData extends RegisterClientData {
-  salon_name: string;
-  address: string;
-  // Ajoutez d'autres champs spécifiques aux coiffeurs si nécessaire
+  profession?: string;
+  residential_address?: string;
+  date_of_birth?: string;
+  id_card_number?: string;
+  has_salon?: boolean;
+  education_level?: string;
+  hairstyle_ids?: number[];
+  is_active?: boolean;
 }
 
 export const AuthService = {
@@ -125,20 +130,46 @@ export const AuthService = {
   // Inscription coiffeur
   async registerHairdresser(userData: RegisterHairdresserData) {
     try {
-      const response = await fetch(`${API_URL}/auth/register/hairdresser`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
+      console.log('Envoi de la requête d\'inscription coiffeur à:', `${API_URL}/auth/register/hairdresser`);
+      console.log('Données envoyées:', userData);
+      
+      let response;
+      try {
+        response = await fetch(`${API_URL}/auth/register/hairdresser`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(userData),
+        });
+      } catch (fetchError) {
+        console.error('Erreur lors de l\'appel à l\'API:', fetchError);
+        throw new Error('Impossible de se connecter au serveur. Vérifiez votre connexion Internet.');
+      }
 
-      const data = await response.json();
+      console.log('Réponse du serveur - Status:', response.status);
+      
+      let data;
+      try {
+        data = await response.json();
+        console.log('Réponse du serveur - Données:', data);
+      } catch (jsonError) {
+        console.error('Erreur lors de l\'analyse de la réponse JSON:', jsonError);
+        throw new Error('Réponse du serveur invalide');
+      }
 
       if (!response.ok) {
+        const errorMessage = data?.error?.message || data?.message || `Erreur serveur (${response.status})`;
+        console.error('Erreur lors de l\'inscription du coiffeur:', errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      if (!data.success) {
+        console.error('Échec de l\'inscription du coiffeur:', data.message || 'Raison inconnue');
         throw new Error(data.message || 'Échec de l\'inscription');
       }
 
+      console.log('Inscription coiffeur réussie, données reçues:', data);
       return data;
     } catch (error) {
       console.error('Erreur lors de l\'inscription du coiffeur:', error);

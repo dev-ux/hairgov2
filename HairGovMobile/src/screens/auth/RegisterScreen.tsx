@@ -34,8 +34,12 @@ export const RegisterScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [salonName, setSalonName] = useState('');
-  const [address, setAddress] = useState('');
+  const [profession, setProfession] = useState('');
+  const [residentialAddress, setResidentialAddress] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [idCardNumber, setIdCardNumber] = useState('');
+  const [hasSalon, setHasSalon] = useState(false);
+  const [educationLevel, setEducationLevel] = useState('');
   const [localError, setLocalError] = useState('');
 
   // Gérer les erreurs du contexte d'authentification
@@ -57,8 +61,8 @@ export const RegisterScreen = () => {
       return;
     }
 
-    if (userType === 'coiffeur' && (!salonName || !address)) {
-      setLocalError('Veuillez remplir les informations du salon');
+    if (userType === 'coiffeur' && (!profession || !residentialAddress)) {
+      setLocalError('Veuillez remplir les informations professionnelles');
       return;
     }
 
@@ -70,8 +74,12 @@ export const RegisterScreen = () => {
       phone,
       password,
       ...(userType === 'coiffeur' && { 
-        salon_name: salonName,
-        address 
+        profession,
+        residential_address: residentialAddress,
+        date_of_birth: dateOfBirth,
+        id_card_number: idCardNumber,
+        has_salon: hasSalon,
+        education_level: educationLevel
       })
     };
 
@@ -150,22 +158,62 @@ export const RegisterScreen = () => {
           {userType === 'coiffeur' && (
             <>
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Nom du salon *</Text>
+                <Text style={styles.label}>Profession *</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Le nom de votre salon"
-                  value={salonName}
-                  onChangeText={setSalonName}
+                  placeholder="Votre profession (ex: Coiffeur, Barbier)"
+                  value={profession}
+                  onChangeText={setProfession}
                 />
               </View>
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Adresse du salon *</Text>
+                <Text style={styles.label}>Adresse résidentielle *</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Adresse complète du salon"
-                  value={address}
-                  onChangeText={setAddress}
+                  placeholder="Votre adresse résidentielle"
+                  value={residentialAddress}
+                  onChangeText={setResidentialAddress}
                 />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Date de naissance</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="JJ/MM/AAAA"
+                  value={dateOfBirth}
+                  onChangeText={setDateOfBirth}
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Numéro de carte d'identité</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Numéro de votre carte d'identité"
+                  value={idCardNumber}
+                  onChangeText={setIdCardNumber}
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Niveau d'éducation</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Votre niveau d'éducation"
+                  value={educationLevel}
+                  onChangeText={setEducationLevel}
+                />
+              </View>
+              <View style={styles.checkboxContainer}>
+                <TouchableOpacity 
+                  style={styles.checkbox}
+                  onPress={() => setHasSalon(!hasSalon)}
+                >
+                  <Ionicons 
+                    name={hasSalon ? "checkmark-circle" : "ellipse-outline"} 
+                    size={20} 
+                    color="#6C63FF" 
+                  />
+                </TouchableOpacity>
+                <Text style={styles.checkboxLabel}>Je possède un salon</Text>
               </View>
             </>
           )}
@@ -248,12 +296,12 @@ export const RegisterScreen = () => {
             style={[
               styles.registerButton,
               (isLoading || !fullName || !email || !phone || !password || !confirmPassword || 
-                (userType === 'coiffeur' && (!salonName || !address))) && 
+                (userType === 'coiffeur' && (!profession || !residentialAddress))) && 
               styles.disabledButton
             ]}
             onPress={handleRegister}
             disabled={isLoading || !fullName || !email || !phone || !password || !confirmPassword || 
-                     (userType === 'coiffeur' && (!salonName || !address))}
+                     (userType === 'coiffeur' && (!profession || !residentialAddress))}
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" />
@@ -409,5 +457,18 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 8,
     textAlign: 'center',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    paddingHorizontal: 15,
+  },
+  checkbox: {
+    marginRight: 10,
+  },
+  checkboxLabel: {
+    fontSize: 16,
+    color: '#333',
   },
 });

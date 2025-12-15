@@ -31,6 +31,8 @@ import SettingsScreen from '../screens/SettingsScreen';
 import NotificationsScreen from '../screens/NotificationsScreen';
 import NotificationDetailScreen from '../screens/NotificationDetailScreen';
 import AllSalonsScreen from '../screens/AllSalonsScreen';
+import BarberHomePage from '../screens/BarberHomePage';
+import ReservationDetailScreen from '../screens/ReservationDetailScreen';
 
 // Définition des types pour la navigation
 export type RootStackParamList = {
@@ -45,6 +47,8 @@ export type RootStackParamList = {
   VerifyOtp: { email?: string; phone: string; userId?: string };
   ForgotPassword: undefined;
   Main: undefined;
+  BarberHome: undefined;
+  ReservationDetail: { reservation: any };
   // Principal
   Home: undefined;
   // Profil
@@ -418,6 +422,22 @@ export const AppNavigator = () => {
           })}
         />
         
+        <Stack.Screen 
+          name="BarberHome" 
+          component={BarberHomePage}
+          options={{
+            headerShown: false,
+            animation: 'fade'
+          }} 
+        />
+        <Stack.Screen 
+          name="ReservationDetail" 
+          component={ReservationDetailScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right'
+          }} 
+        />
         <Stack.Screen 
           name="AllSalons" 
           component={AllSalonsScreen}
