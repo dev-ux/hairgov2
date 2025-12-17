@@ -13,16 +13,21 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
+import { createSalon, getMySalon, updateSalon, Salon as SalonType, CreateSalonData } from '../services/salon.service';
 
 const { width } = Dimensions.get('window');
 
 interface Salon {
   id: string;
+  hairdresser_id: string;
   name: string;
   address: string;
+  latitude: number;
+  longitude: number;
   photos: string[];
   is_validated: boolean;
   created_at: string;
+  updated_at: string;
 }
 
 export default function BarberSalonTab() {
@@ -30,9 +35,17 @@ export default function BarberSalonTab() {
   const [salon, setSalon] = useState<Salon | null>(null);
   const [loading, setLoading] = useState(true);
   const [editingMode, setEditingMode] = useState(false);
-  const [formData, setFormData] = useState({
+  const [creatingMode, setCreatingMode] = useState(false);
+  const [formData, setFormData] = useState<CreateSalonData>({
     name: '',
     address: '',
+    latitude: 5.3600, // Abidjan coordinates
+    longitude: -3.9500,
+    description: '',
+    phone: '',
+    email: '',
+    business_hours: '',
+    photos: []
   });
 
   useEffect(() => {
@@ -42,57 +55,117 @@ export default function BarberSalonTab() {
   const fetchSalonInfo = async () => {
     try {
       setLoading(true);
-      // TODO: Remplacer par l'appel API réel
-      // const response = await api.get('/salons/my-salon');
+      const response = await getMySalon();
       
-      // Données mockées pour l'instant
-      const mockSalon: Salon = {
-        id: '1',
-        name: 'Salon de Coiffure Premium',
-        address: '123 Avenue des Champs-Élysées, Paris',
-        photos: [
-          'https://images.unsplash.com/photo-1560066986-280031964726?w=800',
-          'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=800',
-        ],
-        is_validated: true,
-        created_at: '2025-01-01T00:00:00Z',
-      };
-      
-      setSalon(mockSalon);
-      setFormData({
-        name: mockSalon.name,
-        address: mockSalon.address,
-      });
-    } catch (error) {
+      if (response.success && response.data) {
+        setSalon(response.data);
+        setFormData({
+          name: response.data.name,
+          address: response.data.address,
+          latitude: response.data.latitude,
+          longitude: response.data.longitude,
+          description: '',
+          phone: '',
+          email: '',
+          business_hours: '',
+          photos: response.data.photos || []
+        });
+      } else {
+        // No salon exists, show creation mode
+        setSalon(null);
+      }
+    } catch (error: any) {
       console.error('Error fetching salon info:', error);
-      Alert.alert('Erreur', 'Impossible de charger les informations du salon');
+      // If 404 or similar error, it means no salon exists
+      if (error.response?.status === 404) {
+        setSalon(null);
+      } else {
+        Alert.alert('Erreur', 'Impossible de charger les informations du salon');
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleSave = async () => {
+    // Validation
+    if (!formData.name.trim()) {
+      Alert.alert('Erreur', 'Le nom du salon est obligatoire');
+      return;
+    }
+    
+    if (!formData.address.trim()) {
+      Alert.alert('Erreur', 'L\'adresse du salon est obligatoire');
+      return;
+    }
+    
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      Alert.alert('Erreur', 'Veuillez entrer une adresse email valide');
+      return;
+    }
+
     try {
-      // TODO: Remplacer par l'appel API réel
-      // await api.put('/salons/my-salon', formData);
-      
-      setSalon(prev => prev ? { ...prev, ...formData } : null);
-      setEditingMode(false);
-      Alert.alert('Succès', 'Informations du salon mises à jour');
-    } catch (error) {
-      console.error('Error updating salon:', error);
-      Alert.alert('Erreur', 'Impossible de mettre à jour les informations');
+      if (creatingMode) {
+        // Create new salon
+        const response = await createSalon(formData);
+        if (response.success) {
+          setSalon(response.data);
+          setCreatingMode(false);
+          Alert.alert('Succès', 'Votre salon a été créé avec succès');
+        } else {
+          Alert.alert('Erreur', response.message || 'Impossible de créer le salon');
+        }
+      } else if (salon) {
+        // Update existing salon
+        const response = await updateSalon(salon.id, formData);
+        if (response.success) {
+          setSalon(response.data);
+          setEditingMode(false);
+          Alert.alert('Succès', 'Informations du salon mises à jour');
+        } else {
+          Alert.alert('Erreur', response.message || 'Impossible de mettre à jour les informations');
+        }
+      }
+    } catch (error: any) {
+      console.error('Error saving salon:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Impossible de sauvegarder le salon';
+      Alert.alert('Erreur', errorMessage);
     }
   };
 
   const handleCancel = () => {
-    if (salon) {
+    if (creatingMode) {
+      setCreatingMode(false);
+      // Reset form data
+      setFormData({
+        name: '',
+        address: '',
+        latitude: 5.3600,
+        longitude: -3.9500,
+        description: '',
+        phone: '',
+        email: '',
+        business_hours: '',
+        photos: []
+      });
+    } else if (salon) {
       setFormData({
         name: salon.name,
         address: salon.address,
+        latitude: salon.latitude,
+        longitude: salon.longitude,
+        description: '',
+        phone: '',
+        email: '',
+        business_hours: '',
+        photos: salon.photos || []
       });
+      setEditingMode(false);
     }
-    setEditingMode(false);
+  };
+
+  const handleCreateSalon = () => {
+    setCreatingMode(true);
   };
 
   if (loading) {
@@ -105,7 +178,7 @@ export default function BarberSalonTab() {
     );
   }
 
-  if (!salon) {
+  if (!salon && !creatingMode) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.noSalonContainer}>
@@ -114,10 +187,108 @@ export default function BarberSalonTab() {
           <Text style={styles.noSalonText}>
             Vous n'avez pas encore enregistré de salon
           </Text>
-          <TouchableOpacity style={styles.createButton}>
+          <TouchableOpacity style={styles.createButton} onPress={handleCreateSalon}>
             <Text style={styles.createButtonText}>Créer mon salon</Text>
           </TouchableOpacity>
         </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (creatingMode) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Créer un salon</Text>
+          </View>
+
+          {/* Formulaire de création */}
+          <View style={styles.infoSection}>
+            <Text style={styles.sectionTitle}>Informations du salon</Text>
+            
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Nom du salon *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.name}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, name: text }))}
+                placeholder="Nom du salon"
+              />
+            </View>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Adresse *</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={formData.address}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, address: text }))}
+                placeholder="Adresse complète du salon"
+                multiline
+                numberOfLines={3}
+              />
+            </View>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Téléphone</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.phone}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, phone: text }))}
+                placeholder="Numéro de téléphone"
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.email}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, email: text }))}
+                placeholder="Email du salon"
+                keyboardType="email-address"
+              />
+            </View>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Description</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={formData.description}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, description: text }))}
+                placeholder="Description du salon et services proposés"
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+
+            <View style={styles.infoRow}>
+              <Text style={styles.label}>Heures d'ouverture</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.business_hours}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, business_hours: text }))}
+                placeholder="Ex: Lun-Ven: 9h-18h, Sam: 9h-17h"
+              />
+            </View>
+          </View>
+
+          {/* Actions */}
+          <View style={styles.actionsSection}>
+            <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+              <Text style={styles.cancelButtonText}>Annuler</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.saveButton, !formData.name || !formData.address ? styles.saveButtonDisabled : '']} 
+              onPress={handleSave}
+              disabled={!formData.name || !formData.address}
+            >
+              <Text style={styles.saveButtonText}>Créer</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -127,8 +298,10 @@ export default function BarberSalonTab() {
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Mon Salon</Text>
-          {!editingMode && (
+          <Text style={styles.headerTitle}>
+            {creatingMode ? 'Créer un salon' : salon ? 'Mon Salon' : 'Mon Salon'}
+          </Text>
+          {!editingMode && !creatingMode && salon && (
             <TouchableOpacity
               style={styles.editButton}
               onPress={() => setEditingMode(true)}
@@ -139,17 +312,19 @@ export default function BarberSalonTab() {
         </View>
 
         {/* Photos du salon */}
-        <View style={styles.photosSection}>
-          <Text style={styles.sectionTitle}>Photos du salon</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {salon.photos.map((photo, index) => (
-              <Image key={index} source={{ uri: photo }} style={styles.photo} />
-            ))}
-            <TouchableOpacity style={styles.addPhotoButton}>
-              <Ionicons name="add" size={24} color="#6C63FF" />
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
+        {salon && (
+          <View style={styles.photosSection}>
+            <Text style={styles.sectionTitle}>Photos du salon</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {salon.photos.map((photo, index) => (
+                <Image key={index} source={{ uri: photo }} style={styles.photo} />
+              ))}
+              <TouchableOpacity style={styles.addPhotoButton}>
+                <Ionicons name="add" size={24} color="#6C63FF" />
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        )}
 
         {/* Informations du salon */}
         <View style={styles.infoSection}>
@@ -157,7 +332,7 @@ export default function BarberSalonTab() {
           
           <View style={styles.infoRow}>
             <Text style={styles.label}>Nom du salon</Text>
-            {editingMode ? (
+            {editingMode && salon ? (
               <TextInput
                 style={styles.input}
                 value={formData.name}
@@ -165,13 +340,13 @@ export default function BarberSalonTab() {
                 placeholder="Nom du salon"
               />
             ) : (
-              <Text style={styles.value}>{salon.name}</Text>
+              <Text style={styles.value}>{salon?.name}</Text>
             )}
           </View>
 
           <View style={styles.infoRow}>
             <Text style={styles.label}>Adresse</Text>
-            {editingMode ? (
+            {editingMode && salon ? (
               <TextInput
                 style={[styles.input, styles.textArea]}
                 value={formData.address}
@@ -181,26 +356,28 @@ export default function BarberSalonTab() {
                 numberOfLines={3}
               />
             ) : (
-              <Text style={styles.value}>{salon.address}</Text>
+              <Text style={styles.value}>{salon?.address}</Text>
             )}
           </View>
 
           <View style={styles.infoRow}>
             <Text style={styles.label}>Statut de validation</Text>
-            <View style={[
-              styles.statusBadge,
-              { backgroundColor: salon.is_validated ? '#4CAF50' : '#FF9800' }
-            ]}>
-              <Text style={styles.statusText}>
-                {salon.is_validated ? 'Validé' : 'En attente'}
-              </Text>
-            </View>
+            {salon && (
+              <View style={[
+                styles.statusBadge,
+                { backgroundColor: salon.is_validated ? '#4CAF50' : '#FF9800' }
+              ]}>
+                <Text style={styles.statusText}>
+                  {salon.is_validated ? 'Validé' : 'En attente'}
+                </Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.infoRow}>
             <Text style={styles.label}>Date de création</Text>
             <Text style={styles.value}>
-              {new Date(salon.created_at).toLocaleDateString('fr-FR')}
+              {salon ? new Date(salon.created_at).toLocaleDateString('fr-FR') : ''}
             </Text>
           </View>
         </View>
@@ -391,5 +568,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#ccc',
   },
 });
