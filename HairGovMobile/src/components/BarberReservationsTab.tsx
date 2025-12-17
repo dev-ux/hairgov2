@@ -16,28 +16,9 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../contexts/AuthContext';
+import { getHairdresserBookings, Reservation } from '../services/hairdresser.service';
 
 const { width } = Dimensions.get('window');
-
-interface Reservation {
-  id: string;
-  client_name: string;
-  client_phone: string;
-  client_avatar?: string;
-  service_type: 'home' | 'salon';
-  service_fee: number;
-  client_price: number;
-  status: 'pending' | 'confirmed' | 'in_progress' | 'completed' | 'cancelled';
-  location_address: string;
-  estimated_duration: number;
-  scheduled_time: string;
-  created_at: string;
-  hairstyle?: {
-    name: string;
-    description?: string;
-    category?: string;
-  };
-}
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'BarberHome'>;
 
@@ -47,7 +28,6 @@ export default function BarberReservationsTab() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed' | 'cancelled'>('all');
 
   useEffect(() => {
     fetchReservations();
@@ -56,74 +36,20 @@ export default function BarberReservationsTab() {
   const fetchReservations = async () => {
     try {
       setLoading(true);
-      // TODO: Remplacer par l'appel API réel
-      // const response = await api.get('/bookings/hairdresser/history');
+      const response = await getHairdresserBookings();
       
-      // Données mockées pour l'instant
-      const mockReservations: Reservation[] = [
-        {
-          id: '1',
-          client_name: 'Marie Dupont',
-          client_phone: '+33612345678',
-          client_avatar: 'https://randomuser.me/api/portraits/women/1.jpg',
-          service_type: 'home',
-          service_fee: 25,
-          client_price: 45,
-          status: 'pending',
-          location_address: '15 Rue de la Paix, Paris',
-          estimated_duration: 30,
-          scheduled_time: '2025-12-17T14:00:00Z',
-          created_at: '2025-12-16T10:00:00Z',
-          hairstyle: {
-            name: 'Coupe femme',
-            description: 'Coupe et brushing',
-            category: 'Femme',
-          },
-        },
-        {
-          id: '2',
-          client_name: 'Jean Martin',
-          client_phone: '+33623456789',
-          client_avatar: 'https://randomuser.me/api/portraits/men/2.jpg',
-          service_type: 'salon',
-          service_fee: 0,
-          client_price: 30,
-          status: 'confirmed',
-          location_address: '123 Avenue des Champs-Élysées, Paris',
-          estimated_duration: 45,
-          scheduled_time: '2025-12-17T16:00:00Z',
-          created_at: '2025-12-15T15:00:00Z',
-          hairstyle: {
-            name: 'Coupe homme',
-            description: 'Coupe simple',
-            category: 'Homme',
-          },
-        },
-        {
-          id: '3',
-          client_name: 'Sophie Bernard',
-          client_phone: '+33634567890',
-          client_avatar: 'https://randomuser.me/api/portraits/women/3.jpg',
-          service_type: 'home',
-          service_fee: 25,
-          client_price: 55,
-          status: 'completed',
-          location_address: '8 Boulevard Saint-Germain, Paris',
-          estimated_duration: 60,
-          scheduled_time: '2025-12-16T10:00:00Z',
-          created_at: '2025-12-14T09:00:00Z',
-          hairstyle: {
-            name: 'Coloration',
-            description: 'Coloration complète',
-            category: 'Coloration',
-          },
-        },
-      ];
-      
-      setReservations(mockReservations);
-    } catch (error) {
+      if (response.success && response.data) {
+        setReservations(response.data.bookings || []);
+      } else {
+        console.error('Error in response:', response.message);
+        setReservations([]);
+        Alert.alert('Erreur', response.message || 'Impossible de charger les réservations');
+      }
+    } catch (error: any) {
       console.error('Error fetching reservations:', error);
-      Alert.alert('Erreur', 'Impossible de charger les réservations');
+      const errorMessage = error.response?.data?.message || error.message || 'Impossible de charger les réservations';
+      setReservations([]);
+      Alert.alert('Erreur', errorMessage);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -198,24 +124,13 @@ export default function BarberReservationsTab() {
     navigation.navigate('ReservationDetail', { reservation: reservationDetail });
   };
 
-  const filteredReservations = reservations.filter(reservation => {
-    if (selectedFilter === 'all') return true;
-    return reservation.status === selectedFilter;
-  });
 
-  const filters = [
-    { key: 'all' as const, label: 'Toutes' },
-    { key: 'pending' as const, label: 'En attente' },
-    { key: 'confirmed' as const, label: 'Confirmées' },
-    { key: 'completed' as const, label: 'Terminées' },
-    { key: 'cancelled' as const, label: 'Annulées' },
-  ];
 
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Chargement...</Text>
+          <Text style={styles.loadingText}>Chargement de vos réservations...</Text>
         </View>
       </SafeAreaView>
     );
@@ -225,36 +140,8 @@ export default function BarberReservationsTab() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Mes Réservations</Text>
-        <TouchableOpacity style={styles.filterButton}>
-          <Ionicons name="funnel-outline" size={20} color="#6C63FF" />
-        </TouchableOpacity>
       </View>
 
-      {/* Filtres */}
-      <ScrollView 
-        horizontal 
-        showsHorizontalScrollIndicator={false}
-        style={styles.filtersContainer}
-        contentContainerStyle={styles.filtersContent}
-      >
-        {filters.map((filter) => (
-          <TouchableOpacity
-            key={filter.key}
-            style={[
-              styles.filterChip,
-              selectedFilter === filter.key && styles.filterChipActive
-            ]}
-            onPress={() => setSelectedFilter(filter.key)}
-          >
-            <Text style={[
-              styles.filterChipText,
-              selectedFilter === filter.key && styles.filterChipTextActive
-            ]}>
-              {filter.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
 
       {/* Liste des réservations */}
       <ScrollView
@@ -264,19 +151,19 @@ export default function BarberReservationsTab() {
         }
         showsVerticalScrollIndicator={false}
       >
-        {filteredReservations.length === 0 ? (
+        {!reservations || reservations.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="calendar-outline" size={64} color="#ccc" />
             <Text style={styles.emptyTitle}>Aucune réservation</Text>
             <Text style={styles.emptyText}>
-              {selectedFilter === 'all' 
-                ? "Vous n'avez aucune réservation pour le moment"
-                : `Aucune réservation ${getStatusText(selectedFilter)}`
-              }
+              Vous n'avez aucune réservation pour le moment.
+            </Text>
+            <Text style={styles.emptySubText}>
+              Les nouvelles réservations apparaîtront ici dès que les clients prendront rendez-vous avec vous.
             </Text>
           </View>
         ) : (
-          filteredReservations.map((reservation) => (
+          (reservations || []).map((reservation) => (
             <TouchableOpacity
               key={reservation.id}
               style={styles.reservationCard}
@@ -413,6 +300,14 @@ const styles = StyleSheet.create({
     color: '#666',
     textAlign: 'center',
     paddingHorizontal: 40,
+    marginBottom: 8,
+  },
+  emptySubText: {
+    fontSize: 13,
+    color: '#999',
+    textAlign: 'center',
+    paddingHorizontal: 40,
+    lineHeight: 18,
   },
   reservationCard: {
     backgroundColor: '#fff',
