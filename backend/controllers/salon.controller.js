@@ -126,7 +126,7 @@ exports.createSalon = async (req, res) => {
     // Vérifier si le coiffeur existe et est approuvé
     const hairdresser = await db.Hairdresser.findOne({
       where: { 
-        id: req.body.hairdresser_id || req.user.id,  // Prend hairdresser_id du body ou user.id du token
+        user_id: req.user.id,  // Chercher par user_id au lieu de l'ID direct
         registration_status: 'approved'
       },
       transaction
@@ -364,11 +364,31 @@ exports.updateSalon = async (req, res) => {
     const { id } = req.params;
     const updateData = { ...req.body };
 
+    // Vérifier si le coiffeur existe et est approuvé
+    const hairdresser = await db.Hairdresser.findOne({
+      where: { 
+        user_id: req.user.id,
+        registration_status: 'approved'
+      },
+      transaction
+    });
+
+    if (!hairdresser) {
+      await transaction.rollback();
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Coiffeur non trouvé ou non approuvé'
+        }
+      });
+    }
+
     // Vérifier si le salon existe et appartient au coiffeur
     const salon = await db.Salon.findOne({
       where: { 
         id,
-        hairdresser_id: req.user.id
+        hairdresser_id: hairdresser.id  // Utiliser l'ID du hairdresser trouvé
       },
       transaction
     });
@@ -423,11 +443,31 @@ exports.deleteSalon = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // Vérifier si le coiffeur existe et est approuvé
+    const hairdresser = await db.Hairdresser.findOne({
+      where: { 
+        user_id: req.user.id,
+        registration_status: 'approved'
+      },
+      transaction
+    });
+
+    if (!hairdresser) {
+      await transaction.rollback();
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Coiffeur non trouvé ou non approuvé'
+        }
+      });
+    }
+
     // Vérifier si le salon existe et appartient au coiffeur
     const salon = await db.Salon.findOne({
       where: { 
         id,
-        hairdresser_id: req.user.id
+        hairdresser_id: hairdresser.id  // Utiliser l'ID du hairdresser trouvé
       },
       transaction
     });
@@ -670,6 +710,58 @@ exports.validateSalon = async (req, res) => {
         code: 'SALON_VALIDATION_ERROR',
         message: `Erreur lors de la ${req.body.is_validated ? 'validation' : 'rejet'} du salon`,
         details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      }
+    });
+  }
+};
+
+/**
+ * Obtenir le salon du coiffeur connecté
+ */
+exports.getMySalon = async (req, res) => {
+  try {
+    const hairdresser = await db.Hairdresser.findOne({
+      where: { user_id: req.user.id },
+      include: [
+        {
+          model: db.Salon,
+          as: 'salon'
+        }
+      ]
+    });
+
+    if (!hairdresser) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'HAIRDRESSER_NOT_FOUND',
+          message: 'Coiffeur non trouvé'
+        }
+      });
+    }
+
+    if (!hairdresser.salon) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'SALON_NOT_FOUND',
+          message: 'Aucun salon trouvé pour ce coiffeur'
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: hairdresser.salon
+    });
+
+  } catch (error) {
+    console.error('Get my salon error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Erreur lors de la récupération du salon'
       }
     });
   }
