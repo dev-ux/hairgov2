@@ -10,13 +10,16 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert
+  Alert,
+  Modal,
+  Button as RNButton
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, RouteProp, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { useAuth } from '../../contexts/AuthContext';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 type UserType = 'client' | 'coiffeur';
 type RegisterScreenRouteProp = RouteProp<RootStackParamList, 'Register'>;
@@ -37,6 +40,8 @@ export const RegisterScreen = () => {
   const [profession, setProfession] = useState('');
   const [residentialAddress, setResidentialAddress] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [idCardNumber, setIdCardNumber] = useState('');
   const [hasSalon, setHasSalon] = useState(false);
   const [educationLevel, setEducationLevel] = useState('');
@@ -50,6 +55,28 @@ export const RegisterScreen = () => {
     }
   }, [authError, clearError]);
 
+  const showDatePickerModal = () => {
+    setShowDatePicker(true);
+  };
+
+  const hideDatePickerModal = () => {
+    setShowDatePicker(false);
+  };
+
+  const handleDateConfirm = () => {
+    const day = selectedDate.getDate().toString().padStart(2, '0');
+    const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+    const year = selectedDate.getFullYear();
+    const formattedDate = `${day}/${month}/${year}`;
+    setDateOfBirth(formattedDate);
+    setShowDatePicker(false);
+  };
+
+  const formatDateDisplay = (dateString: string) => {
+    if (!dateString) return 'JJ/MM/AAAA';
+    return dateString;
+  };
+
   const handleRegister = async () => {
     if (!fullName || !email || !phone || !password || !confirmPassword) {
       setLocalError('Veuillez remplir tous les champs obligatoires');
@@ -61,11 +88,6 @@ export const RegisterScreen = () => {
       return;
     }
 
-    if (userType === 'coiffeur' && (!profession || !residentialAddress)) {
-      setLocalError('Veuillez remplir les informations professionnelles');
-      return;
-    }
-
     setLocalError('');
 
     const userData = {
@@ -74,12 +96,11 @@ export const RegisterScreen = () => {
       phone,
       password,
       ...(userType === 'coiffeur' && { 
-        profession,
-        residential_address: residentialAddress,
+        profession: profession || 'Coiffeur',
+        residential_address: residentialAddress || 'Non spécifié',
         date_of_birth: dateOfBirth,
         id_card_number: idCardNumber,
-        has_salon: hasSalon,
-        education_level: educationLevel
+        has_salon: hasSalon
       })
     };
 
@@ -158,31 +179,19 @@ export const RegisterScreen = () => {
           {userType === 'coiffeur' && (
             <>
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Profession *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Votre profession (ex: Coiffeur, Barbier)"
-                  value={profession}
-                  onChangeText={setProfession}
-                />
-              </View>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Adresse résidentielle *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Votre adresse résidentielle"
-                  value={residentialAddress}
-                  onChangeText={setResidentialAddress}
-                />
-              </View>
-              <View style={styles.inputContainer}>
                 <Text style={styles.label}>Date de naissance</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="JJ/MM/AAAA"
-                  value={dateOfBirth}
-                  onChangeText={setDateOfBirth}
-                />
+                <TouchableOpacity 
+                  style={styles.dateInput}
+                  onPress={showDatePickerModal}
+                >
+                  <Text style={[
+                    styles.dateInputText, 
+                    !dateOfBirth && styles.placeholderText
+                  ]}>
+                    {formatDateDisplay(dateOfBirth)}
+                  </Text>
+                  <Ionicons name="calendar" size={20} color="#666" />
+                </TouchableOpacity>
               </View>
               <View style={styles.inputContainer}>
                 <Text style={styles.label}>Numéro de carte d'identité</Text>
@@ -191,15 +200,6 @@ export const RegisterScreen = () => {
                   placeholder="Numéro de votre carte d'identité"
                   value={idCardNumber}
                   onChangeText={setIdCardNumber}
-                />
-              </View>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Niveau d'éducation</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Votre niveau d'éducation"
-                  value={educationLevel}
-                  onChangeText={setEducationLevel}
                 />
               </View>
               <View style={styles.checkboxContainer}>
@@ -295,13 +295,11 @@ export const RegisterScreen = () => {
           <TouchableOpacity 
             style={[
               styles.registerButton,
-              (isLoading || !fullName || !email || !phone || !password || !confirmPassword || 
-                (userType === 'coiffeur' && (!profession || !residentialAddress))) && 
+              (isLoading || !fullName || !email || !phone || !password || !confirmPassword) && 
               styles.disabledButton
             ]}
             onPress={handleRegister}
-            disabled={isLoading || !fullName || !email || !phone || !password || !confirmPassword || 
-                     (userType === 'coiffeur' && (!profession || !residentialAddress))}
+            disabled={isLoading || !fullName || !email || !phone || !password || !confirmPassword}
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" />
@@ -320,6 +318,26 @@ export const RegisterScreen = () => {
           </View>
         </View>
       </ScrollView>
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          maximumDate={new Date()}
+          onChange={(event, selectedDate) => {
+            setShowDatePicker(false);
+            if (event.type === 'set' && selectedDate) {
+              setSelectedDate(selectedDate);
+              const day = selectedDate.getDate().toString().padStart(2, '0');
+              const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+              const year = selectedDate.getFullYear();
+              const formattedDate = `${day}/${month}/${year}`;
+              setDateOfBirth(formattedDate);
+            }
+          }}
+        />
+      )}
     </KeyboardAvoidingView>
   );
 };
@@ -470,5 +488,24 @@ const styles = StyleSheet.create({
   checkboxLabel: {
     fontSize: 16,
     color: '#333',
+  },
+  dateInput: {
+    flex: 1,
+    height: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    color: '#333',
+    fontSize: 16,
+  },
+  dateInputText: {
+    flex: 1,
+    height: 50,
+    color: '#333',
+    fontSize: 16,
+    paddingTop: 15,
+  },
+  placeholderText: {
+    color: '#999',
   },
 });
