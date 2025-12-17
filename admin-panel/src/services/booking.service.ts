@@ -1,12 +1,25 @@
 import api from './api';
 
+export interface Hairdresser {
+  id: string;
+  full_name: string;
+  profile_photo?: string;
+}
+
+export interface Hairstyle {
+  id: string;
+  name: string;
+  description?: string;
+  estimated_duration: number;
+  category?: string;
+}
+
 export interface Booking {
   id: string;
-  client_id?: string;
   client_name: string;
   client_phone: string;
-  hairdresser_id: string;
-  hairstyle_id: string;
+  hairdresser?: Hairdresser;
+  hairstyle?: Hairstyle;
   service_type: string;
   service_fee: number;
   client_price: number;
@@ -20,9 +33,6 @@ export interface Booking {
   completed_at?: string;
   cancelled_at?: string;
   cancellation_reason?: string;
-  extension_requested: boolean;
-  extension_minutes: number;
-  extension_approved: boolean;
   created_at: string;
   updated_at: string;
 }

@@ -335,6 +335,87 @@ const BookingsPage: React.FC = () => {
                   />
                 </Box>
               </Grid>
+
+              {/* Section Coiffeur */}
+              {selectedBooking.hairdresser && (
+                <>
+                  <Grid item xs={12}>
+                    <Divider sx={{ my: 2 }} />
+                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                      Informations du Coiffeur
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Nom du coiffeur
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <PersonIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                      <Typography variant="body1">
+                        {selectedBooking.hairdresser.full_name || 'Non spécifié'}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Photo de profil
+                    </Typography>
+                    {selectedBooking.hairdresser.profile_photo ? (
+                      <Box
+                        component="img"
+                        src={selectedBooking.hairdresser.profile_photo}
+                        alt="Photo du coiffeur"
+                        sx={{ width: 50, height: 50, borderRadius: '50%', objectFit: 'cover' }}
+                      />
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        Aucune photo
+                      </Typography>
+                    )}
+                  </Grid>
+                </>
+              )}
+
+              {/* Section Service */}
+              {selectedBooking.hairstyle && (
+                <>
+                  <Grid item xs={12}>
+                    <Divider sx={{ my: 2 }} />
+                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                      Détails du Service
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Nom du service
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {selectedBooking.hairstyle.name}
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Catégorie
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedBooking.hairstyle.category || 'Non spécifiée'}
+                    </Typography>
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Description
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedBooking.hairstyle.description || 'Aucune description'}
+                    </Typography>
+                  </Grid>
+                </>
+              )}
               
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
