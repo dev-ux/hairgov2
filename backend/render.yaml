@@ -1,0 +1,24 @@
+services:
+  # Service Backend API
+  - type: web
+    name: hairgo-backend
+    env: node
+    plan: free
+    buildCommand: "npm install && npm run migrate"
+    startCommand: "npm start"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - fromDatabase:
+          name: hairgo-db
+          property: connectionString
+        key: DATABASE_URL
+
+  # Base de données PostgreSQL
+databases:
+  - name: hairgo-db
+    plan: free
+    databaseName: hairgo
+    user: hairgo_user
