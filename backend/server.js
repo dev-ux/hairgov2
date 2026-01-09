@@ -105,6 +105,7 @@ app.get('/', (req, res) => {
   res.status(200).json({
     message: 'HAIRGO API - Service de coiffure à domicile',
     version: '1.0.0',
+    url: 'https://hairgov2.onrender.com',
     endpoints: {
       health: '/health',
       api: '/api/v1',

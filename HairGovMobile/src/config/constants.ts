@@ -1,6 +1,7 @@
 // URL de base de l'API
 // Pour production (déployé sur Render)
-export const API_URL = 'https://hairgov2.onrender.com/api/v1';
+const API_BASE_URL = "https://hairgov2.onrender.com";
+export const API_URL = `${API_BASE_URL}/api/v1`;
 
 // Options alternatives (commentées)
 // export const API_URL = 'http://192.168.0.23:3001/api/v1'; // Pour développement mobile
