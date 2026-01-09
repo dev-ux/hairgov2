@@ -4,7 +4,7 @@ services:
     name: hairgo-backend
     env: node
     plan: free
-    buildCommand: "npm install && npm run migrate"
+    buildCommand: "npm install --production"
     startCommand: "npm start"
     envVars:
       - key: NODE_ENV
