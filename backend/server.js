@@ -24,7 +24,7 @@ const errorHandler = require('./middleware/errorHandler');
 const app = express();
 
 // Trust proxy pour Render
-app.set('trust proxy', 1);
+app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 
 // Configuration CORS
 const allowedOrigins = [
