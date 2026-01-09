@@ -133,18 +133,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Routes API
-app.use('/api/v1/auth', authRoutes);
-app.use('/api/v1/hairdressers', hairdresserRoutes);
-app.use('/api/v1/clients', clientRoutes);
-app.use('/api/v1/bookings', bookingRoutes);
-app.use('/api/v1/admin', adminRoutes);
-app.use('/api/v1/hairstyles', hairstyleRoutes);
-app.use('/api/v1/salons', salonRoutes);
-app.use('/api/v1/notifications', notificationRoutes);
-app.use('/api/v1', uploadRoutes);
-app.use('/api', notificationRoutes);
-
 // Route info pour /api/v1
 app.get('/api/v1', (req, res) => {
   res.status(200).json({ 
@@ -170,6 +158,21 @@ app.use((req, res) => {
     path: req.path 
   });
 });
+
+
+
+// Routes API
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/hairdressers', hairdresserRoutes);
+app.use('/api/v1/clients', clientRoutes);
+app.use('/api/v1/bookings', bookingRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/hairstyles', hairstyleRoutes);
+app.use('/api/v1/salons', salonRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/upload', uploadRoutes);
+
+
 
 // Error handling middleware
 app.use(errorHandler);
