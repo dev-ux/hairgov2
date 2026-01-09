@@ -151,16 +151,6 @@ app.get('/api/v1', (req, res) => {
   });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ 
-    error: 'Route non trouvée',
-    path: req.path 
-  });
-});
-
-
-
 // Routes API
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/hairdressers', hairdresserRoutes);
@@ -172,9 +162,15 @@ app.use('/api/v1/salons', salonRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 
+// 404 handler - doit être à la fin après toutes les routes
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: 'Route non trouvée',
+    path: req.path 
+  });
+});
 
-
-// Error handling middleware
+// Error handling middleware - doit être tout à la fin
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 3000;
