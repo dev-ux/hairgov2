@@ -137,24 +137,6 @@ app.use('/api/', limiter);
 // Logging
 app.use(morgan('combined'));
 
-// Route info pour /api/v1
-app.get('/api/v1', (req, res) => {
-  res.status(200).json({ 
-    message: 'HAIRGO API v1 - Service de coiffure à domicile',
-    version: '1.0.0',
-    endpoints: {
-      auth: '/api/v1/auth',
-      hairdressers: '/api/v1/hairdressers',
-      clients: '/api/v1/clients',
-      bookings: '/api/v1/bookings',
-      hairstyles: '/api/v1/hairstyles',
-      salons: '/api/v1/salons',
-      notifications: '/api/v1/notifications',
-      upload: '/api/v1/upload'
-    }
-  });
-});
-
 // Routes API
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/hairdressers', hairdresserRoutes);
