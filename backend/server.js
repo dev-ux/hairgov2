@@ -27,6 +27,7 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:3000', // Panel admin
   'http://localhost:3001', // Backend (si nécessaire)
+  'https://hairgo-backend.onrender.com', // Backend production
   ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [])
 ];
 
