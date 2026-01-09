@@ -10,6 +10,14 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: JWT_SECRET
+        value: hairgo-super-secret-jwt-key-change-in-production-2024
+      - key: JWT_REFRESH_SECRET
+        value: hairgo-refresh-secret-key-change-in-production-2024
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 30d
       - fromDatabase:
           name: hairgo-db
           property: connectionString
