@@ -23,6 +23,9 @@ const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
 
+// Trust proxy pour Render
+app.set('trust proxy', 1);
+
 // Configuration CORS
 const allowedOrigins = [
   'http://localhost:3000', // Panel admin
@@ -76,13 +79,6 @@ app.use(cors({
 // Gestion des requêtes OPTIONS (pré-vol)
 app.options('*', cors());
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limite de requêtes
-});
-app.use('/api/', limiter);
-
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -104,25 +100,14 @@ app.use('/uploads', (req, res, next) => {
 // Servir les fichiers statiques depuis le dossier racine /public/uploads
 app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
-// Logging
-app.use(morgan('combined'));
-
-// Health check
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    service: 'HAIRGO API'
-  });
-});
-
-// Route racine
+// Route racine (AVANT rate limit)
 app.get('/', (req, res) => {
-  res.status(200).json({ 
+  res.status(200).json({
     message: 'HAIRGO API - Service de coiffure à domicile',
     version: '1.0.0',
     endpoints: {
       health: '/health',
+      api: '/api/v1',
       auth: '/api/v1/auth',
       hairdressers: '/api/v1/hairdressers',
       clients: '/api/v1/clients',
@@ -132,6 +117,25 @@ app.get('/', (req, res) => {
     }
   });
 });
+
+// Health check (AVANT rate limit)
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    service: 'HAIRGO API'
+  });
+});
+
+// Rate limiting (après routes racine)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limite de requêtes
+});
+app.use('/api/', limiter);
+
+// Logging
+app.use(morgan('combined'));
 
 // Route info pour /api/v1
 app.get('/api/v1', (req, res) => {
