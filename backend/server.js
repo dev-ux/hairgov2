@@ -27,7 +27,7 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:3000', // Panel admin
   'http://localhost:3001', // Backend (si nécessaire)
-  'https://hairgo-backend.onrender.com', // Backend production
+  'https://hairgov2.onrender.com', // Backend production
   ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [])
 ];
 
@@ -116,6 +116,23 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Route racine
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    message: 'HAIRGO API - Service de coiffure à domicile',
+    version: '1.0.0',
+    endpoints: {
+      health: '/health',
+      auth: '/api/v1/auth',
+      hairdressers: '/api/v1/hairdressers',
+      clients: '/api/v1/clients',
+      bookings: '/api/v1/bookings',
+      hairstyles: '/api/v1/hairstyles',
+      salons: '/api/v1/salons'
+    }
+  });
+});
+
 // Routes API
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/hairdressers', hairdresserRoutes);
@@ -127,6 +144,24 @@ app.use('/api/v1/salons', salonRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1', uploadRoutes);
 app.use('/api', notificationRoutes);
+
+// Route info pour /api/v1
+app.get('/api/v1', (req, res) => {
+  res.status(200).json({ 
+    message: 'HAIRGO API v1 - Service de coiffure à domicile',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/v1/auth',
+      hairdressers: '/api/v1/hairdressers',
+      clients: '/api/v1/clients',
+      bookings: '/api/v1/bookings',
+      hairstyles: '/api/v1/hairstyles',
+      salons: '/api/v1/salons',
+      notifications: '/api/v1/notifications',
+      upload: '/api/v1/upload'
+    }
+  });
+});
 
 // 404 handler
 app.use((req, res) => {
