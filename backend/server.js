@@ -31,6 +31,8 @@ const allowedOrigins = [
   'http://localhost:3000', // Panel admin
   'http://localhost:3001', // Backend (si nécessaire)
   'https://hairgov2.onrender.com', // Backend production
+  'http://192.168.0.29:3000', // Votre IP locale
+  'http://10.0.2.2:3000', // Emulateur Android
   ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [])
 ];
 
