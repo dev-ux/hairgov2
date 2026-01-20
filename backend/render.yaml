@@ -3,8 +3,8 @@ services:
     name: hairgo-backend
     env: node
     plan: free
-    buildCommand: yarn ci --production
-    startCommand: yarn start
+    buildCommand: npm ci --production
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
