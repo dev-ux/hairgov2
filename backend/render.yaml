@@ -3,15 +3,8 @@ services:
     name: hairgo-backend
     env: node
     plan: free
-    buildCommand: npm install --production
-    preDeployCommand: npm run migrate
-    startCommand: npm start
-    buildFilter:
-      paths:
-        - /**
-        - !node_modules/**
-        - package.json
-        - package-lock.json
+    buildCommand: "npm install --production"
+    startCommand: "npm start"
     envVars:
       - key: NODE_ENV
         value: production
