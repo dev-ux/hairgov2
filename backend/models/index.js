@@ -12,41 +12,28 @@ console.log('DATABASE_URL value:', process.env.DATABASE_URL);
 // UNE SEULE INSTANCE Sequelize selon l'environnement
 let sequelize;
 if (process.env.NODE_ENV === 'production') {
-  const dbUrl = process.env.DATABASE_URL;
-  console.log('Raw DB URL:', dbUrl);
-  
-  // Parser l'URL manuellement pour éviter l'erreur de parsing
-  const match = dbUrl.match(/postgres:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
-  if (match) {
-    sequelize = new Sequelize({
-      username: match[1],
-      password: match[2],
-      host: match[3],
-      port: match[4],
-      database: match[5],
-      dialect: 'postgres',
-      dialectOptions: { 
+  sequelize = new Sequelize(process.env.DATABASE_URL, {
+    dialect: 'postgres',
+    dialectOptions: {
+      ssl: { 
         require: true, 
         rejectUnauthorized: false 
-      },
-      logging: false,
-      pool: {
-        max: 5,
-        min: 0,
-        acquire: 30000,
-        idle: 10000
-      },
-      define: {
-        timestamps: true,
-        underscored: true,
-        createdAt: 'created_at',
-        updatedAt: 'updated_at'
       }
-    });
-  } else {
-    console.error(' Failed to parse DATABASE_URL');
-    process.exit(1);
-  }
+    },
+    logging: false,
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    },
+    define: {
+      timestamps: true,
+      underscored: true,
+      createdAt: 'created_at',
+      updatedAt: 'updated_at'
+    }
+  });
 } else {
   sequelize = new Sequelize({
     dialect: 'sqlite',
@@ -60,6 +47,7 @@ if (process.env.NODE_ENV === 'production') {
     }
   });
 }
+
 
 // Test connexion au démarrage
 sequelize.authenticate()
