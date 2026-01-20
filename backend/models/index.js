@@ -1,27 +1,41 @@
-// models/index.js - VERSION COMPLETE ET CORRIGEE
+// models/index.js - VERSION COMPLETE RENDER ✅
 require('dotenv').config();
 const { Sequelize, DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
 
-
-console.log(' Debug - Environment variables:');
+// 🔍 Debug Environment (visible dans Render logs)
+console.log('🔍 Debug - Environment variables:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
 
-const sequelize = new Sequelize(process.env.DATABASE_URL, {
-  dialect: 'postgres',
-  dialectOptions: {
-    ssl: process.env.NODE_ENV === 'production' ? { 
-      require: true, 
-      rejectUnauthorized: false 
-    } : false
-  },
-  logging: false
-});
-   new Sequelize({
+// ✅ UNE SEULE INSTANCE Sequelize selon l'environnement
+const sequelize = process.env.NODE_ENV === 'production' 
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: 'postgres',
+      dialectOptions: {
+        ssl: { 
+          require: true, 
+          rejectUnauthorized: false 
+        }
+      },
+      logging: false,
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+      },
+      define: {
+        timestamps: true,
+        underscored: true,
+        createdAt: 'created_at',
+        updatedAt: 'updated_at'
+      }
+    })
+  : new Sequelize({
       dialect: 'sqlite',
       storage: './database.sqlite',
-      logging: process.env.NODE_ENV === 'development' ? console.log : false,
+      logging: console.log,
       define: {
         timestamps: true,
         underscored: true,
@@ -29,6 +43,14 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
         updatedAt: 'updated_at'
       }
     });
+
+// ✅ Test connexion au démarrage
+sequelize.authenticate()
+  .then(() => console.log('✅ Database connected successfully'))
+  .catch(err => {
+    console.error('❌ Database connection failed:', err.message);
+    process.exit(1);
+  });
 
 // ==========================================
 // MODELE USER
@@ -555,14 +577,15 @@ Complaint.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Complaint.belongsTo(Booking, { foreignKey: 'booking_id', as: 'booking' });
 User.hasMany(Complaint, { foreignKey: 'user_id', as: 'complaints' });
 
-// Relations pour Salon
 Salon.belongsTo(Hairdresser, { foreignKey: 'hairdresser_id', as: 'hairdresser' });
 Hairdresser.hasOne(Salon, { foreignKey: 'hairdresser_id', as: 'salon' });
 
 // ==========================================
 // EXPORTS
 // ==========================================
-const models = {
+module.exports = {
+  sequelize,      // ✅ L'UNIQUE instance
+  Sequelize,
   User,
   Hairdresser,
   Hairstyle,
@@ -573,11 +596,4 @@ const models = {
   Complaint,
   Salon,
   SalonPhoto
-};
-
-// Exporter les modèles et l'instance sequelize
-module.exports = {
-  sequelize,
-  Sequelize,
-  ...models
 };
