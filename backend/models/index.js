@@ -1,40 +1,77 @@
-// models/index.js - VERSION COMPLETE RENDER ✅
+// models/index.js - VERSION RENDER ✅ DEFINITIVE
 require('dotenv').config();
 const { Sequelize, DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
 
-// Debug Environment (visible dans Render logs)
-console.log(' Debug - Environment variables:');
+// 🔍 Debug Environment
+console.log('🔍 Debug - Environment variables:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
-console.log('DATABASE_URL value:', process.env.DATABASE_URL);
 
-// UNE SEULE INSTANCE Sequelize selon l'environnement
+// ✅ SOLUTION DEFINITIVE : Vérification + bypass Render fake URL
 let sequelize;
+
 if (process.env.NODE_ENV === 'production') {
-  sequelize = new Sequelize(process.env.DATABASE_URL, {
-    dialect: 'postgres',
-    dialectOptions: {
-      ssl: { 
-        require: true, 
-        rejectUnauthorized: false 
+  // Render envoie parfois "hairgo-db connectionString" → on utilise les vraies vars DB
+  const dbUrl = process.env.DATABASE_URL;
+  
+  if (dbUrl && !dbUrl.includes('connectionString') && dbUrl.startsWith('postgres://')) {
+    // URL PostgreSQL valide → Sequelize standard
+    sequelize = new Sequelize(dbUrl, {
+      dialect: 'postgres',
+      dialectOptions: {
+        ssl: { 
+          require: true, 
+          rejectUnauthorized: false 
+        }
+      },
+      logging: false,
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+      },
+      define: {
+        timestamps: true,
+        underscored: true,
+        createdAt: 'created_at',
+        updatedAt: 'updated_at'
       }
-    },
-    logging: false,
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000
-    },
-    define: {
-      timestamps: true,
-      underscored: true,
-      createdAt: 'created_at',
-      updatedAt: 'updated_at'
-    }
-  });
+    });
+  } else {
+    // Render fake URL ou vars manquantes → utilise les vraies vars individuelles
+    console.log('🔧 Using individual DB vars (Render fix)');
+    sequelize = new Sequelize({
+      dialect: 'postgres',
+      host: process.env.DB_HOST || process.env.PGHOST,
+      port: parseInt(process.env.DB_PORT || process.env.PGPORT || '5432'),
+      database: process.env.DB_NAME || process.env.PGDATABASE,
+      username: process.env.DB_USER || process.env.PGUSER,
+      password: process.env.DB_PASSWORD || process.env.PGPASSWORD,
+      dialectOptions: {
+        ssl: { 
+          require: true, 
+          rejectUnauthorized: false 
+        }
+      },
+      logging: false,
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+      },
+      define: {
+        timestamps: true,
+        underscored: true,
+        createdAt: 'created_at',
+        updatedAt: 'updated_at'
+      }
+    });
+  }
 } else {
+  // Local SQLite
   sequelize = new Sequelize({
     dialect: 'sqlite',
     storage: './database.sqlite',
