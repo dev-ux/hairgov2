@@ -3,7 +3,7 @@ services:
     name: hairgo-backend
     env: node
     plan: free
-    buildCommand: npm ci --production
+    buildCommand: npm install --production
     preDeployCommand: npm run migrate
     startCommand: npm start
     buildFilter:
