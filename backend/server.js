@@ -21,6 +21,9 @@ const uploadRoutes = require('./routes/upload.routes');
 // Import middleware d'erreur
 const errorHandler = require('./middleware/errorHandler');
 
+// Importer les modèles pour les créer automatiquement
+const { sequelize } = require('./models');
+
 // Vérifier les variables d'environnement essentielles
 if (!process.env.JWT_SECRET) {
   console.error('❌ JWT_SECRET manquant! Ajoutez cette variable dans Render Environment');
@@ -31,6 +34,13 @@ if (!process.env.JWT_REFRESH_SECRET) {
   console.error('❌ JWT_REFRESH_SECRET manquant! Ajoutez cette variable dans Render Environment');
   process.exit(1);
 }
+
+// Initialiser la base de données au démarrage
+sequelize.sync({ alter: true }).then(() => {
+  console.log('✅ Base de données synchronisée');
+}).catch(err => {
+  console.error('❌ Erreur de synchronisation DB:', err);
+});
 
 const app = express();
 
