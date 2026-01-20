@@ -113,12 +113,17 @@ exports.registerHairdresser = async (req, res) => {
       password,
       profession,
       residential_address,
-      date_of_birth,
-      id_card_number,
-      has_salon,
-      education_level,
-      hairstyle_ids
+      date_of_birth = '',
+      id_card_number = '',
+      has_salon = false,
+      education_level = '',
+      hairstyle_ids = [],
+      is_active = true
     } = req.body;
+
+    // Vérifier si c'est une création par un administrateur
+    const isAdminCreation = req.query.is_admin_creation === 'true';
+    const autoApprove = req.query.auto_approve === 'true';
 
     // Vérifier si le téléphone existe déjà
     const existingUser = await User.findOne({ where: { phone } });
@@ -153,20 +158,31 @@ exports.registerHairdresser = async (req, res) => {
       password_hash: password,
       user_type: 'hairdresser',
       profile_photo,
-      is_verified: false
+      is_verified: isAdminCreation, // Vérification automatique si création par admin
+      is_active: isAdminCreation ? is_active : false // Activer le compte si création par admin
     });
+
+    // Convertir la date de naissance du format DD/MM/YYYY vers YYYY-MM-DD si nécessaire
+    let formattedDateOfBirth = date_of_birth;
+    if (date_of_birth && date_of_birth.includes('/')) {
+      const parts = date_of_birth.split('/');
+      if (parts.length === 3) {
+        formattedDateOfBirth = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+      }
+    }
 
     // Créer le profil coiffeur
     const hairdresser = await Hairdresser.create({
       user_id: user.id,
       profession,
       residential_address,
-      date_of_birth,
-      id_card_number,
+      date_of_birth: formattedDateOfBirth && formattedDateOfBirth.trim() !== '' ? formattedDateOfBirth : null,
+      id_card_number: id_card_number && id_card_number.trim() !== '' ? id_card_number : null,
       id_card_photo,
       has_salon: has_salon === 'true' || has_salon === true,
-      education_level,
-      registration_status: 'pending'
+      education_level: education_level && education_level.trim() !== '' ? education_level : null,
+      registration_status: isAdminCreation && autoApprove ? 'approved' : 'pending',
+      is_available: isAdminCreation && autoApprove // Rendre disponible si approuvé par admin
     });
 
     // Associer les coiffures
@@ -177,15 +193,45 @@ exports.registerHairdresser = async (req, res) => {
       await hairdresser.addHairstyles(hairstyles);
     }
 
-    res.status(201).json({
+    // Envoyer OTP (code de vérification) si pas création par admin
+    let otp = null;
+    let token = null;
+    let refreshToken = null;
+
+    if (!isAdminCreation) {
+      otp = await smsService.sendOTP(phone);
+
+      // Générer JWT
+      token = jwt.sign(
+        { userId: user.id, userType: 'hairdresser' },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN }
+      );
+
+      refreshToken = jwt.sign(
+        { userId: user.id },
+        process.env.JWT_REFRESH_SECRET,
+        { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
+      );
+    }
+
+    const response = {
       success: true,
-      message: 'Demande d\'inscription envoyée. Un administrateur va vérifier votre profil.',
+      message: isAdminCreation 
+        ? 'Le coiffeur a été créé avec succès.' 
+        : 'Demande d\'inscription envoyée. Un administrateur va vérifier votre profil.',
       data: {
         hairdresser_id: hairdresser.id,
         user_id: user.id,
-        registration_status: 'pending'
+        registration_status: hairdresser.registration_status,
+        is_active: user.is_active,
+        ...(token && { token }),
+        ...(refreshToken && { refreshToken }),
+        ...(otp && { otp_sent: true })
       }
-    });
+    };
+
+    res.status(201).json(response);
 
   } catch (error) {
     console.error('Register hairdresser error:', error);

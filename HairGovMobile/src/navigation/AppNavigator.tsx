@@ -9,11 +9,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Onboarding1 } from '../screens/Onboarding1';
 import { Onboarding2 } from '../screens/Onboarding2';
 import { Onboarding3 } from '../screens/Onboarding3';
-import { HomeScreen } from '../screens/HomeScreen';
+import HomeScreen from '../screens/HomeScreen';
+import MapScreen from '../screens/MapScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import { VerifyOtpScreen } from '../screens/auth/VerifyOtpScreen';
 import BookingScreen from '../screens/BookingScreen';
+import CreateBookingScreen from '../screens/CreateBookingScreen';
+import BookingFormScreen from '../screens/BookingFormScreen';
 import BarberListScreen from '../screens/BarberListScreen';
 import BarberDetailScreen from '../screens/BarberDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -25,6 +28,11 @@ import StatisticsScreen from '../screens/StatisticsScreen';
 import BookingsScreen from '../screens/BookingsScreen';
 import PaymentsScreen from '../screens/PaymentsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
+import NotificationDetailScreen from '../screens/NotificationDetailScreen';
+import AllSalonsScreen from '../screens/AllSalonsScreen';
+import BarberHomePage from '../screens/BarberHomePage';
+import ReservationDetailScreen from '../screens/ReservationDetailScreen';
 
 // Définition des types pour la navigation
 export type RootStackParamList = {
@@ -39,12 +47,25 @@ export type RootStackParamList = {
   VerifyOtp: { email?: string; phone: string; userId?: string };
   ForgotPassword: undefined;
   Main: undefined;
+  BarberHome: undefined;
+  ReservationDetail: { reservation: any };
   // Principal
   Home: undefined;
   // Profil
   Profile: undefined;
+  // Autres écrans
+  AllSalons: undefined;
+  // Réservation
+  Booking: {
+    hairdresserId: string;
+    hairdresserName: string;
+  };
+  CreateBooking: undefined;
+  BookingForm: { salon: { id: string; name: string; address: string; latitude: number; longitude: number } };
   // Autres écrans du profil
   Favorites: undefined;
+  Hairstyles: undefined;
+  HairstyleDetail: { hairstyleId: string };
   History: undefined;
   Statistics: undefined;
   Bookings: undefined;
@@ -53,13 +74,11 @@ export type RootStackParamList = {
   // Autres écrans
   Barber: undefined;
   BarberDetail: { barberId: string };
-  Booking: {
-    hairdresserId: string;
-    hairdresserName: string;
-  };
   SalonDetail: { salonId: string };
   Map: undefined;
   Notifications: undefined;
+  NotificationDetail: { notification: any };
+  Notification: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -101,6 +120,16 @@ const MainTabs = () => {
         }} 
       />
       <Tab.Screen 
+        name="Map" 
+        component={MapScreen} 
+        options={{ 
+          title: 'Carte',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="location" size={size} color={color} />
+          )
+        }} 
+      />
+      <Tab.Screen 
         name="Barber" 
         component={BarberListScreen} 
         options={{ 
@@ -125,7 +154,6 @@ const MainTabs = () => {
           hairdresserName: 'Coiffeur', // Nom par défaut
         }}
       />
-      <Tab.Screen name="Map" component={HomeScreen} options={{ title: 'Carte' }} />
     </Tab.Navigator>
   );
 };
@@ -202,6 +230,24 @@ export const AppNavigator = () => {
         <Stack.Screen 
           name="Booking" 
           component={BookingScreen} 
+        />
+        <Stack.Screen 
+          name="CreateBooking" 
+          component={CreateBookingScreen} 
+          options={{
+            title: 'Créer une réservation',
+            headerShown: true,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="BookingForm" 
+          component={BookingFormScreen} 
+          options={{
+            title: 'Formulaire de réservation',
+            headerShown: true,
+            animation: 'slide_from_right',
+          }}
         />
         <Stack.Screen 
           name="SalonDetail" 
@@ -336,6 +382,69 @@ export const AppNavigator = () => {
               </TouchableOpacity>
             ),
           })}
+        />
+        <Stack.Screen 
+          name="Notifications" 
+          component={NotificationsScreen}
+          options={({ navigation }) => ({
+            title: 'Notifications',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        <Stack.Screen 
+          name="NotificationDetail" 
+          component={NotificationDetailScreen}
+          options={({ navigation }) => ({
+            title: 'Détails de la notification',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        
+        <Stack.Screen 
+          name="BarberHome" 
+          component={BarberHomePage}
+          options={{
+            headerShown: false,
+            animation: 'fade'
+          }} 
+        />
+        <Stack.Screen 
+          name="ReservationDetail" 
+          component={ReservationDetailScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right'
+          }} 
+        />
+        <Stack.Screen 
+          name="AllSalons" 
+          component={AllSalonsScreen}
+          options={{
+            title: 'Tous les salons',
+            animation: 'slide_from_right',
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>

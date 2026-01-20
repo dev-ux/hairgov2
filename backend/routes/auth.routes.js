@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/auth.controller');
-const { validateRegister, validateLogin, validateAdminRegister } = require('../validators/auth.validator');
+const { validateRegister, validateLogin, validateAdminRegister, validateHairdresserRegister } = require('../validators/auth.validator');
 const { authenticate } = require('../middleware/auth.middleware');
 
 /**
@@ -17,7 +17,7 @@ router.post('/register/client', validateRegister, authController.registerClient)
  * @desc    Demande d'inscription coiffeur (nécessite validation admin)
  * @access  Public
  */
-router.post('/register/hairdresser', validateRegister, authController.registerHairdresser);
+router.post('/register/hairdresser', validateHairdresserRegister, authController.registerHairdresser);
 
 /**
  * @route   POST /api/v1/auth/login

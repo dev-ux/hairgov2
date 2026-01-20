@@ -10,13 +10,16 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert
+  Alert,
+  Modal,
+  Button as RNButton
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, RouteProp, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { useAuth } from '../../contexts/AuthContext';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 type UserType = 'client' | 'coiffeur';
 type RegisterScreenRouteProp = RouteProp<RootStackParamList, 'Register'>;
@@ -34,8 +37,14 @@ export const RegisterScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [salonName, setSalonName] = useState('');
-  const [address, setAddress] = useState('');
+  const [profession, setProfession] = useState('');
+  const [residentialAddress, setResidentialAddress] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [idCardNumber, setIdCardNumber] = useState('');
+  const [hasSalon, setHasSalon] = useState(false);
+  const [educationLevel, setEducationLevel] = useState('');
   const [localError, setLocalError] = useState('');
 
   // Gérer les erreurs du contexte d'authentification
@@ -45,6 +54,28 @@ export const RegisterScreen = () => {
       clearError();
     }
   }, [authError, clearError]);
+
+  const showDatePickerModal = () => {
+    setShowDatePicker(true);
+  };
+
+  const hideDatePickerModal = () => {
+    setShowDatePicker(false);
+  };
+
+  const handleDateConfirm = () => {
+    const day = selectedDate.getDate().toString().padStart(2, '0');
+    const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+    const year = selectedDate.getFullYear();
+    const formattedDate = `${day}/${month}/${year}`;
+    setDateOfBirth(formattedDate);
+    setShowDatePicker(false);
+  };
+
+  const formatDateDisplay = (dateString: string) => {
+    if (!dateString) return 'JJ/MM/AAAA';
+    return dateString;
+  };
 
   const handleRegister = async () => {
     if (!fullName || !email || !phone || !password || !confirmPassword) {
@@ -57,11 +88,6 @@ export const RegisterScreen = () => {
       return;
     }
 
-    if (userType === 'coiffeur' && (!salonName || !address)) {
-      setLocalError('Veuillez remplir les informations du salon');
-      return;
-    }
-
     setLocalError('');
 
     const userData = {
@@ -70,8 +96,11 @@ export const RegisterScreen = () => {
       phone,
       password,
       ...(userType === 'coiffeur' && { 
-        salon_name: salonName,
-        address 
+        profession: profession || 'Coiffeur',
+        residential_address: residentialAddress || 'Non spécifié',
+        date_of_birth: dateOfBirth,
+        id_card_number: idCardNumber,
+        has_salon: hasSalon
       })
     };
 
@@ -150,22 +179,41 @@ export const RegisterScreen = () => {
           {userType === 'coiffeur' && (
             <>
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Nom du salon *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Le nom de votre salon"
-                  value={salonName}
-                  onChangeText={setSalonName}
-                />
+                <Text style={styles.label}>Date de naissance</Text>
+                <TouchableOpacity 
+                  style={styles.dateInput}
+                  onPress={showDatePickerModal}
+                >
+                  <Text style={[
+                    styles.dateInputText, 
+                    !dateOfBirth && styles.placeholderText
+                  ]}>
+                    {formatDateDisplay(dateOfBirth)}
+                  </Text>
+                  <Ionicons name="calendar" size={20} color="#666" />
+                </TouchableOpacity>
               </View>
               <View style={styles.inputContainer}>
-                <Text style={styles.label}>Adresse du salon *</Text>
+                <Text style={styles.label}>Numéro de carte d'identité</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Adresse complète du salon"
-                  value={address}
-                  onChangeText={setAddress}
+                  placeholder="Numéro de votre carte d'identité"
+                  value={idCardNumber}
+                  onChangeText={setIdCardNumber}
                 />
+              </View>
+              <View style={styles.checkboxContainer}>
+                <TouchableOpacity 
+                  style={styles.checkbox}
+                  onPress={() => setHasSalon(!hasSalon)}
+                >
+                  <Ionicons 
+                    name={hasSalon ? "checkmark-circle" : "ellipse-outline"} 
+                    size={20} 
+                    color="#6C63FF" 
+                  />
+                </TouchableOpacity>
+                <Text style={styles.checkboxLabel}>Je possède un salon</Text>
               </View>
             </>
           )}
@@ -247,13 +295,11 @@ export const RegisterScreen = () => {
           <TouchableOpacity 
             style={[
               styles.registerButton,
-              (isLoading || !fullName || !email || !phone || !password || !confirmPassword || 
-                (userType === 'coiffeur' && (!salonName || !address))) && 
+              (isLoading || !fullName || !email || !phone || !password || !confirmPassword) && 
               styles.disabledButton
             ]}
             onPress={handleRegister}
-            disabled={isLoading || !fullName || !email || !phone || !password || !confirmPassword || 
-                     (userType === 'coiffeur' && (!salonName || !address))}
+            disabled={isLoading || !fullName || !email || !phone || !password || !confirmPassword}
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" />
@@ -272,6 +318,26 @@ export const RegisterScreen = () => {
           </View>
         </View>
       </ScrollView>
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          maximumDate={new Date()}
+          onChange={(event, selectedDate) => {
+            setShowDatePicker(false);
+            if (event.type === 'set' && selectedDate) {
+              setSelectedDate(selectedDate);
+              const day = selectedDate.getDate().toString().padStart(2, '0');
+              const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+              const year = selectedDate.getFullYear();
+              const formattedDate = `${day}/${month}/${year}`;
+              setDateOfBirth(formattedDate);
+            }
+          }}
+        />
+      )}
     </KeyboardAvoidingView>
   );
 };
@@ -409,5 +475,37 @@ const styles = StyleSheet.create({
     marginTop: 8,
     marginBottom: 8,
     textAlign: 'center',
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    paddingHorizontal: 15,
+  },
+  checkbox: {
+    marginRight: 10,
+  },
+  checkboxLabel: {
+    fontSize: 16,
+    color: '#333',
+  },
+  dateInput: {
+    flex: 1,
+    height: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    color: '#333',
+    fontSize: 16,
+  },
+  dateInputText: {
+    flex: 1,
+    height: 50,
+    color: '#333',
+    fontSize: 16,
+    paddingTop: 15,
+  },
+  placeholderText: {
+    color: '#999',
   },
 });

@@ -3,29 +3,34 @@ require('dotenv').config();
 const { Sequelize, DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
-  {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    dialect: 'postgres',
-    logging: process.env.NODE_ENV === 'development' ? console.log : false,
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000
-    },
-    define: {
-      timestamps: true,
-      underscored: true,
-      createdAt: 'created_at',
-      updatedAt: 'updated_at'
-    }
-  }
-);
+const sequelize = process.env.NODE_ENV === 'production' 
+  ? new Sequelize(process.env.DATABASE_URL, {
+      dialect: 'postgres',
+      logging: false,
+      pool: {
+        max: 10,
+        min: 2,
+        acquire: 30000,
+        idle: 10000
+      },
+      dialectOptions: {
+        ssl: {
+          require: true,
+          rejectUnauthorized: false
+        }
+      }
+    })
+  : new Sequelize({
+      dialect: 'sqlite',
+      storage: './database.sqlite',
+      logging: process.env.NODE_ENV === 'development' ? console.log : false,
+      define: {
+        timestamps: true,
+        underscored: true,
+        createdAt: 'created_at',
+        updatedAt: 'updated_at'
+      }
+    });
 
 // ==========================================
 // MODELE USER
@@ -360,7 +365,17 @@ const Notification = sequelize.define('Notification', {
     type: DataTypes.STRING(50),
     allowNull: false
   },
-  data: DataTypes.JSONB,
+  data: {
+    type: DataTypes.TEXT,
+    defaultValue: '{}',
+    get() {
+      const value = this.getDataValue('data');
+      return value ? JSON.parse(value) : {};
+    },
+    set(value) {
+      this.setDataValue('data', JSON.stringify(value || {}));
+    }
+  },
   is_read: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
@@ -479,8 +494,15 @@ const Salon = sequelize.define('Salon', {
     allowNull: false
   },
   photos: {
-    type: DataTypes.ARRAY(DataTypes.TEXT),
-    defaultValue: []
+    type: DataTypes.TEXT,
+    defaultValue: '[]',
+    get() {
+      const value = this.getDataValue('photos');
+      return value ? JSON.parse(value) : [];
+    },
+    set(value) {
+      this.setDataValue('photos', JSON.stringify(value || []));
+    }
   },
   is_validated: {
     type: DataTypes.BOOLEAN,
@@ -541,7 +563,7 @@ Hairdresser.hasOne(Salon, { foreignKey: 'hairdresser_id', as: 'salon' });
 
 // ==========================================
 // EXPORTS
-// ==========================================// Initialiser les associations
+// ==========================================
 const models = {
   User,
   Hairdresser,

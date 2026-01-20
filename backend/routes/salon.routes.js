@@ -9,7 +9,8 @@ const {
   searchSalons, 
   validateSalon,
   createSalonAsAdmin,
-  getAllSalons 
+  getAllSalons,
+  getMySalon 
 } = require('../controllers/salon.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 
@@ -62,6 +63,13 @@ router.post('/',
   ]),
   createSalon
 );
+
+/**
+ * @route   GET /api/v1/salons/my-salon
+ * @desc    Obtenir le salon du coiffeur connecté
+ * @access  Private (Coiffeur)
+ */
+router.get('/my-salon', authenticate, getMySalon);
 
 /**
  * @route   GET /api/v1/salons/search

@@ -4,8 +4,12 @@ const { authenticate, isAdmin } = require('../middleware/auth.middleware');
 const { getUsersList } = require('../controllers/admin.controller');
 const { getDashboardStats } = require('../controllers/dashboard.controller');
 const { createSalon } = require('../controllers/admin/salon.admin.controller');
-const { validateHairdresser, getHairdressers: getHairdressersAdmin } = require('../controllers/admin/hairdresser.admin.controller');
-const { upload } = require('../middleware/upload.middleware');
+const { 
+  validateHairdresser, 
+  getHairdressers: getHairdressersAdmin,
+  toggleHairdresserStatus 
+} = require('../controllers/admin/hairdresser.admin.controller');
+const { uploadFields, handleUploadErrors } = require('../middleware/upload.middleware');
 const db = require('../models');
 const { Op } = require('sequelize');
 
@@ -41,6 +45,14 @@ router.get('/hairdressers', getHairdressersAdmin);
  */
 router.patch('/hairdressers/:id/validate', validateHairdresser);
 router.put('/hairdressers/:id/approve', validateHairdresser);
+
+/**
+ * @route   PATCH /admin/hairdressers/:id/status
+ * @desc    Activer ou désactiver un coiffeur (Admin uniquement)
+ * @body    {boolean} is_active - Statut d'activation (true/false)
+ * @access  Private/Admin
+ */
+router.patch('/hairdressers/:id/status', toggleHairdresserStatus);
 
 /**
  * @route   GET /api/v1/admin/dashboard/stats
@@ -134,10 +146,7 @@ router.get('/salons', async (req, res) => {
  */
 router.post(
   '/salons',
-  upload.fields([
-    { name: 'photos', maxCount: 10 },
-    { name: 'logo', maxCount: 1 }
-  ]),
+  uploadFields,
   createSalon
 );
 

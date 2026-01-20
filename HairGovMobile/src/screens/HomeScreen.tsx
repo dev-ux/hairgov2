@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,13 +12,82 @@ import {
   Dimensions,
   ActivityIndicator
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 import { API_URL } from '../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { homeScreenStyles } from './styles/HomeScreen.styles';
 // Import de l'image par défaut
 const defaultSalonImage = require('../assets/url_de_l_image_1.jpg');
 
-type Salon = {
+// Fonction utilitaire pour formater les URLs d'images
+const formatImageUrl = (url: string) => {
+  try {
+    if (!url) {
+      console.log('Aucune URL fournie');
+      return null;
+    }
+
+    console.log('URL originale reçue:', url);
+
+    // Nettoyer l'URL (supprimer les accolades, espaces, guillemets et autres caractères invalides)
+    let cleanUrl = url.replace(/[{}"']/g, '').trim();
+    
+    // Si l'URL commence par /uploads/, la nettoyer et construire l'URL complète
+    if (cleanUrl.startsWith('/uploads/photos/')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      const fullUrl = `${baseUrl}${cleanUrl}`;
+      console.log('URL uploads/photos détectée, URL finale:', fullUrl);
+      return fullUrl;
+    }
+
+    // Si l'URL commence par /uploads/, la nettoyer et construire l'URL complète
+    if (cleanUrl.startsWith('/uploads/')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      const fullUrl = `${baseUrl}${cleanUrl}`;
+      console.log('URL uploads détectée, URL finale:', fullUrl);
+      return fullUrl;
+    }
+
+    // Si l'URL commence par photos-, construire l'URL complète
+    if (cleanUrl.startsWith('photos-')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      const fullUrl = `${baseUrl}/uploads/photos/${cleanUrl}`;
+      console.log('Nom de fichier photos- détecté, URL finale:', fullUrl);
+      return fullUrl;
+    }
+
+    // Si l'URL ne contient que le nom du fichier sans préfixe
+    if (!cleanUrl.includes('/')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      const fullUrl = `${baseUrl}/uploads/photos/${cleanUrl}`;
+      console.log('Nom de fichier simple détecté, URL finale:', fullUrl);
+      return fullUrl;
+    }
+
+    // Pour tout autre cas, essayer de construire avec /uploads/photos/
+    const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+    const fileName = cleanUrl.split('/').pop();
+    const fullUrl = `${baseUrl}/uploads/photos/${fileName}`;
+    console.log('Cas par défaut, URL finale:', fullUrl);
+    return fullUrl;
+  } catch (error) {
+    console.error('Erreur lors du formatage de l\'URL:', error);
+    return null;
+  }
+};
+
+export interface Hairstyle {
+  id: string;
+  name: string;
+  photo: string;
+  estimated_duration: number;
+  price: number;
+}
+
+export interface Salon {
   id: string;
   name: string;
   address: string;
@@ -31,7 +100,7 @@ type Salon = {
   };
 };
 
-
+// Dimensions de l'écran
 const { width } = Dimensions.get('window');
 
 interface UserData {
@@ -39,13 +108,65 @@ interface UserData {
   // Ajoutez d'autres propriétés utilisateur si nécessaire
 }
 
-export const HomeScreen = ({ navigation }: any) => {
+export default function HomeScreen() {
+  type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+  const navigation = useNavigation<NavigationProp>();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [salons, setSalons] = useState<Salon[] | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [hairstyles, setHairstyles] = useState<Hairstyle[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingHairstyles, setLoadingHairstyles] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [currentPromoIndex, setCurrentPromoIndex] = useState(0);
+  const promoFlatListRef = useRef<FlatList>(null);
+
+  // Données des promotions
+  const promotions = [
+    {
+      id: '1',
+      title: 'Jour Spécial 30%',
+      subtitle: '30% off',
+      description: 'Bénéficiez d\'une réduction pour chaque commande de service ! Valable aujourd\'hui uniquement !',
+      color: '#6C63FF'
+    },
+    {
+      id: '2',
+      title: 'Service Premium',
+      subtitle: '20% off',
+      description: 'Découvrez nos services premium avec une réduction exclusive !',
+      color: '#FF6B6B'
+    },
+    {
+      id: '3',
+      title: 'Nouveaux Clients',
+      subtitle: '15% off',
+      description: 'Offre spéciale pour nos nouveaux clients ! Profitez-en maintenant !',
+      color: '#4CAF50'
+    }
+  ];
+
+  // Défilement automatique du carousel
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentPromoIndex((prevIndex) => {
+        const nextIndex = prevIndex === promotions.length - 1 ? 0 : prevIndex + 1;
+        // Faire défiler vers la slide suivante avec un meilleur centrage
+        if (promoFlatListRef.current) {
+          promoFlatListRef.current.scrollToIndex({ 
+            index: nextIndex, 
+            animated: true,
+            viewPosition: 0.5 // Centre la slide parfaitement
+          });
+        }
+        return nextIndex;
+      });
+    }, 4000); // 4 secondes
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const fetchSalons = async () => {
@@ -60,9 +181,9 @@ export const HomeScreen = ({ navigation }: any) => {
             'Expires': '0'
           }
         });
-        
+
         console.log('Réponse du serveur - Status:', response.status);
-        
+
         // Vérifier si la réponse est en cache (304) ou si c'est une réponse normale (200)
         if (response.status === 304) {
           console.log('Réponse 304 - Utilisation du cache côté client');
@@ -71,17 +192,17 @@ export const HomeScreen = ({ navigation }: any) => {
         } else if (!response.ok) {
           throw new Error(`Erreur HTTP: ${response.status}`);
         }
-        
+
         const data = await response.json().catch(err => {
           console.error('Erreur lors du parsing de la réponse JSON:', err);
           throw new Error('Format de réponse invalide du serveur');
         });
-        
+
         console.log('Données des salons reçues:', data);
 
         if (data && data.success && Array.isArray(data.data)) {
           console.log(`Nombre de salons reçus: ${data.data.length}`);
-          
+
           if (data.data.length === 0) {
             console.log('Aucun salon disponible dans la réponse');
           } else {
@@ -95,7 +216,7 @@ export const HomeScreen = ({ navigation }: any) => {
               });
             });
           }
-          
+
           // Vérifier si les données sont différentes avant de mettre à jour l'état
           setSalons(prevSalons => {
             const newSalons = data.data;
@@ -120,7 +241,32 @@ export const HomeScreen = ({ navigation }: any) => {
       }
     };
 
+    const fetchHairstyles = async () => {
+      try {
+        setLoadingHairstyles(true);
+        console.log('Tentative de récupération des coiffures depuis:', `${API_URL}/hairstyles`);
+        const response = await fetch(`${API_URL}/hairstyles`);
+        const responseData = await response.json();
+        console.log('Réponse de l\'API pour les coiffures:', { status: response.status, data: responseData });
+        if (response.ok && responseData.success) {
+          const hairstylesData = responseData.data || [];
+          console.log('Coiffures chargées avec succès:', hairstylesData);
+          setHairstyles(Array.isArray(hairstylesData) ? hairstylesData : []);
+        } else {
+          const errorMessage = responseData?.message || 'Erreur inconnue lors du chargement des coiffures';
+          console.error('Erreur lors du chargement des coiffures:', errorMessage);
+          setError(`Impossible de charger les coiffures: ${errorMessage}`);
+        }
+      } catch (err) {
+        console.error('Erreur API:', err);
+        setError('Erreur de connexion au serveur');
+      } finally {
+        setLoadingHairstyles(false);
+      }
+    };
+
     fetchSalons();
+    fetchHairstyles();
   }, []);
 
   useEffect(() => {
@@ -150,24 +296,27 @@ export const HomeScreen = ({ navigation }: any) => {
 
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+    <SafeAreaView style={homeScreenStyles.container}>
+      <ScrollView style={homeScreenStyles.scrollView}>
         {/* En-tête */}
-        <View style={styles.header}>
+        <View style={homeScreenStyles.header}>
           <View>
-            <Text style={styles.greeting}>
+            <Text style={homeScreenStyles.greeting}>
               Bonjour, {user?.full_name || 'Client'}
             </Text>
-            <Text style={styles.title}>Trouvez votre salon</Text>
+            <Text style={homeScreenStyles.title}>Trouvez votre salon</Text>
           </View>
 
-          <TouchableOpacity style={styles.notificationButton}>
+          <TouchableOpacity
+            style={homeScreenStyles.notificationButton}
+            onPress={() => navigation.navigate('Notifications')}
+          >
             <Ionicons name="notifications-outline" size={24} color="#6C63FF" />
-            <View style={styles.notificationBadge} />
+            <View style={homeScreenStyles.notificationBadge} />
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={styles.profileButton}
+            style={homeScreenStyles.profileButton}
             onPress={() => navigation.navigate('Profile')}
           >
             <Ionicons name="person" size={24} color="#6C63FF" />
@@ -175,10 +324,10 @@ export const HomeScreen = ({ navigation }: any) => {
         </View>
 
         {/* Barre de recherche */}
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+        <View style={homeScreenStyles.searchContainer}>
+          <Ionicons name="search" size={20} color="#666" style={homeScreenStyles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
+            style={homeScreenStyles.searchInput}
             placeholder="Rechercher un salon ou un service..."
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -186,66 +335,152 @@ export const HomeScreen = ({ navigation }: any) => {
           />
         </View>
 
+        {/* Carousel des promotions */}
+        <View style={homeScreenStyles.section}>
+          <FlatList
+            ref={promoFlatListRef}
+            data={promotions}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            pagingEnabled
+            keyExtractor={(item) => item.id}
+            initialScrollIndex={currentPromoIndex}
+            onMomentumScrollEnd={(event) => {
+              const index = Math.round(event.nativeEvent.contentOffset.x / (width - 40));
+              setCurrentPromoIndex(index);
+            }}
+            renderItem={({ item, index }) => (
+              <TouchableOpacity style={[homeScreenStyles.promoCard, { backgroundColor: item.color }]}>
+                <Text style={homeScreenStyles.promoSubtitle}>{item.subtitle}</Text>
+                <Text style={homeScreenStyles.promoTitle}>{item.title}</Text>
+                <Text style={homeScreenStyles.promoDescription}>{item.description}</Text>
+                <View style={homeScreenStyles.pagination}>
+                  {promotions.map((_, dotIndex) => (
+                    <View 
+                      key={dotIndex}
+                      style={[
+                        homeScreenStyles.paginationDot,
+                        dotIndex === currentPromoIndex ? null : homeScreenStyles.paginationDotInactive
+                      ]}
+                    />
+                  ))}
+                </View>
+              </TouchableOpacity>
+            )}
+            contentContainerStyle={homeScreenStyles.promoCarousel}
+            getItemLayout={(data, index) => ({
+              length: width - 40,
+              offset: (width - 40) * index + 20, // Ajout du padding initial
+              index,
+            })}
+            snapToInterval={width - 40} // Assure le snap parfait
+            decelerationRate="fast" // Défilement plus rapide et précis
+          />
+        </View>
+
+            {/* Filtres */}
+        <View style={homeScreenStyles.section}>
+          <View style={homeScreenStyles.sectionHeader}>
+            <Text style={homeScreenStyles.sectionTitle}>Près de vous</Text>
+            <TouchableOpacity onPress={() => { /* Gérer l'action "Plus" */ }}>
+              <Text style={homeScreenStyles.seeAll}>Plus</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={homeScreenStyles.filterContainer}>
+            <TouchableOpacity style={[homeScreenStyles.filterButton, homeScreenStyles.filterButtonActive]}>
+              <Text style={homeScreenStyles.filterButtonTextActive}>Offre spéciales</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={homeScreenStyles.filterButton}>
+              <Text style={homeScreenStyles.filterButtonText}>Coiffure tendances</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={homeScreenStyles.filterButton}>
+              <Text style={homeScreenStyles.filterButtonText}>Spécialiste</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={homeScreenStyles.filterButton}>
+              <Text style={homeScreenStyles.filterButtonText}>Historique</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+
         {/* Liste des salons */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Nos Salons</Text>
-            <TouchableOpacity>
-              <Text style={styles.seeAll}>Voir tout</Text>
+        <View style={homeScreenStyles.section}>
+          <View style={homeScreenStyles.sectionHeader}>
+            <Text style={homeScreenStyles.sectionTitle}>Nos Salons</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('AllSalons')}>
+              <Text style={homeScreenStyles.seeAll}>Voir tout</Text>
             </TouchableOpacity>
           </View>
 
           {loading ? (
-            <ActivityIndicator size="large" color="#6C63FF" style={styles.loader} />
+            <ActivityIndicator size="large" color="#6C63FF" style={homeScreenStyles.loader} />
           ) : error ? (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
-              <Text style={styles.errorDetail}>Vérifiez que le serveur est en cours d'exécution sur {API_URL}</Text>
+            <View style={homeScreenStyles.errorContainer}>
+              <Text style={homeScreenStyles.errorText}>{error}</Text>
+              <Text style={homeScreenStyles.errorDetail}>Vérifiez que le serveur est en cours d'exécution sur {API_URL}</Text>
             </View>
           ) : salons === null ? (
-            <Text style={styles.emptyText}>Chargement des données en cours...</Text>
+            <Text style={homeScreenStyles.emptyText}>Chargement des données en cours...</Text>
           ) : salons.length === 0 ? (
-            <Text style={styles.emptyText}>Aucun salon disponible pour le moment</Text>
+            <Text style={homeScreenStyles.emptyText}>Aucun salon disponible pour le moment</Text>
           ) : (
             <FlatList
-              data={salons}
+              data={salons.slice(0, 5)} // Afficher seulement les 5 premiers salons
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={styles.salonCard}
+                  style={homeScreenStyles.salonCard}
                   onPress={() => navigation.navigate('SalonDetail', { salonId: item.id })}
                 >
-                  <View style={styles.salonImageContainer}>
-                    <Image 
-                      source={item.photos && item.photos.length > 0 
-                        ? { 
-                            uri: item.photos[0],
-                            cache: 'reload' // Force le rechargement de l'image
+                  <View style={homeScreenStyles.salonImageContainer}>
+                    <Image
+                      source={(() => {
+                        const imageUrl = item.photos?.[0];
+                        const formattedUrl = imageUrl ? formatImageUrl(imageUrl) : null;
+
+                        console.log('Chargement de l\'image pour le salon:', {
+                          nom: item.name,
+                          id: item.id,
+                          urlOriginale: imageUrl,
+                          urlFormatee: formattedUrl,
+                          aDesPhotos: item.photos?.length > 0
+                        });
+
+                        if (formattedUrl) {
+                          // Vérifier si l'URL semble valide
+                          if (formattedUrl.includes('undefined') || !formattedUrl.includes('http')) {
+                            console.warn('URL d\'image potentiellement invalide:', formattedUrl);
+                            return defaultSalonImage;
                           }
-                        : defaultSalonImage
-                      } 
-                      style={styles.salonImage}
+                          return {
+                            uri: formattedUrl,
+                            cache: 'reload'
+                          };
+                        }
+                        return defaultSalonImage;
+                      })()}
+                      style={homeScreenStyles.salonImage}
                       resizeMode="cover"
                       defaultSource={defaultSalonImage}
                       onError={(e) => {
-                        console.log('Erreur de chargement de l\'image, utilisation de l\'image par défaut');
-                        // Forcer le rechargement avec l'image par défaut
-                        if (item.photos && item.photos.length > 0) {
-                          item.photos = [];
-                          setSalons([...salons]);
-                        }
+                        console.error('Erreur de chargement de l\'image:', {
+                          error: e.nativeEvent.error,
+                          salon: item.name,
+                          id: item.id,
+                          photoUrl: item.photos?.[0],
+                          formattedUrl: item.photos?.[0] ? formatImageUrl(item.photos[0]) : null
+                        });
                       }}
                     />
-                    <View style={styles.ratingContainer}>
+                    <View style={homeScreenStyles.ratingContainer}>
                       <Ionicons name="star" size={14} color="#FFD700" />
-                      <Text style={styles.ratingText}>
+                      <Text style={homeScreenStyles.ratingText}>
                         {item.average_rating > 0 ? item.average_rating.toFixed(1) : 'Nouveau'}
                       </Text>
                     </View>
                   </View>
-                  <View style={styles.salonInfo}>
-                    <Text style={styles.salonName} numberOfLines={1}>{item.name}</Text>
-                    <Text style={styles.salonAddress} numberOfLines={1}>{item.address}</Text>
-                    <Text style={styles.hairdresserName} numberOfLines={1}>
+                  <View style={homeScreenStyles.salonInfo}>
+                    <Text style={homeScreenStyles.salonName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={homeScreenStyles.salonAddress} numberOfLines={1}>{item.address}</Text>
+                    <Text style={homeScreenStyles.hairdresserName} numberOfLines={1}>
                       {item.hairdresser?.full_name || 'Coiffeur non spécifié'}
                     </Text>
                   </View>
@@ -254,287 +489,63 @@ export const HomeScreen = ({ navigation }: any) => {
               keyExtractor={(item) => item.id}
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.salonsList}
+              contentContainerStyle={homeScreenStyles.salonsList}
             />
           )}
         </View>
 
+        {/* Section des coiffures */}
+        <View style={homeScreenStyles.section}>
+          <View style={homeScreenStyles.sectionHeader}>
+            <Text style={homeScreenStyles.sectionTitle}>Nos Coiffures</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Hairstyles')}>
+              <Text style={homeScreenStyles.seeAll}>Voir tout</Text>
+            </TouchableOpacity>
+          </View>
 
+          {loadingHairstyles ? (
+            <ActivityIndicator size="large" color="#6C63FF" style={homeScreenStyles.loader} />
+          ) : error ? (
+            <View style={homeScreenStyles.errorContainer}>
+              <Text style={homeScreenStyles.errorText}>{error}</Text>
+            </View>
+          ) : !hairstyles || hairstyles.length === 0 ? (
+            <Text style={homeScreenStyles.emptyText}>Aucune coiffure disponible</Text>
+          ) : (
+            <FlatList
+              data={hairstyles ? hairstyles.slice(0, 5) : []}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={homeScreenStyles.hairstyleCard}
+                  onPress={() => navigation.navigate('HairstyleDetail', { hairstyleId: item.id })}
+                >
+                  <Image
+                    source={item.photo ? { uri: `${API_URL}/uploads/hairstyles/${item.photo}` } : require('../assets/url_de_l_image_1.jpg')}
+                    style={homeScreenStyles.hairstyleImage}
+                    resizeMode="cover"
+                    onError={(e) => console.error('Erreur de chargement de l\'image:', e.nativeEvent.error)}
+                  />
+                  <View style={homeScreenStyles.hairstyleInfo}>
+                    <Text style={homeScreenStyles.hairstyleName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={homeScreenStyles.hairstyleDuration} numberOfLines={1}>
+                      {item.estimated_duration} min • {item.price}€
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.id.toString()}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={homeScreenStyles.hairstylesList}
+            />
+          )}
+        </View>
+
+        
+  
+
+        
       </ScrollView>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
-  },
-  greeting: {
-    fontSize: 16,
-    color: '#666',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  profileButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 10,
-  },
-  notificationButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F0F0F0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginLeft: 70,
-    position: 'relative',
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#FF6B6B',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    marginHorizontal: 20,
-    marginVertical: 10,
-    paddingHorizontal: 15,
-    height: 50,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    marginLeft: 10,
-    color: '#333',
-    fontSize: 16,
-  },
-  section: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  seeAll: {
-    color: '#6C63FF',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  loader: {
-    marginVertical: 20,
-  },
-  errorContainer: {
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  errorText: {
-    color: '#FF6B6B',
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 10,
-  },
-  errorDetail: {
-    color: '#666',
-    textAlign: 'center',
-    fontSize: 14,
-    marginTop: 5,
-  },
-  emptyText: {
-    textAlign: 'center',
-    color: '#666',
-    fontSize: 16,
-    marginTop: 20,
-    fontStyle: 'italic',
-  },
-  salonsList: {
-    paddingBottom: 10,
-    paddingHorizontal: 15,
-  },
-  salonCard: {
-    width: 220,
-    marginRight: 15,
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    overflow: 'hidden',
-  },
-  salonImageContainer: {
-    width: '100%',
-    height: 140,
-    position: 'relative',
-    backgroundColor: '#f0f0f0',
-    overflow: 'hidden',
-    borderRadius: 8,
-  },
-  salonImage: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#f5f5f5',
-  },
-  defaultImageContainer: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#f5f5f5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-  },
-  defaultImageText: {
-    marginTop: 8,
-    color: '#666',
-    fontSize: 12,
-    textAlign: 'center',
-    paddingHorizontal: 10,
-  },
-  ratingContainer: {
-    position: 'absolute',
-    top: 10,
-    left: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  ratingText: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 4,
-    marginRight: 8,
-  },
-  salonInfo: {
-    padding: 12,
-  },
-  salonName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 5,
-  },
-  salonAddress: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 4,
-  },
-  hairdresserName: {
-    fontSize: 12,
-    color: '#6C63FF',
-  },
-  categoriesList: {
-    paddingLeft: 20,
-    paddingRight: 10,
-  },
-  salonCategory: {
-    fontSize: 12,
-    color: '#6C63FF',
-  },
-  popularSalonCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    overflow: 'hidden',
-    alignItems: 'center',
-    padding: 10,
-  },
-  popularSalonImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-  },
-  popularSalonInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  popularSalonName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  popularSalonCategory: {
-    fontSize: 12,
-    color: '#6C63FF',
-    marginTop: 4,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  categoryItem: {
-    alignItems: 'center',
-    marginRight: 20,
-    width: 70,
-  },
-  categoryIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  categoryText: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 30,
-  },
-});

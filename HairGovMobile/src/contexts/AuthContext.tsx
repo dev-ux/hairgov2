@@ -8,6 +8,7 @@ interface User {
   email: string;
   phone: string;
   user_type: 'client' | 'hairdresser' | 'guest';
+  profile_picture?: string;
   // Ajoutez d'autres champs utilisateur si nécessaire
 }
 
@@ -161,9 +162,50 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const registerHairdresser = async (userData: any): Promise<boolean> => {
     try {
+      console.log('Début de l\'inscription coiffeur avec les données:', userData);
       setIsLoading(true);
       setError(null);
       const response = await AuthService.registerHairdresser(userData);
+      console.log('Réponse du service d\'inscription coiffeur:', response);
+      
+      // Si l'inscription est réussie, sauvegarder les tokens et les données utilisateur
+      if (response.success && response.data) {
+        console.log('Inscription coiffeur réussie');
+        
+        // En mode développement, afficher le code OTP dans la console
+        if (__DEV__ && userData.phone && response.data.otp_sent) {
+          generateTestOtp(userData.phone);
+        }
+        
+        // Sauvegarder le token et les informations utilisateur dans le stockage local
+        if (response.data.token && response.data.user_id) {
+          await AsyncStorage.setItem('userToken', response.data.token);
+          if (response.data.refreshToken) {
+            await AsyncStorage.setItem('refreshToken', response.data.refreshToken);
+          }
+          
+          // Créer un objet utilisateur minimal pour le stockage
+          const userToStore = {
+            id: response.data.user_id,
+            full_name: '', // Sera rempli plus tard lors de la récupération du profil
+            email: '', // Sera rempli plus tard lors de la récupération du profil  
+            phone: userData.phone, // Utiliser le téléphone de la requête
+            user_type: 'hairdresser' as const,
+            registration_status: response.data.registration_status,
+            is_active: response.data.is_active
+          };
+          
+          await AsyncStorage.setItem('userData', JSON.stringify(userToStore));
+          setUser(userToStore);
+        }
+        
+        console.log('Un code de vérification a été envoyé à votre numéro de téléphone');
+      } else {
+        console.log('Échec de l\'inscription du coiffeur');
+        const errorMessage = response?.message || 'Échec de l\'inscription';
+        setError(errorMessage);
+      }
+      
       return response.success;
     } catch (error: any) {
       console.error('Erreur lors de l\'inscription du coiffeur:', error);

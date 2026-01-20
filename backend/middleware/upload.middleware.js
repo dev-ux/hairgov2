@@ -4,7 +4,7 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
 // Créer le dossier d'uploads s'il n'existe pas
-const uploadDir = path.join(__dirname, '../uploads');
+const uploadDir = path.join(__dirname, '../../public/uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -12,7 +12,7 @@ if (!fs.existsSync(uploadDir)) {
 // Configuration du stockage
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const type = file.fieldname === 'photos' ? 'photos' : 'documents';
+    const type = 'hairstyles';
     const dir = path.join(uploadDir, type);
     
     // Créer le dossier s'il n'existe pas
@@ -25,7 +25,7 @@ const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     const uniqueSuffix = `${Date.now()}-${uuidv4()}`;
     const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
+    cb(null, `hairstyle-${uniqueSuffix}${ext}`);
   }
 });
 
@@ -40,15 +40,23 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Configuration de Multer
-const upload = multer({
+// Configuration de base de Multer
+const multerConfig = {
   storage: storage,
   fileFilter: fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB max file size
-    files: 10 // Maximum de 10 fichiers
+  limits: { 
+    fileSize: 5 * 1024 * 1024 // 5MB limit per file
   }
-});
+};
+
+// Créer différentes instances de multer pour différents cas d'utilisation
+const upload = multer(multerConfig);
+const uploadSingle = upload.single('photo'); // Pour un seul fichier
+const uploadAny = upload.any(); // Pour les téléchargements génériques
+const uploadFields = upload.fields([
+  { name: 'photos', maxCount: 10 },
+  { name: 'logo', maxCount: 1 }
+]);
 
 // Middleware pour gérer les erreurs d'upload
 const handleUploadErrors = (err, req, res, next) => {
@@ -101,5 +109,8 @@ const handleUploadErrors = (err, req, res, next) => {
 
 module.exports = {
   upload,
+  uploadAny,
+  uploadSingle,
+  uploadFields,
   handleUploadErrors
 };
