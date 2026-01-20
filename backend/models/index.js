@@ -3,26 +3,20 @@ require('dotenv').config();
 const { Sequelize, DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
 
-console.log('🔍 Debug - Environment variables:');
+console.log(' Debug - Environment variables:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
 
 const sequelize = process.env.NODE_ENV === 'production' 
-  ? new Sequelize(process.env.DATABASE_URL.replace('postgres://', 'postgresql://'), {
+  ? new Sequelize(process.env.DATABASE_URL, {
       dialect: 'postgres',
-      logging: console.log, // Activer les logs pour debug
-      pool: {
-        max: 10,
-        min: 2,
-        acquire: 30000,
-        idle: 10000
-      },
       dialectOptions: {
         ssl: {
           require: true,
           rejectUnauthorized: false
         }
-      }
+      },
+      logging: false
     })
   : new Sequelize({
       dialect: 'sqlite',
