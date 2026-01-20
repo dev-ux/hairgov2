@@ -3,20 +3,31 @@ require('dotenv').config();
 const { Sequelize, DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
 
-// 🔍 Debug Environment (visible dans Render logs)
-console.log('🔍 Debug - Environment variables:');
+// Debug Environment (visible dans Render logs)
+console.log(' Debug - Environment variables:');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+console.log('DATABASE_URL value:', process.env.DATABASE_URL);
 
-// ✅ UNE SEULE INSTANCE Sequelize selon l'environnement
-const sequelize = process.env.NODE_ENV === 'production' 
-  ? new Sequelize(process.env.DATABASE_URL, {
+// UNE SEULE INSTANCE Sequelize selon l'environnement
+let sequelize;
+if (process.env.NODE_ENV === 'production') {
+  const dbUrl = process.env.DATABASE_URL;
+  console.log('Raw DB URL:', dbUrl);
+  
+  // Parser l'URL manuellement pour éviter l'erreur de parsing
+  const match = dbUrl.match(/postgres:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
+  if (match) {
+    sequelize = new Sequelize({
+      username: match[1],
+      password: match[2],
+      host: match[3],
+      port: match[4],
+      database: match[5],
       dialect: 'postgres',
-      dialectOptions: {
-        ssl: { 
-          require: true, 
-          rejectUnauthorized: false 
-        }
+      dialectOptions: { 
+        require: true, 
+        rejectUnauthorized: false 
       },
       logging: false,
       pool: {
@@ -31,23 +42,30 @@ const sequelize = process.env.NODE_ENV === 'production'
         createdAt: 'created_at',
         updatedAt: 'updated_at'
       }
-    })
-  : new Sequelize({
-      dialect: 'sqlite',
-      storage: './database.sqlite',
-      logging: console.log,
-      define: {
-        timestamps: true,
-        underscored: true,
-        createdAt: 'created_at',
-        updatedAt: 'updated_at'
-      }
     });
+  } else {
+    console.error(' Failed to parse DATABASE_URL');
+    process.exit(1);
+  }
+} else {
+  sequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: './database.sqlite',
+    logging: console.log,
+    define: {
+      timestamps: true,
+      underscored: true,
+      createdAt: 'created_at',
+      updatedAt: 'updated_at'
+    }
+  });
+}
 
-// ✅ Test connexion au démarrage
+// Test connexion au démarrage
 sequelize.authenticate()
-  .then(() => console.log('✅ Database connected successfully'))
+  .then(() => console.log(' Database connected successfully'))
   .catch(err => {
+    console.error(' Database connection failed:', err.message);
     console.error('❌ Database connection failed:', err.message);
     process.exit(1);
   });
