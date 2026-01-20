@@ -1,29 +1,37 @@
-// models/index.js - VERSION COMPLETE ET CORRIGEE
+// models/index.js - VERSION RENDER ✅ DEFINITIVE
 require('dotenv').config();
 const { Sequelize, DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
 
-const sequelize = process.env.NODE_ENV === 'production' 
-  ? new Sequelize(process.env.DATABASE_URL, {
+// 🔍 Debug Environment
+console.log('🔍 Debug - Environment variables:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+
+// ✅ SOLUTION DEFINITIVE : Vérification + bypass Render fake URL
+let sequelize;
+
+if (process.env.NODE_ENV === 'production') {
+  // Render envoie parfois "hairgo-db connectionString" → on utilise les vraies vars DB
+  const dbUrl = process.env.DATABASE_URL;
+  
+  if (dbUrl && !dbUrl.includes('connectionString') && dbUrl.startsWith('postgres://')) {
+    // URL PostgreSQL valide → Sequelize standard
+    sequelize = new Sequelize(dbUrl, {
       dialect: 'postgres',
+      dialectOptions: {
+        ssl: { 
+          require: true, 
+          rejectUnauthorized: false 
+        }
+      },
       logging: false,
       pool: {
-        max: 10,
-        min: 2,
+        max: 5,
+        min: 0,
         acquire: 30000,
         idle: 10000
       },
-      dialectOptions: {
-        ssl: {
-          require: true,
-          rejectUnauthorized: false
-        }
-      }
-    })
-  : new Sequelize({
-      dialect: 'sqlite',
-      storage: './database.sqlite',
-      logging: process.env.NODE_ENV === 'development' ? console.log : false,
       define: {
         timestamps: true,
         underscored: true,
@@ -31,6 +39,61 @@ const sequelize = process.env.NODE_ENV === 'production'
         updatedAt: 'updated_at'
       }
     });
+  } else {
+    // Render fake URL ou vars manquantes → utilise les vraies vars individuelles
+    console.log('🔧 Using individual DB vars (Render fix)');
+    sequelize = new Sequelize({
+      dialect: 'postgres',
+      host: process.env.DB_HOST || process.env.PGHOST,
+      port: parseInt(process.env.DB_PORT || process.env.PGPORT || '5432'),
+      database: process.env.DB_NAME || process.env.PGDATABASE,
+      username: process.env.DB_USER || process.env.PGUSER,
+      password: process.env.DB_PASSWORD || process.env.PGPASSWORD,
+      dialectOptions: {
+        ssl: { 
+          require: true, 
+          rejectUnauthorized: false 
+        }
+      },
+      logging: false,
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+      },
+      define: {
+        timestamps: true,
+        underscored: true,
+        createdAt: 'created_at',
+        updatedAt: 'updated_at'
+      }
+    });
+  }
+} else {
+  // Local SQLite
+  sequelize = new Sequelize({
+    dialect: 'sqlite',
+    storage: './database.sqlite',
+    logging: console.log,
+    define: {
+      timestamps: true,
+      underscored: true,
+      createdAt: 'created_at',
+      updatedAt: 'updated_at'
+    }
+  });
+}
+
+
+// Test connexion au démarrage
+sequelize.authenticate()
+  .then(() => console.log(' Database connected successfully'))
+  .catch(err => {
+    console.error(' Database connection failed:', err.message);
+    console.error('❌ Database connection failed:', err.message);
+    process.exit(1);
+  });
 
 // ==========================================
 // MODELE USER
@@ -557,14 +620,15 @@ Complaint.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
 Complaint.belongsTo(Booking, { foreignKey: 'booking_id', as: 'booking' });
 User.hasMany(Complaint, { foreignKey: 'user_id', as: 'complaints' });
 
-// Relations pour Salon
 Salon.belongsTo(Hairdresser, { foreignKey: 'hairdresser_id', as: 'hairdresser' });
 Hairdresser.hasOne(Salon, { foreignKey: 'hairdresser_id', as: 'salon' });
 
 // ==========================================
 // EXPORTS
 // ==========================================
-const models = {
+module.exports = {
+  sequelize,      // ✅ L'UNIQUE instance
+  Sequelize,
   User,
   Hairdresser,
   Hairstyle,
@@ -575,11 +639,4 @@ const models = {
   Complaint,
   Salon,
   SalonPhoto
-};
-
-// Exporter les modèles et l'instance sequelize
-module.exports = {
-  sequelize,
-  Sequelize,
-  ...models
 };

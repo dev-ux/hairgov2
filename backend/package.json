@@ -8,7 +8,7 @@
     "dev": "nodemon server.js",
     "test": "jest",
     "test:watch": "jest --watch",
-    "migrate": "node database/migrate.js",
+    "migrate": "node -e \"const { sequelize } = require('./models'); sequelize.sync({ alter: true }).then(() => console.log('✅ Tables created')).catch(err => console.error('❌ Migration failed:', err));\"",
     "seed": "node database/seed.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
