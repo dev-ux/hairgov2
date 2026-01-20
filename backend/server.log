@@ -1,0 +1,16 @@
+
+> hairgo-backend@1.0.0 start
+> node server.js
+
+Firebase Admin non configuré. Les notifications push seront désactivées.
+Pour activer les notifications, configurez Firebase Admin avec un fichier firebase-service-account.json valide.
+Dossier des uploads: /Users/juniormarvin/Downloads/hairgov2/public/uploads
+Dossier des coiffures: /Users/juniormarvin/Downloads/hairgov2/public/uploads/hairstyles
+🚀 HAIRGO API démarrée sur le port 3001
+📍 Environnement: development
+(node:43979) NOTE: The AWS SDK for JavaScript (v2) is in maintenance mode.
+ SDK releases are limited to address critical bug fixes and security issues only.
+
+Please migrate your code to use AWS SDK for JavaScript (v3).
+For more information, check the blog post at https://a.co/cUPnyil
+(Use `node --trace-warnings ...` to show where the warning was created)
