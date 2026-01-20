@@ -21,6 +21,17 @@ const uploadRoutes = require('./routes/upload.routes');
 // Import middleware d'erreur
 const errorHandler = require('./middleware/errorHandler');
 
+// Vérifier les variables d'environnement essentielles
+if (!process.env.JWT_SECRET) {
+  console.error('❌ JWT_SECRET manquant! Ajoutez cette variable dans Render Environment');
+  process.exit(1);
+}
+
+if (!process.env.JWT_REFRESH_SECRET) {
+  console.error('❌ JWT_REFRESH_SECRET manquant! Ajoutez cette variable dans Render Environment');
+  process.exit(1);
+}
+
 const app = express();
 
 // Trust proxy pour Render
@@ -31,8 +42,8 @@ const allowedOrigins = [
   'http://localhost:3000', // Panel admin
   'http://localhost:3001', // Backend (si nécessaire)
   'https://hairgov2.onrender.com', // Backend production
-  'http://192.168.0.29:3000', // Votre IP locale
-  'http://10.0.2.2:3000', // Emulateur Android
+  'exp://192.168.0.29:8081', // Expo Go local
+  'exp://192.168.0.29:19006', // Expo Go local
   ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [])
 ];
 
