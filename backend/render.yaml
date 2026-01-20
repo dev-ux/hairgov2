@@ -4,8 +4,8 @@ services:
     env: node
     plan: free
     rootDir: backend
-    buildCommand: "npm install --production"
-    startCommand: "npm start"
+    buildCommand: "npm install"
+    startCommand: "node server.js"    # ← Direct, sans npm
     envVars:
       - key: NODE_ENV
         value: production
