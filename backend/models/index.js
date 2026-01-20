@@ -8,7 +8,7 @@ console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
 
 const sequelize = process.env.NODE_ENV === 'production' 
-  ? new Sequelize(process.env.DATABASE_URL, {
+  ? new Sequelize(process.env.DATABASE_URL.replace('postgres://', 'postgresql://'), {
       dialect: 'postgres',
       logging: console.log, // Activer les logs pour debug
       pool: {
