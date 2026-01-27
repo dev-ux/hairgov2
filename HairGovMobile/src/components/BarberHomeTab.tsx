@@ -112,32 +112,39 @@ export default function BarberHomeTab() {
       console.log('Accepting request:', requestId);
       const response = await acceptBooking(requestId);
       
-      if (response.success) {
-        Alert.alert('Succès', 'Réservation acceptée avec succès');
-        // Refresh the reservations list
-        fetchReservations();
-        // Navigate to reservation details
-        const request = clientRequests.find(req => req.id === requestId);
-        if (request) {
-          const reservation = {
-            id: requestId,
-            clientName: request.client_name,
-            clientAvatar: request.client_avatar,
-            description: request.hairstyle?.description || 'Service de coiffure',
-            price: `${request.client_price}€`,
-            locationPreference: request.service_type === 'home' ? 'domicile' as const : 'salon' as const,
-            date: request.scheduled_time ? new Date(request.scheduled_time).toLocaleDateString() : '',
-            time: request.scheduled_time ? new Date(request.scheduled_time).toLocaleTimeString() : '',
-            status: 'accepted' as const,
-          };
-          navigation.navigate('ReservationDetail', { reservation });
-        }
+      if (response && response.success) {
+        Alert.alert(
+          'Succès', 
+          'Réservation acceptée avec succès',
+          [
+            { text: 'OK', onPress: () => {
+              // Refresh the reservations list
+              fetchReservations();
+              // Navigate to reservation details
+              const request = clientRequests.find(req => req.id === requestId);
+              if (request) {
+                const reservation = {
+                  id: requestId,
+                  clientName: request.client_name,
+                  clientAvatar: request.client_avatar,
+                  description: request.hairstyle?.description || 'Service de coiffure',
+                  price: `${request.client_price}€`,
+                  locationPreference: request.service_type === 'home' ? 'domicile' as const : 'salon' as const,
+                  date: request.scheduled_time ? new Date(request.scheduled_time).toLocaleDateString() : '',
+                  time: request.scheduled_time ? new Date(request.scheduled_time).toLocaleTimeString() : '',
+                  status: 'accepted' as const,
+                };
+                navigation.navigate('ReservationDetail', { reservation });
+              }
+            }}
+          ]
+        );
       } else {
         Alert.alert('Erreur', 'Impossible d\'accepter la réservation');
       }
     } catch (error: any) {
       console.error('Error accepting request:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Impossible d\'accepter la réservation';
+      const errorMessage = error?.response?.data?.message || error?.message || 'Impossible d\'accepter la réservation';
       Alert.alert('Erreur', errorMessage);
     }
   };
@@ -147,16 +154,23 @@ export default function BarberHomeTab() {
       console.log('Refusing request:', requestId);
       const response = await rejectBooking(requestId);
       
-      if (response.success) {
-        Alert.alert('Succès', 'Réservation refusée');
-        // Refresh the reservations list
-        fetchReservations();
+      if (response && response.success) {
+        Alert.alert(
+          'Succès', 
+          'Réservation refusée',
+          [
+            { text: 'OK', onPress: () => {
+              // Refresh the reservations list
+              fetchReservations();
+            }}
+          ]
+        );
       } else {
         Alert.alert('Erreur', 'Impossible de refuser la réservation');
       }
     } catch (error: any) {
       console.error('Error refusing request:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Impossible de refuser la réservation';
+      const errorMessage = error?.response?.data?.message || error?.message || 'Impossible de refuser la réservation';
       Alert.alert('Erreur', errorMessage);
     }
   };
