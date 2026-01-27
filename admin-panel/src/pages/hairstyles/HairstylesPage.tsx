@@ -35,7 +35,7 @@ interface Hairstyle {
   updated_at: string;
 }
 
-const API_URL = 'http://localhost:3001';
+const API_URL = 'https://hairgov2.onrender.com/api/v1';
 
 const HairstylesPage: React.FC = () => {
   const [hairstyles, setHairstyles] = useState<Hairstyle[]>([]);

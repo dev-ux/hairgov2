@@ -131,7 +131,7 @@ const DetailSalon: React.FC = () => {
     }
     
     // Construire l'URL complète
-    const baseUrl = api.defaults.baseURL || 'http://localhost:3001';
+    const baseUrl = api.defaults.baseURL || 'https://hairgov2.onrender.com/api/v1';
     console.log('URL de base de l\'API:', baseUrl);
     
     // S'assurer qu'il n'y a pas de double slash

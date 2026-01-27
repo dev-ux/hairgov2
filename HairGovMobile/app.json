@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "HairGovMobile",
-    "slug": "HairGovMobile",
+    "name": "Scizz",
+    "slug": "Scizz",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -9,8 +9,7 @@
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon2.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "resizeMode": "contain"
     },
     "ios": {
       "supportsTablet": true,
