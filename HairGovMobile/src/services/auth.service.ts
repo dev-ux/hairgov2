@@ -4,17 +4,21 @@ import { Platform } from 'react-native';
 
 // Configuration de l'URL de l'API en fonction de la plateforme
 const getApiUrl = () => {
-  if (__DEV__) {
-    if (Platform.OS === 'android') {
-      return 'http://10.0.2.2:3001/api/v1'; // Pour émulateur Android (port 3001)
-    } else if (Platform.OS === 'ios') {
-      return 'http://localhost:3001/api/v1'; // Pour émulateur iOS
-    } else {
-      return 'http://localhost:3001/api/v1'; // Pour développement web
-    }
-  } else {
-    return 'https://hairgov2.onrender.com/api/v1'; // Pour la production
-  }
+  // Utiliser toujours l'URL de production pour éviter les problèmes de connexion
+  return 'https://hairgov2.onrender.com/api/v1';
+  
+  // Ancienne logique (commentée)
+  // if (__DEV__) {
+  //   if (Platform.OS === 'android') {
+  //     return 'http://10.0.2.2:3001/api/v1'; // Pour émulateur Android (port 3001)
+  //   } else if (Platform.OS === 'ios') {
+  //     return 'http://localhost:3001/api/v1'; // Pour émulateur iOS
+  //   } else {
+  //     return 'http://localhost:3001/api/v1'; // Pour développement web
+  //   }
+  // } else {
+  //   return 'https://hairgov2.onrender.com/api/v1'; // Pour la production
+  // }
 };
 
 const API_URL = getApiUrl();
