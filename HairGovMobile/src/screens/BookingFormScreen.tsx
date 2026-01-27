@@ -80,9 +80,14 @@ const BookingFormScreen = ({ navigation }: any) => {
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(false);
-    if (selectedDate) {
-      setFormData(prev => ({ ...prev, scheduled_time: selectedDate }));
+    try {
+      setShowDatePicker(false);
+      if (selectedDate && event.type === 'set') {
+        setFormData(prev => ({ ...prev, scheduled_time: selectedDate }));
+      }
+    } catch (error) {
+      console.error('Error handling date change:', error);
+      setShowDatePicker(false);
     }
   };
 
@@ -132,16 +137,25 @@ const BookingFormScreen = ({ navigation }: any) => {
 
       const result = await response.json();
 
-      if (result.success) {
+      if (result && result.success) {
         Alert.alert(
           'Réservation créée',
           'Votre réservation a été créée avec succès',
           [
-            { text: 'OK', onPress: () => navigation.goBack() }
+            { 
+              text: 'OK', 
+              onPress: () => {
+                try {
+                  navigation.goBack();
+                } catch (error) {
+                  console.error('Navigation error:', error);
+                }
+              }
+            }
           ]
         );
       } else {
-        Alert.alert('Erreur', result.message || 'Impossible de créer la réservation');
+        Alert.alert('Erreur', result?.message || 'Impossible de créer la réservation');
       }
     } catch (error) {
       console.error('Erreur création réservation:', error);
