@@ -1,35 +1,57 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, ActivityIndicator } from 'react-native';
-import { Platform } from 'react-native';
+import { StyleSheet, View, Text, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 // Import conditionnel pour éviter les erreurs
 let MapView: any = null;
 let Marker: any = null;
 let mapError = false;
+let mapLoadError = '';
 
 try {
+  console.log('Platform:', Platform.OS);
+  console.log('Attempting to import react-native-maps...');
+  
   if (Platform.OS !== 'web') {
     const Maps = require('react-native-maps');
-    MapView = Maps.MapView;
-    Marker = Maps.Marker;
+    MapView = Maps.default || Maps.MapView;
+    Marker = Maps.default ? Maps.default.Marker : Maps.Marker;
+    console.log('react-native-maps imported successfully');
+    console.log('MapView:', !!MapView);
+    console.log('Marker:', !!Marker);
+  } else {
+    mapLoadError = 'Web platform not supported for react-native-maps';
+    console.warn(mapLoadError);
   }
-} catch (error) {
-  console.warn('react-native-maps not available:', error);
+} catch (error: any) {
+  console.error('Error importing react-native-maps:', error);
   mapError = true;
+  mapLoadError = error?.message || 'Unknown error importing maps';
 }
 
 const MapScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
+    console.log('MapScreen useEffect - checking map availability...');
+    console.log('mapError:', mapError);
+    console.log('mapLoadError:', mapLoadError);
+    console.log('MapView available:', !!MapView);
+    console.log('Marker available:', !!Marker);
+    console.log('Platform.OS:', Platform.OS);
+    
     // Vérifier si react-native-maps est disponible
     if (mapError || !MapView || !Marker) {
+      console.log('Map not available, showing error screen');
       setHasError(true);
+      setErrorMessage(mapLoadError || 'Maps library not available');
       setIsLoading(false);
       return;
     }
+    
+    console.log('Map is available');
     setIsLoading(false);
   }, []);
 
@@ -83,8 +105,14 @@ const MapScreen = () => {
           <Ionicons name="map-outline" size={64} color="#6C63FF" />
           <Text style={styles.errorTitle}>Carte non disponible</Text>
           <Text style={styles.errorText}>
-            La carte interactive n'est pas disponible sur cet appareil.
+            {Platform.OS === 'web' 
+              ? 'La carte interactive n\'est pas disponible sur le web.'
+              : 'La carte interactive n\'est pas disponible sur cet appareil.'
+            }
           </Text>
+          {errorMessage && (
+            <Text style={styles.debugText}>Erreur: {errorMessage}</Text>
+          )}
           <View style={styles.markersList}>
             <Text style={styles.markersTitle}>Nos salons :</Text>
             {markers.map((marker) => (
@@ -103,6 +131,7 @@ const MapScreen = () => {
   }
 
   try {
+    console.log('Attempting to render MapView...');
     return (
       <View style={styles.container}>
         <MapView 
@@ -126,7 +155,7 @@ const MapScreen = () => {
         </MapView>
       </View>
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Map rendering error:', error);
     return (
       <View style={styles.container}>
@@ -136,6 +165,7 @@ const MapScreen = () => {
           <Text style={styles.errorText}>
             Impossible d'afficher la carte. Veuillez réessayer plus tard.
           </Text>
+          <Text style={styles.debugText}>Erreur: {error?.message || 'Unknown error'}</Text>
         </View>
       </View>
     );
@@ -201,6 +231,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     marginTop: 2,
+  },
+  debugText: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 10,
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
   markerContainer: {
     backgroundColor: '#6C63FF',
