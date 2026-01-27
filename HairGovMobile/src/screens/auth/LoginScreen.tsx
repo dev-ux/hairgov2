@@ -52,25 +52,53 @@ const LoginScreen = () => {
       console.log('Appel de login avec:', { phone });
       const success = await login(phone, password);
       if (success) {
-        console.log('Login réussi, navigation vers l\'accueil...');
-        // La navigation est gérée par le contexte d'authentification
-        const userData = await AsyncStorage.getItem('userData');
-        if (userData) {
-          const parsedUser = JSON.parse(userData);
-          if (parsedUser.user_type === 'hairdresser') {
-            navigation.replace('BarberHome');
+        console.log('Login réussi, tentative de navigation...');
+        
+        try {
+          // Récupérer les données utilisateur de manière sécurisée
+          const userData = await AsyncStorage.getItem('userData');
+          console.log('UserData trouvé:', !!userData);
+          
+          if (userData) {
+            const parsedUser = JSON.parse(userData);
+            console.log('Type utilisateur:', parsedUser.user_type);
+            
+            // Navigation sécurisée avec timeout
+            setTimeout(() => {
+              try {
+                if (parsedUser.user_type === 'hairdresser') {
+                  console.log('Navigation vers BarberHome');
+                  navigation.replace('BarberHome');
+                } else {
+                  console.log('Navigation vers Home');
+                  navigation.replace('Home');
+                }
+              } catch (navError) {
+                console.error('Erreur de navigation:', navError);
+                // Fallback: navigation vers Home
+                navigation.replace('Home');
+              }
+            }, 100);
           } else {
-            navigation.replace('Home');
+            console.log('Pas de userData, navigation vers Home par défaut');
+            setTimeout(() => {
+              navigation.replace('Home');
+            }, 100);
           }
-        } else {
-          navigation.replace('Home');
+        } catch (storageError) {
+          console.error('Erreur de stockage:', storageError);
+          // Fallback: navigation vers Home
+          setTimeout(() => {
+            navigation.replace('Home');
+          }, 100);
         }
       } else {
         setLocalError('Échec de la connexion. Veuillez réessayer.');
       }
     } catch (error) {
       console.error('Erreur dans handleLogin:', error);
-      setLocalError(error instanceof Error ? error.message : 'Une erreur est survenue lors de la connexion');
+      const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue lors de la connexion';
+      setLocalError(errorMessage);
     }
   };
 

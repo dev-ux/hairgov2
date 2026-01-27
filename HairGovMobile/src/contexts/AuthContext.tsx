@@ -66,7 +66,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const response = await AuthService.login(phone, password);
       console.log('Réponse de l\'API:', response);
       
-      if (response.data?.user) {
+      if (response && response.data && response.data.user) {
         // Mettre à jour l'état de l'utilisateur
         const userData = response.data.user;
         setUser(userData);
@@ -82,13 +82,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Retourner true pour indiquer que la connexion a réussi
         return true;
       } else {
-        throw new Error('Aucune donnée utilisateur reçue');
+        console.warn('Réponse API invalide:', response);
+        throw new Error('Réponse invalide du serveur');
       }
     } catch (error: any) {
       console.error('Erreur lors de la connexion:', error);
-      const errorMessage = error.message || 'Une erreur est survenue lors de la connexion';
+      
+      // Gérer différents types d'erreurs
+      let errorMessage = 'Une erreur est survenue lors de la connexion';
+      
+      if (error.response) {
+        // Erreur HTTP
+        if (error.response.status === 401) {
+          errorMessage = 'Téléphone ou mot de passe incorrect';
+        } else if (error.response.status === 400) {
+          errorMessage = 'Données invalides';
+        } else if (error.response.status >= 500) {
+          errorMessage = 'Erreur serveur, veuillez réessayer';
+        }
+      } else if (error.request) {
+        // Erreur réseau
+        errorMessage = 'Erreur de connexion, vérifiez votre internet';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       setError(errorMessage);
-      throw error;
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }

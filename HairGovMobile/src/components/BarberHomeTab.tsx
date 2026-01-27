@@ -58,17 +58,28 @@ export default function BarberHomeTab() {
   const fetchReservations = async () => {
     try {
       setLoading(true);
+      console.log('Fetching hairdresser bookings...');
       const response = await getHairdresserBookings();
       
-      if (response.success && response.data) {
+      console.log('Bookings response:', response);
+      
+      if (response && response.success && response.data) {
         setClientRequests(response.data.bookings || []);
       } else {
-        console.error('Error in response:', response.message);
+        console.warn('Unexpected response format:', response);
         setClientRequests([]);
       }
     } catch (error: any) {
       console.error('Error fetching reservations:', error);
+      // Ne pas faire crasher l'app, juste afficher une liste vide
       setClientRequests([]);
+      
+      // Optionnel: afficher une alerte une seule fois
+      if (error.response?.status === 401) {
+        console.log('Unauthorized - token might be expired');
+      } else if (error.response?.status >= 500) {
+        console.log('Server error - using empty list');
+      }
     } finally {
       setLoading(false);
     }
