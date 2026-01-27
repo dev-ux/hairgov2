@@ -461,13 +461,17 @@ export default function HomeScreen() {
                       resizeMode="cover"
                       defaultSource={defaultSalonImage}
                       onError={(e) => {
-                        console.error('Erreur de chargement de l\'image:', {
-                          error: e.nativeEvent.error,
-                          salon: item.name,
-                          id: item.id,
-                          photoUrl: item.photos?.[0],
-                          formattedUrl: item.photos?.[0] ? formatImageUrl(item.photos[0]) : null
-                        });
+                        try {
+                          console.error('Erreur de chargement de l\'image:', {
+                            error: e?.nativeEvent?.error || 'Unknown error',
+                            salon: item.name,
+                            id: item.id,
+                            photoUrl: item.photos?.[0],
+                            formattedUrl: item.photos?.[0] ? formatImageUrl(item.photos[0]) : null
+                          });
+                        } catch (logError) {
+                          console.error('Erreur lors du logging de l\'erreur image:', logError);
+                        }
                       }}
                     />
                     <View style={homeScreenStyles.ratingContainer}>
@@ -523,7 +527,17 @@ export default function HomeScreen() {
                     source={item.photo ? { uri: `${API_URL}/uploads/hairstyles/${item.photo}` } : require('../assets/url_de_l_image_1.jpg')}
                     style={homeScreenStyles.hairstyleImage}
                     resizeMode="cover"
-                    onError={(e) => console.error('Erreur de chargement de l\'image:', e.nativeEvent.error)}
+                    onError={(e) => {
+                      try {
+                        console.error('Erreur de chargement de l\'image hairstyle:', {
+                          error: e?.nativeEvent?.error || 'Unknown error',
+                          hairstyle: item.name,
+                          photo: item.photo
+                        });
+                      } catch (logError) {
+                        console.error('Erreur lors du logging de l\'erreur hairstyle:', logError);
+                      }
+                    }}
                   />
                   <View style={homeScreenStyles.hairstyleInfo}>
                     <Text style={homeScreenStyles.hairstyleName} numberOfLines={1}>{item.name}</Text>
