@@ -52,7 +52,10 @@ export default function BarberHomeTab() {
   const { user } = useAuth();
 
   useEffect(() => {
-    fetchReservations();
+    // Ne pas charger automatiquement les réservations à la connexion
+    // L'utilisateur pourra les charger manuellement si besoin
+    console.log('BarberHomeTab monté - pas de chargement automatique des réservations');
+    setLoading(false);
   }, []);
 
   const fetchReservations = async () => {
@@ -266,6 +269,22 @@ export default function BarberHomeTab() {
             <View style={styles.dragHandle} />
             <Text style={styles.detailsTitle}>Demandes de réservation</Text>
             
+            {/* Bouton de rafraîchissement */}
+            <TouchableOpacity 
+              style={styles.refreshButton}
+              onPress={fetchReservations}
+              disabled={loading}
+            >
+              <Ionicons 
+                name={loading ? "refresh" : "refresh-outline"} 
+                size={20} 
+                color="#6C63FF" 
+              />
+              <Text style={styles.refreshButtonText}>
+                {loading ? 'Chargement...' : 'Rafraîchir'}
+              </Text>
+            </TouchableOpacity>
+            
             {loading ? (
               <View style={styles.loadingContainer}>
                 <Text style={styles.loadingText}>Chargement des demandes...</Text>
@@ -465,6 +484,25 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: '#666',
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f8f9fa',
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    alignSelf: 'center',
+  },
+  refreshButtonText: {
+    color: '#6C63FF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   emptyContainer: {
     flex: 1,
