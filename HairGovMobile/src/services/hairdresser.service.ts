@@ -32,6 +32,17 @@ export interface ReservationResponse {
 export const getHairdresserBookings = async (): Promise<ReservationResponse> => {
   try {
     const response = await api.get<ReservationResponse>('/bookings/hairdresser/pending');
+    
+    // Si la réponse est null (status 304), retourner une réponse vide
+    if (!response.data) {
+      return {
+        success: true,
+        data: {
+          bookings: []
+        }
+      };
+    }
+    
     return response.data;
   } catch (error) {
     console.error('Error fetching hairdresser bookings:', error);

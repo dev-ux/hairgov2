@@ -294,27 +294,8 @@ exports.getSalon = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const salon = await db.Salon.findByPk(id, {
-      attributes: [
-        'id', 'name', 'address',
-        'latitude', 'longitude', 'is_validated',
-        'created_at', 'updated_at', 'photos'
-      ]
-    });
-    
-    // Récupérer les informations du coiffeur séparément
-    let hairdresser = null;
-    if (salon && salon.hairdresser_id) {
-      hairdresser = await db.Hairdresser.findByPk(salon.hairdresser_id, {
-        attributes: ['id', 'first_name', 'last_name', 'email', 'phone', 'profile_photo']
-      });
-    }
-    
-    // Fusionner les données
-    const salonData = salon.get({ plain: true });
-    if (hairdresser) {
-      salonData.hairdresser = hairdresser.get({ plain: true });
-    }
+    // Récupérer le salon
+    const salon = await db.Salon.findByPk(id);
 
     if (!salon) {
       return res.status(404).json({
@@ -326,14 +307,60 @@ exports.getSalon = async (req, res) => {
       });
     }
 
-    // Formater la réponse
+    const salonData = salon.get({ plain: true });
+
+    // Récupérer les informations du coiffeur manuellement
+    let hairdresser = null;
+    if (salonData.hairdresser_id) {
+      try {
+        const hairdresserRecord = await db.Hairdresser.findByPk(salonData.hairdresser_id, {
+          include: [
+            {
+              model: db.User,
+              as: 'user',
+              attributes: ['id', 'full_name', 'email', 'phone']
+            }
+          ]
+        });
+
+        if (hairdresserRecord && hairdresserRecord.user) {
+          const hairdresserData = hairdresserRecord.get({ plain: true });
+          const user = hairdresserData.user;
+          
+          hairdresser = {
+            id: hairdresserData.id,
+            full_name: user.full_name,
+            // Garder la compatibilité avec l'ancien format
+            first_name: user.full_name ? user.full_name.split(' ')[0] : '',
+            last_name: user.full_name ? user.full_name.split(' ').slice(1).join(' ') : '',
+            email: user.email,
+            phone: user.phone,
+            profile_photo: hairdresserData.id_card_photo || null
+          };
+        }
+      } catch (hairdresserError) {
+        console.error('Erreur lors de la récupération du coiffeur:', hairdresserError);
+        // Ne pas échouer toute la requête si le coiffeur n'est pas trouvé
+      }
+    }
+
+    // Ajouter les informations du coiffeur si trouvées
+    if (hairdresser) {
+      salonData.hairdresser = hairdresser;
+    }
+
+    // S'assurer que photos est toujours un tableau
+    if (!Array.isArray(salonData.photos)) {
+      try {
+        salonData.photos = JSON.parse(salonData.photos || '[]');
+      } catch (e) {
+        salonData.photos = [];
+      }
+    }
+
     const response = {
       success: true,
-      data: {
-        ...salon.get({ plain: true }),
-        // S'assurer que photos est toujours un tableau
-        photos: Array.isArray(salon.photos) ? salon.photos : []
-      }
+      data: salonData
     };
 
     res.json(response);

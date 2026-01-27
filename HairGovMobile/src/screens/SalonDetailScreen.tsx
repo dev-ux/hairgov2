@@ -77,8 +77,9 @@ type SalonDetailScreenRouteProp = RouteProp<RootStackParamList, 'SalonDetail'>;
 
 interface Hairdresser {
     id: string;
-    first_name: string;
-    last_name: string;
+    full_name?: string;
+    first_name?: string;
+    last_name?: string;
     email?: string;
     phone?: string;
     profile_photo: string | null;
@@ -135,20 +136,42 @@ const SalonDetailScreen = () => {
         }
 
         try {
+            console.log('Récupération des détails du salon:', salonId);
             const response = await fetch(`${API_URL}/salons/${salonId}`);
-            const data = await response.json();
-
+            
             if (!response.ok) {
-                throw new Error(data.message || 'Erreur lors du chargement du salon');
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `Erreur HTTP: ${response.status}`);
             }
+            
+            const data = await response.json();
+            console.log('Données reçues:', JSON.stringify(data, null, 2));
 
             if (data.success && data.data) {
-                setSalon(data.data);
+                // Validation des données reçues
+                const salonData = data.data;
+                
+                // S'assurer que les coordonnées sont des nombres valides
+                if (salonData.latitude) {
+                    salonData.latitude = parseFloat(salonData.latitude);
+                }
+                if (salonData.longitude) {
+                    salonData.longitude = parseFloat(salonData.longitude);
+                }
+                
+                // Validation des coordonnées
+                if (isNaN(salonData.latitude) || isNaN(salonData.longitude)) {
+                    console.warn('Coordonnées GPS invalides, utilisation de valeurs par défaut');
+                    salonData.latitude = 48.8566; // Paris par défaut
+                    salonData.longitude = 2.3522;
+                }
+                
+                setSalon(salonData);
             } else {
-                throw new Error('Données du salon non disponibles');
+                throw new Error(data.message || 'Données du salon non disponibles');
             }
         } catch (err) {
-            console.error('Erreur:', err);
+            console.error('Erreur lors du chargement du salon:', err);
             setError(err instanceof Error ? err.message : 'Une erreur est survenue');
         } finally {
             setLoading(false);
@@ -253,7 +276,7 @@ const SalonDetailScreen = () => {
                 </View>
 
                 {/* Coiffeur */}
-                {salon.hairdresser && (
+                {salon.hairdresser ? (
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Coiffeur</Text>
                         <View style={styles.hairdresserInfo}>
@@ -277,7 +300,9 @@ const SalonDetailScreen = () => {
                             )}
                             <View>
                                 <Text style={styles.hairdresserName}>
-                                    {salon.hairdresser.first_name} {salon.hairdresser.last_name}
+                                    {salon.hairdresser.full_name || 
+                                     `${salon.hairdresser.first_name || ''} ${salon.hairdresser.last_name || ''}`.trim() || 
+                                     'Nom non disponible'}
                                 </Text>
                                 {salon.hairdresser.phone && (
                                     <TouchableOpacity
@@ -291,10 +316,15 @@ const SalonDetailScreen = () => {
                             </View>
                         </View>
                     </View>
+                ) : (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Coiffeur</Text>
+                        <Text style={styles.hairdresserName}>Informations non disponibles</Text>
+                    </View>
                 )}
 
                 {/* Photos du salon */}
-                {salon.photos && salon.photos.length > 0 && (
+                {salon.photos && Array.isArray(salon.photos) && salon.photos.length > 0 && (
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Photos</Text>
                         <ScrollView 
@@ -341,26 +371,33 @@ const SalonDetailScreen = () => {
                         onPress={handleMapPress}
                         activeOpacity={0.8}
                     >
-                        <MapView
-                            style={styles.map}
-                            initialRegion={{
-                                latitude: Number(salon.latitude) || 0,
-                                longitude: Number(salon.longitude) || 0,
-                                latitudeDelta: 0.01,
-                                longitudeDelta: 0.01,
-                            }}
-                            scrollEnabled={false}
-                            zoomEnabled={false}
-                        >
-                            <Marker
-                                coordinate={{
-                                    latitude: Number(salon.latitude) || 0,
-                                    longitude: Number(salon.longitude) || 0,
+                        {salon.latitude && salon.longitude ? (
+                            <MapView
+                                style={styles.map}
+                                initialRegion={{
+                                    latitude: Number(salon.latitude) || 48.8566,
+                                    longitude: Number(salon.longitude) || 2.3522,
+                                    latitudeDelta: 0.01,
+                                    longitudeDelta: 0.01,
                                 }}
-                                title={salon.name}
-                                description={salon.address}
-                            />
-                        </MapView>
+                                scrollEnabled={false}
+                                zoomEnabled={false}
+                            >
+                                <Marker
+                                    coordinate={{
+                                        latitude: Number(salon.latitude) || 48.8566,
+                                        longitude: Number(salon.longitude) || 2.3522,
+                                    }}
+                                    title={salon.name}
+                                    description={salon.address}
+                                />
+                            </MapView>
+                        ) : (
+                            <View style={[styles.map, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }]}>
+                                <Ionicons name="location-outline" size={40} color="#ccc" />
+                                <Text style={{ color: '#999', marginTop: 8 }}>Localisation non disponible</Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
                 </View>
 

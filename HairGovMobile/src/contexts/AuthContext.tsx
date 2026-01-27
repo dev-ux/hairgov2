@@ -98,8 +98,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const generateTestOtp = (phone: string) => {
     if (!__DEV__) return;
     
-    // Générer un code OTP à 4 chiffres
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    // Générer un code OTP à 6 chiffres
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
     console.log(`\n=================================`);
     console.log(`CODE OTP POUR ${phone}: ${otp}`);
     console.log(`(Ceci est un code de test en mode développement)`);

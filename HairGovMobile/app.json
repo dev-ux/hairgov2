@@ -19,10 +19,9 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#6C63FF"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
+      "icon": "./assets/icon.png",
       "package": "com.marvinj0r.scizz",
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",

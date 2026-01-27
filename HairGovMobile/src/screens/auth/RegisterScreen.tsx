@@ -15,14 +15,17 @@ import { useNavigation, RouteProp, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { useAuth } from '../../contexts/AuthContext';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
+type UserType = 'client' | 'coiffeur';
 type RegisterScreenRouteProp = RouteProp<RootStackParamList, 'Register'>;
 
 export const RegisterScreen = () => {
   const route = useRoute<RegisterScreenRouteProp>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { registerClient, isLoading, error: authError, clearError } = useAuth();
+  const { registerClient, registerHairdresser, isLoading, error: authError, clearError } = useAuth();
   
+  const [userType, setUserType] = useState<UserType>(route.params?.userType || 'client');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -30,6 +33,13 @@ export const RegisterScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [profession, setProfession] = useState('');
+  const [residentialAddress, setResidentialAddress] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [idCardNumber, setIdCardNumber] = useState('');
+  const [hasSalon, setHasSalon] = useState(false);
   const [localError, setLocalError] = useState('');
 
   // Gérer les erreurs du contexte d'authentification
@@ -40,8 +50,34 @@ export const RegisterScreen = () => {
     }
   }, [authError, clearError]);
 
+  const showDatePickerModal = () => {
+    setShowDatePicker(true);
+  };
+
+  const hideDatePickerModal = () => {
+    setShowDatePicker(false);
+  };
+
+  const handleDateConfirm = () => {
+    const day = selectedDate.getDate().toString().padStart(2, '0');
+    const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+    const year = selectedDate.getFullYear();
+    const formattedDate = `${day}/${month}/${year}`;
+    setDateOfBirth(formattedDate);
+    setShowDatePicker(false);
+  };
+
+  const formatDateDisplay = (dateString: string) => {
+    if (!dateString) return 'JJ/MM/AAAA';
+    return dateString;
+  };
+
   const handleRegister = async () => {
-    if (!fullName || !phone || !password || !confirmPassword) {
+    const requiredFields = userType === 'client' 
+      ? [fullName, phone, password, confirmPassword]
+      : [fullName, phone, password, confirmPassword, profession, residentialAddress, dateOfBirth, idCardNumber];
+    
+    if (requiredFields.some(field => !field)) {
       setLocalError('Veuillez remplir tous les champs obligatoires');
       return;
     }
@@ -55,13 +91,30 @@ export const RegisterScreen = () => {
 
     const userData = {
       full_name: fullName,
-      email: email || undefined, // email optionnel
+      email: email || undefined,
       phone,
-      password
+      password,
+      ...(userType === 'coiffeur' && { 
+        profession,
+        residential_address: residentialAddress,
+        date_of_birth: dateOfBirth,
+        id_card_number: idCardNumber,
+        has_salon: hasSalon
+      })
     };
 
     try {
-      await registerClient(userData, navigation);
+      if (userType === 'client') {
+        await registerClient(userData, navigation);
+      } else {
+        const result = await registerHairdresser(userData);
+        if (result) {
+          navigation.navigate('VerifyOtp', { 
+            email: userData.email, 
+            phone: userData.phone 
+          });
+        }
+      }
     } catch (error) {
       console.error('Erreur lors de l\'inscription:', error);
       setLocalError('Une erreur est survenue lors de l\'inscription');
@@ -81,10 +134,34 @@ export const RegisterScreen = () => {
           >
             <Ionicons name="arrow-back" size={24} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.title}>Créer un compte client</Text>
-          <Text style={styles.subtitle}>
-            Rejoignez HairGov et réservez vos rendez-vous
+          <Text style={styles.title}>
+            {userType === 'client' ? 'Créer un compte client' : 'Devenir coiffeur'}
           </Text>
+          <Text style={styles.subtitle}>
+            {userType === 'client' 
+              ? 'Rejoignez HairGov et réservez vos rendez-vous'
+              : 'Rejoignez notre réseau de coiffeurs professionnels'
+            }
+          </Text>
+        </View>
+
+        <View style={styles.toggleContainer}>
+          <TouchableOpacity 
+            style={[styles.toggleButton, userType === 'client' && styles.activeToggle]}
+            onPress={() => setUserType('client')}
+          >
+            <Text style={[styles.toggleText, userType === 'client' && styles.activeToggleText]}>
+              Client
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.toggleButton, userType === 'coiffeur' && styles.activeToggle]}
+            onPress={() => setUserType('coiffeur')}
+          >
+            <Text style={[styles.toggleText, userType === 'coiffeur' && styles.activeToggleText]}>
+              Coiffeur
+            </Text>
+          </TouchableOpacity>
         </View>
 
 
@@ -100,9 +177,70 @@ export const RegisterScreen = () => {
             />
           </View>
 
+          {userType === 'coiffeur' && (
+            <>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Date de naissance *</Text>
+                <TouchableOpacity 
+                  style={styles.dateInput}
+                  onPress={showDatePickerModal}
+                >
+                  <Text style={[
+                    styles.dateInputText, 
+                    !dateOfBirth && styles.placeholderText
+                  ]}>
+                    {formatDateDisplay(dateOfBirth)}
+                  </Text>
+                  <Ionicons name="calendar" size={20} color="#666" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Numéro de carte d'identité *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Numéro de votre carte d'identité"
+                  value={idCardNumber}
+                  onChangeText={setIdCardNumber}
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Profession *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Votre profession (ex: Coiffeur, Barbier...)"
+                  value={profession}
+                  onChangeText={setProfession}
+                  autoCapitalize="words"
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <Text style={styles.label}>Adresse résidentielle *</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Votre adresse complète"
+                  value={residentialAddress}
+                  onChangeText={setResidentialAddress}
+                  autoCapitalize="words"
+                />
+              </View>
+              <View style={styles.checkboxContainer}>
+                <TouchableOpacity 
+                  style={styles.checkbox}
+                  onPress={() => setHasSalon(!hasSalon)}
+                >
+                  <Ionicons 
+                    name={hasSalon ? "checkmark-circle" : "ellipse-outline"} 
+                    size={20} 
+                    color="#6C63FF" 
+                  />
+                </TouchableOpacity>
+                <Text style={styles.checkboxLabel}>Je possède un salon</Text>
+              </View>
+            </>
+          )}
 
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email (optionnel)</Text>
+            <Text style={styles.label}>Email {userType === 'client' ? '(optionnel)' : '*'}</Text>
             <TextInput
               style={styles.input}
               placeholder="Votre adresse email"
@@ -182,12 +320,14 @@ export const RegisterScreen = () => {
               styles.disabledButton
             ]}
             onPress={handleRegister}
-            disabled={isLoading || !fullName || !phone || !password || !confirmPassword}
+            disabled={isLoading || !fullName || !phone || !password || !confirmPassword || (userType === 'coiffeur' && (!profession || !residentialAddress || !dateOfBirth || !idCardNumber))}
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.registerButtonText}>Créer mon compte</Text>
+              <Text style={styles.registerButtonText}>
+                {userType === 'client' ? 'Créer mon compte' : 'Devenir coiffeur'}
+              </Text>
             )}
           </TouchableOpacity>
 
@@ -200,6 +340,25 @@ export const RegisterScreen = () => {
         </View>
       </ScrollView>
 
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          maximumDate={new Date()}
+          onChange={(event, selectedDate) => {
+            setShowDatePicker(false);
+            if (event.type === 'set' && selectedDate) {
+              setSelectedDate(selectedDate);
+              const day = selectedDate.getDate().toString().padStart(2, '0');
+              const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+              const year = selectedDate.getFullYear();
+              const formattedDate = `${day}/${month}/${year}`;
+              setDateOfBirth(formattedDate);
+            }
+          }}
+        />
+      )}
     </KeyboardAvoidingView>
   );
 };
