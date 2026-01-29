@@ -62,6 +62,56 @@ router.patch('/hairdressers/:id/status', toggleHairdresserStatus);
 router.get('/dashboard/stats', getDashboardStats);
 
 /**
+ * @route   GET /admin/salons/:id
+ * @desc    Récupérer les détails d'un salon spécifique (Admin uniquement)
+ * @access  Private/Admin
+ */
+router.get('/salons/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const salon = await db.Salon.findOne({
+      where: { id },
+      include: [
+        {
+          model: db.Hairdresser,
+          as: 'hairdresser',
+          include: [
+            {
+              model: db.User,
+              as: 'user',
+              attributes: ['id', 'full_name', 'email', 'phone', 'profile_photo']
+            }
+          ]
+        }
+      ]
+    });
+
+    if (!salon) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'SALON_NOT_FOUND',
+          message: 'Salon non trouvé'
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: salon
+    });
+  } catch (error) {
+    console.error('Error fetching salon:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Une erreur est survenue lors de la récupération du salon',
+      details: error.message
+    });
+  }
+});
+
+/**
  * @route   GET /api/v1/admin/salons
  * @desc    Récupérer la liste des salons (Admin uniquement)
  * @query   {string} [status] - Filtrer par statut (validated, pending)
