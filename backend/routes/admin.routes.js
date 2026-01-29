@@ -3,7 +3,7 @@ const router = express.Router();
 const { authenticate, isAdmin } = require('../middleware/auth.middleware');
 const { getUsersList } = require('../controllers/admin.controller');
 const { getDashboardStats } = require('../controllers/dashboard.controller');
-const { createSalon } = require('../controllers/admin/salon.admin.controller');
+const { createSalon, validateSalon } = require('../controllers/admin/salon.admin.controller');
 const { 
   validateHairdresser, 
   getHairdressers: getHairdressersAdmin,
@@ -149,5 +149,13 @@ router.post(
   uploadFields,
   createSalon
 );
+
+/**
+ * @route   PATCH /api/v1/admin/salons/:id/validate
+ * @desc    Valider ou invalider un salon (Admin uniquement)
+ * @body    {boolean} is_validated - Statut de validation (true/false)
+ * @access  Private/Admin
+ */
+router.patch('/salons/:id/validate', validateSalon);
 
 module.exports = router;

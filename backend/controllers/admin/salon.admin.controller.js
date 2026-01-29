@@ -110,3 +110,68 @@ exports.createSalon = async (req, res) => {
     });
   }
 };
+
+/**
+ * Valider ou invalider un salon
+ */
+exports.validateSalon = async (req, res) => {
+  const transaction = await db.sequelize.transaction();
+  
+  try {
+    const { id } = req.params;
+    const { is_validated } = req.body;
+
+    // Vérifier si le salon existe
+    const salon = await db.Salon.findByPk(id, {
+      include: [{
+        model: db.Hairdresser,
+        as: 'hairdresser',
+        include: [{
+          model: db.User,
+          as: 'user',
+          attributes: ['id', 'full_name', 'email']
+        }]
+      }],
+      transaction
+    });
+    
+    if (!salon) {
+      await transaction.rollback();
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'SALON_NOT_FOUND',
+          message: 'Salon non trouvé'
+        }
+      });
+    }
+
+    // Mettre à jour le statut de validation du salon
+    await salon.update({ is_validated }, { transaction });
+
+    await transaction.commit();
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        id: salon.id,
+        name: salon.name,
+        is_validated: salon.is_validated,
+        hairdresser: salon.hairdresser
+      },
+      message: is_validated ? 'Salon activé avec succès' : 'Salon désactivé avec succès'
+    });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Erreur lors de la validation du salon:', error);
+    
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Une erreur est survenue lors de la mise à jour du statut du salon',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      }
+    });
+  }
+};

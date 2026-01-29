@@ -391,34 +391,62 @@ exports.updateSalon = async (req, res) => {
     const { id } = req.params;
     const updateData = { ...req.body };
 
-    // Vérifier si le coiffeur existe et est approuvé
-    const hairdresser = await db.Hairdresser.findOne({
-      where: { 
-        user_id: req.user.id,
-        registration_status: 'approved'
-      },
-      transaction
-    });
+    let salon;
+    
+    // Si l'utilisateur est un admin, il peut modifier n'importe quel salon
+    if (req.user.user_type === 'admin') {
+      salon = await db.Salon.findOne({
+        where: { id },
+        include: [{
+          model: db.Hairdresser,
+          as: 'hairdresser',
+          include: [{
+            model: db.User,
+            as: 'user',
+            attributes: ['id', 'full_name', 'email', 'phone']
+          }]
+        }],
+        transaction
+      });
+    } else {
+      // Pour les coiffeurs, vérifier si le coiffeur existe et est approuvé
+      const hairdresser = await db.Hairdresser.findOne({
+        where: { 
+          user_id: req.user.id,
+          registration_status: 'approved'
+        },
+        transaction
+      });
 
-    if (!hairdresser) {
-      await transaction.rollback();
-      return res.status(403).json({
-        success: false,
-        error: {
-          code: 'UNAUTHORIZED',
-          message: 'Coiffeur non trouvé ou non approuvé'
-        }
+      if (!hairdresser) {
+        await transaction.rollback();
+        return res.status(403).json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'Coiffeur non trouvé ou non approuvé'
+          }
+        });
+      }
+
+      // Vérifier si le salon existe et appartient au coiffeur
+      salon = await db.Salon.findOne({
+        where: { 
+          id,
+          hairdresser_id: hairdresser.id  // Utiliser l'ID du hairdresser trouvé
+        },
+        include: [{
+          model: db.Hairdresser,
+          as: 'hairdresser',
+          include: [{
+            model: db.User,
+            as: 'user',
+            attributes: ['id', 'full_name', 'email', 'phone']
+          }]
+        }],
+        transaction
       });
     }
-
-    // Vérifier si le salon existe et appartient au coiffeur
-    const salon = await db.Salon.findOne({
-      where: { 
-        id,
-        hairdresser_id: hairdresser.id  // Utiliser l'ID du hairdresser trouvé
-      },
-      transaction
-    });
 
     if (!salon) {
       await transaction.rollback();

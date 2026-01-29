@@ -10,6 +10,7 @@ import AdminLayout from './components/layout/AdminLayout';
 import LoginPage from './pages/LoginPage';
 import SalonsPage from './pages/salons/SalonsPage';
 import DetailSalon from './pages/salons/DetailSalon';
+import EditSalon from './pages/salons/EditSalon';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -63,6 +64,7 @@ const ProtectedRoutes = () => (
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/salons" element={<SalonsPage />} />
           <Route path="/salons/:id" element={<DetailSalon />} />
+          <Route path="/salons/edit/:id" element={<EditSalon />} />
           <Route path="/hairdressers" element={<HairdressersPage />} />
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="/users" element={<UsersPage />} />
