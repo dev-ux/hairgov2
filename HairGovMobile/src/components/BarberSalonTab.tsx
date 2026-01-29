@@ -12,6 +12,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../contexts/AuthContext';
 import { createSalon, getMySalon, updateSalon, Salon as SalonType, CreateSalonData } from '../services/salon.service';
 
@@ -47,6 +48,108 @@ export default function BarberSalonTab() {
     business_hours: '',
     photos: []
   });
+
+  // Demander les permissions pour l'appareil photo et la galerie
+  useEffect(() => {
+    (async () => {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission requise',
+          'Désolé, nous avons besoin des permissions pour accéder à vos photos pour que cela fonctionne !'
+        );
+      }
+    })();
+  }, []);
+
+  const handleAddPhoto = async () => {
+    try {
+      // Demander à l'utilisateur de choisir entre la galerie ou l'appareil photo
+      Alert.alert(
+        'Ajouter une photo',
+        'Choisissez comment vous voulez ajouter une photo',
+        [
+          {
+            text: 'Galerie',
+            onPress: pickImageFromGallery,
+          },
+          {
+            text: 'Appareil photo',
+            onPress: takePhotoWithCamera,
+          },
+          {
+            text: 'Annuler',
+            style: 'cancel',
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de photo:', error);
+      Alert.alert('Erreur', 'Impossible d\'ajouter une photo');
+    }
+  };
+
+  const pickImageFromGallery = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const newPhoto = result.assets[0].uri;
+        addPhotoToSalon(newPhoto);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la sélection depuis la galerie:', error);
+      Alert.alert('Erreur', 'Impossible de sélectionner une image depuis la galerie');
+    }
+  };
+
+  const takePhotoWithCamera = async () => {
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets[0]) {
+        const newPhoto = result.assets[0].uri;
+        addPhotoToSalon(newPhoto);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la prise de photo:', error);
+      Alert.alert('Erreur', 'Impossible de prendre une photo');
+    }
+  };
+
+  const addPhotoToSalon = async (photoUri: string) => {
+    try {
+      if (creatingMode) {
+        // Mode création : ajouter au formulaire
+        const currentPhotos = formData.photos || [];
+        const updatedPhotos = [...currentPhotos, photoUri];
+        setFormData({ ...formData, photos: updatedPhotos });
+      } else if (salon) {
+        // Mode édition : mettre à jour le salon existant
+        const currentPhotos = salon.photos || [];
+        const updatedPhotos = [...currentPhotos, photoUri];
+        const updatedSalon = { ...salon, photos: updatedPhotos };
+        setSalon(updatedSalon);
+        
+        // Mettre à jour sur le backend
+        await updateSalon(salon.id, { photos: updatedPhotos });
+        Alert.alert('Succès', 'Photo ajoutée avec succès');
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de la photo au salon:', error);
+      Alert.alert('Erreur', 'Impossible d\'ajouter la photo au salon');
+    }
+  };
 
   useEffect(() => {
     fetchSalonInfo();
@@ -275,6 +378,19 @@ export default function BarberSalonTab() {
             </View>
           </View>
 
+          {/* Photos du salon */}
+          <View style={styles.photosSection}>
+            <Text style={styles.sectionTitle}>Photos du salon</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {formData.photos && formData.photos.map((photo, index) => (
+                <Image key={index} source={{ uri: photo }} style={styles.photo} />
+              ))}
+              <TouchableOpacity style={styles.addPhotoButton} onPress={handleAddPhoto}>
+                <Ionicons name="add" size={24} color="#6C63FF" />
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+
           {/* Actions */}
           <View style={styles.actionsSection}>
             <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
@@ -319,7 +435,7 @@ export default function BarberSalonTab() {
               {salon.photos.map((photo, index) => (
                 <Image key={index} source={{ uri: photo }} style={styles.photo} />
               ))}
-              <TouchableOpacity style={styles.addPhotoButton}>
+              <TouchableOpacity style={styles.addPhotoButton} onPress={handleAddPhoto}>
                 <Ionicons name="add" size={24} color="#6C63FF" />
               </TouchableOpacity>
             </ScrollView>

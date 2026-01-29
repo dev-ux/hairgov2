@@ -10,7 +10,8 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert
+  StatusBar,
+  Dimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -18,6 +19,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { useAuth } from '../../contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const { width, height } = Dimensions.get('window');
 
 const LoginScreen = () => {
   const [phone, setPhone] = useState('');
@@ -49,178 +52,190 @@ const LoginScreen = () => {
     setLocalError('');
 
     try {
-      console.log('Appel de login avec:', { phone });
       const success = await login(phone, password);
       if (success) {
-        console.log('Login réussi, tentative de navigation...');
-        
-        try {
-          // Récupérer les données utilisateur de manière sécurisée
-          const userData = await AsyncStorage.getItem('userData');
-          console.log('UserData trouvé:', !!userData);
+        console.log('Connexion réussie, redirection...');
+        // Récupérer les données utilisateur pour la redirection
+        const userData = await AsyncStorage.getItem('userData');
+        if (userData) {
+          const parsedUser = JSON.parse(userData);
+          console.log('Type utilisateur:', parsedUser.user_type);
           
-          if (userData) {
-            const parsedUser = JSON.parse(userData);
-            console.log('Type utilisateur:', parsedUser.user_type);
-            
-            // Navigation sécurisée avec timeout
-            setTimeout(() => {
-              try {
-                if (parsedUser.user_type === 'hairdresser') {
-                  console.log('Navigation vers BarberHome');
-                  navigation.replace('BarberHome');
-                } else {
-                  console.log('Navigation vers Home');
-                  navigation.replace('Home');
-                }
-              } catch (navError) {
-                console.error('Erreur de navigation:', navError);
-                // Fallback: navigation vers Home
-                navigation.replace('Home');
-              }
-            }, 100);
-          } else {
-            console.log('Pas de userData, navigation vers Home par défaut');
-            setTimeout(() => {
+          // Redirection selon le type d'utilisateur
+          setTimeout(() => {
+            if (parsedUser.user_type === 'hairdresser') {
+              console.log('Navigation vers BarberHome');
+              navigation.replace('BarberHome');
+            } else {
+              console.log('Navigation vers Home');
               navigation.replace('Home');
-            }, 100);
-          }
-        } catch (storageError) {
-          console.error('Erreur de stockage:', storageError);
-          // Fallback: navigation vers Home
+            }
+          }, 100);
+        } else {
+          console.log('Pas de userData, navigation vers Home par défaut');
           setTimeout(() => {
             navigation.replace('Home');
           }, 100);
         }
       } else {
-        setLocalError('Échec de la connexion. Veuillez réessayer.');
+        setLocalError('Échec de la connexion');
       }
     } catch (error) {
       console.error('Erreur dans handleLogin:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue lors de la connexion';
-      setLocalError(errorMessage);
+      setLocalError('Échec de la connexion');
     }
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    <KeyboardAvoidingView 
       style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <ScrollView 
-        contentContainerStyle={styles.scrollView}
-        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={styles.logoContainer}>
-          <View style={styles.logoPlaceholder}>
-            <Text style={styles.logoPlaceholderText}>HairGov</Text>
+        {/* Header avec logo Scizz */}
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <Image 
+              source={require('../../assets/images/logo.png')} 
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+            <Text style={styles.tagline}>Votre style, notre expertise</Text>
           </View>
-          <Text style={styles.title}>HairGov</Text>
-          <Text style={styles.subtitle}>Trouvez le coiffeur parfait près de chez vous</Text>
         </View>
 
-        <View style={styles.toggleContainer}>
-          <TouchableOpacity
-            style={[
-              styles.toggleButton, 
-              userType === 'client' && styles.activeToggle
-            ]}
-            onPress={() => setUserType('client')}
-          >
-            <Text style={[
-              styles.toggleText, 
-              userType === 'client' && styles.activeToggleText
-            ]}>
-              Je suis un client
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.toggleButton, 
-              userType === 'coiffeur' && styles.activeToggle
-            ]}
-            onPress={() => setUserType('coiffeur')}
-          >
-            <Text style={[
-              styles.toggleText, 
-              userType === 'coiffeur' && styles.activeToggleText
-            ]}>
-              Je suis un coiffeur
-            </Text>
-          </TouchableOpacity>
-        </View>
-
+        {/* Formulaire de connexion */}
         <View style={styles.formContainer}>
-          {localError ? <Text style={styles.errorText}>{localError}</Text> : null}
-          
+          <Text style={styles.title}>Connexion</Text>
+          <Text style={styles.subtitle}>Connectez-vous à votre compte Scizz</Text>
+
+          {/* Sélection du type d'utilisateur */}
+          <View style={styles.userTypeContainer}>
+            <TouchableOpacity
+              style={[
+                styles.userTypeButton,
+                userType === 'client' && styles.userTypeButtonActive
+              ]}
+              onPress={() => setUserType('client')}
+            >
+              <Ionicons 
+                name="person-outline" 
+                size={20} 
+                color={userType === 'client' ? '#ffffff' : '#666'} 
+              />
+              <Text style={[
+                styles.userTypeText,
+                userType === 'client' && styles.userTypeTextActive
+              ]}>
+                Client
+              </Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={[
+                styles.userTypeButton,
+                userType === 'coiffeur' && styles.userTypeButtonActive
+              ]}
+              onPress={() => setUserType('coiffeur')}
+            >
+              <Ionicons 
+                name="cut-outline" 
+                size={20} 
+                color={userType === 'coiffeur' ? '#ffffff' : '#666'} 
+              />
+              <Text style={[
+                styles.userTypeText,
+                userType === 'coiffeur' && styles.userTypeTextActive
+              ]}>
+                Coiffeur
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Champ téléphone */}
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Téléphone</Text>
+            <Ionicons name="call-outline" size={20} color="#666" style={styles.inputIcon} />
             <TextInput
               style={styles.input}
-              placeholder="+225XXXXXXXXX"
+              placeholder="Numéro de téléphone"
+              placeholderTextColor="#999"
               value={phone}
               onChangeText={setPhone}
               keyboardType="phone-pad"
               autoCapitalize="none"
+              autoComplete="tel"
             />
           </View>
 
+          {/* Champ mot de passe */}
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Mot de passe</Text>
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={[styles.input, styles.passwordInput]}
-                placeholder="Votre mot de passe"
-                secureTextEntry={!showPassword}
-                value={password}
-                onChangeText={setPassword}
-                autoCapitalize="none"
+            <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Mot de passe"
+              placeholderTextColor="#999"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoComplete="password"
+            />
+            <TouchableOpacity
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Ionicons 
+                name={showPassword ? "eye-off-outline" : "eye-outline"} 
+                size={20} 
+                color="#666" 
               />
-              <TouchableOpacity 
-                style={styles.eyeIcon}
-                onPress={() => setShowPassword(!showPassword)}
-              >
-                <Ionicons 
-                  name={showPassword ? 'eye-off' : 'eye'} 
-                  size={24} 
-                  color="#666" 
-                />
-              </TouchableOpacity>
-            </View>
+            </TouchableOpacity>
           </View>
 
-          <TouchableOpacity 
-            style={[
-              styles.loginButton,
-              (isLoading || !phone || !password) && styles.disabledButton
-            ]}
+          {/* Message d'erreur */}
+          {localError ? (
+            <View style={styles.errorContainer}>
+              <Ionicons name="alert-circle-outline" size={20} color="#ff4444" />
+              <Text style={styles.errorText}>{localError}</Text>
+            </View>
+          ) : null}
+
+          {/* Bouton de connexion */}
+          <TouchableOpacity
+            style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
             onPress={handleLogin}
-            disabled={isLoading || !phone || !password}
+            disabled={isLoading}
           >
             {isLoading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator size="small" color="#ffffff" />
             ) : (
               <Text style={styles.loginButtonText}>Se connecter</Text>
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity 
-            style={styles.forgotPassword}
-            onPress={() => navigation.navigate('ForgotPassword')}
-          >
+          {/* Lien mot de passe oublié */}
+          <TouchableOpacity style={styles.forgotPasswordButton}>
             <Text style={styles.forgotPasswordText}>Mot de passe oublié ?</Text>
           </TouchableOpacity>
 
+          {/* Lien vers inscription */}
           <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>Vous n'avez pas de compte ? </Text>
+            <Text style={styles.signupText}>Pas encore de compte ? </Text>
             <TouchableOpacity 
-              onPress={() => navigation.navigate('Register', { userType })}
+              onPress={() => navigation.navigate('Register' as any)}
             >
-              <Text style={styles.signupLink}>
-                {userType === 'client' ? 'Créer un compte' : 'Devenir coiffeur'}
-              </Text>
+              <Text style={styles.signupLink}>S'inscrire</Text>
             </TouchableOpacity>
           </View>
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>© 2024 Scizz - Tous droits réservés</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -232,145 +247,162 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  scrollView: {
+  scrollContainer: {
     flexGrow: 1,
-    padding: 20,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+  },
+  header: {
+    alignItems: 'center',
+    paddingTop: height * 0.1,
+    paddingBottom: height * 0.05,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 30,
   },
-  logoPlaceholder: {
+  logoImage: {
     width: 120,
     height: 120,
     marginBottom: 20,
-    backgroundColor: '#6C63FF',
-    borderRadius: 60,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  logoPlaceholderText: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
+  tagline: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  formContainer: {
+    paddingHorizontal: 30,
+    paddingVertical: 30,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 5,
+    marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
-    paddingHorizontal: 20,
+    marginBottom: 40,
   },
-  toggleContainer: {
+  userTypeContainer: {
     flexDirection: 'row',
     backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    padding: 5,
-    marginBottom: 20,
+    borderRadius: 25,
+    padding: 4,
+    marginBottom: 30,
   },
-  toggleButton: {
+  userTypeButton: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 22,
+    gap: 8,
   },
-  activeToggle: {
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  userTypeButtonActive: {
+    backgroundColor: '#6C63FF',
   },
-  toggleText: {
+  userTypeText: {
     fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  activeToggleText: {
-    color: '#6C63FF',
     fontWeight: '600',
+    color: '#666',
   },
-  formContainer: {
-    marginBottom: 20,
+  userTypeTextActive: {
+    color: '#ffffff',
   },
   inputContainer: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  input: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#f9f9f9',
+    borderRadius: 15,
+    marginBottom: 20,
+    paddingHorizontal: 20,
+    height: 56,
     borderWidth: 1,
     borderColor: '#e1e1e1',
-    borderRadius: 10,
-    padding: 15,
+  },
+  inputIcon: {
+    marginRight: 15,
+  },
+  input: {
+    flex: 1,
     fontSize: 16,
     color: '#333',
   },
-  passwordContainer: {
-    position: 'relative',
-  },
-  passwordInput: {
-    paddingRight: 50,
-  },
   eyeIcon: {
-    position: 'absolute',
-    right: 15,
-    top: 15,
+    padding: 5,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 68, 68, 0.1)',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 20,
+    gap: 10,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#ff4444',
+    flex: 1,
   },
   loginButton: {
     backgroundColor: '#6C63FF',
-    padding: 16,
-    borderRadius: 10,
+    borderRadius: 15,
+    height: 56,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 10,
+    marginBottom: 20,
+    shadowColor: '#6C63FF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  disabledButton: {
+  loginButtonDisabled: {
     backgroundColor: '#a5a1ff',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   loginButtonText: {
-    color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    color: '#ffffff',
   },
-  forgotPassword: {
-    alignItems: 'center',
-    marginTop: 15,
+  forgotPasswordButton: {
+    alignSelf: 'center',
+    marginBottom: 30,
   },
   forgotPasswordText: {
-    color: '#6C63FF',
     fontSize: 14,
+    color: '#6C63FF',
+    textDecorationLine: 'underline',
   },
   signupContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 30,
+    alignItems: 'center',
   },
   signupText: {
-    color: '#666',
     fontSize: 14,
+    color: '#666',
   },
   signupLink: {
-    color: '#6C63FF',
     fontSize: 14,
+    color: '#6C63FF',
     fontWeight: '600',
   },
-  errorText: {
-    color: '#ff4444',
-    fontSize: 14,
-    marginBottom: 15,
-    textAlign: 'center',
+  footer: {
+    alignItems: 'center',
+    paddingBottom: 30,
+  },
+  footerText: {
+    fontSize: 12,
+    color: '#999',
   },
 });
 
