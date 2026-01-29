@@ -227,9 +227,11 @@ const MapScreen = ({ navigation }: any) => {
                   <View style={styles.distanceContainer}>
                     <Ionicons name="location" size={14} color="#6C63FF" />
                     <Text style={styles.distanceText}>
-                      {salon.distance < 1 
+                      {salon.distance && salon.distance < 1 
                         ? `${Math.round(salon.distance * 1000)}m` 
-                        : `${salon.distance.toFixed(1)}km`
+                        : salon.distance 
+                          ? `${salon.distance.toFixed(1)}km`
+                          : 'Distance inconnue'
                       }
                     </Text>
                   </View>
@@ -238,14 +240,19 @@ const MapScreen = ({ navigation }: any) => {
                 {salon.average_rating && (
                   <View style={styles.ratingContainer}>
                     <Ionicons name="star" size={14} color="#FFA500" />
-                    <Text style={styles.ratingText}>{salon.average_rating.toFixed(1)}</Text>
+                    <Text style={styles.ratingText}>
+                      {typeof salon.average_rating === 'number' ? salon.average_rating.toFixed(1) : 'N/A'}
+                    </Text>
                   </View>
                 )}
                 
                 <View style={styles.locationContainer}>
                   <Ionicons name="location-outline" size={14} color="#6C63FF" />
                   <Text style={styles.locationText}>
-                    {parseFloat(String(salon.latitude)).toFixed(2)}, {parseFloat(String(salon.longitude)).toFixed(2)}
+                    {salon.latitude && salon.longitude 
+                      ? `${parseFloat(String(salon.latitude)).toFixed(2)}, ${parseFloat(String(salon.longitude)).toFixed(2)}`
+                      : 'Coordonnées inconnues'
+                    }
                   </Text>
                 </View>
               </View>
