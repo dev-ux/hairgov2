@@ -155,6 +155,34 @@ const SalonsPage: React.FC = () => {
     fetchSalons(); // Rafraîchir la liste des salons
   };
 
+  const handleToggleSalonValidation = async (salonId: string, currentStatus: boolean) => {
+    try {
+      const newStatus = !currentStatus;
+      const response = await api.post(`/salons/${salonId}/validate`, {
+        is_validated: newStatus
+      });
+
+      if (response.data.success) {
+        // Mettre à jour l'état local
+        setSalons(prevSalons => 
+          prevSalons.map(salon => 
+            salon.id === salonId 
+              ? { ...salon, is_validated: newStatus }
+              : salon
+          )
+        );
+        
+        // Afficher un message de succès
+        alert(newStatus ? 'Salon activé avec succès' : 'Salon désactivé avec succès');
+      } else {
+        alert('Erreur lors de la mise à jour du statut du salon');
+      }
+    } catch (error) {
+      console.error('Error toggling salon validation:', error);
+      alert('Une erreur est survenue lors de la mise à jour du statut');
+    }
+  };
+
   const filteredSalons = salons.filter((salon) => {
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
@@ -316,8 +344,9 @@ const SalonsPage: React.FC = () => {
                         <IconButton
                           size="small"
                           color={salon.is_validated ? 'error' : 'success'}
-                          onClick={async () => {
-                            // Logique d'activation/désactivation
+                          onClick={(e) => {
+                            e.stopPropagation(); // Empêcher la redirection vers les détails
+                            handleToggleSalonValidation(salon.id, salon.is_validated);
                           }}
                         >
                           {salon.is_validated ? <CancelIcon fontSize="small" /> : <CheckCircleIcon fontSize="small" />}
