@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../contexts/AuthContext';
 import { createSalon, getMySalon, updateSalon, Salon as SalonType, CreateSalonData } from '../services/salon.service';
+import AddressSelector from './AddressSelector';
 
 const { width } = Dimensions.get('window');
 
@@ -37,6 +38,7 @@ export default function BarberSalonTab() {
   const [loading, setLoading] = useState(true);
   const [editingMode, setEditingMode] = useState(false);
   const [creatingMode, setCreatingMode] = useState(false);
+  const [showAddressSelector, setShowAddressSelector] = useState(false);
   const [formData, setFormData] = useState<CreateSalonData>({
     name: '',
     address: '',
@@ -75,7 +77,7 @@ export default function BarberSalonTab() {
           },
           {
             text: 'Appareil photo',
-            onPress: takePhotoWithCamera,
+            onPress: pickImageFromCamera,
           },
           {
             text: 'Annuler',
@@ -98,18 +100,25 @@ export default function BarberSalonTab() {
         quality: 0.8,
       });
 
-      if (!result.canceled && result.assets && result.assets[0]) {
-        const newPhoto = result.assets[0].uri;
-        addPhotoToSalon(newPhoto);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const currentPhotos = formData.photos || [];
+        const newPhotos = [...currentPhotos, result.assets[0].uri];
+        setFormData(prev => ({ ...prev, photos: newPhotos }));
       }
     } catch (error) {
-      console.error('Erreur lors de la sélection depuis la galerie:', error);
-      Alert.alert('Erreur', 'Impossible de sélectionner une image depuis la galerie');
+      console.error('Error picking image:', error);
+      Alert.alert('Erreur', 'Impossible de sélectionner cette photo');
     }
   };
 
-  const takePhotoWithCamera = async () => {
+  const pickImageFromCamera = async () => {
     try {
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      if (permissionResult.granted === false) {
+        Alert.alert('Permission requise', 'Autorisez l\'accès à la caméra pour prendre des photos');
+        return;
+      }
+
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -117,14 +126,24 @@ export default function BarberSalonTab() {
         quality: 0.8,
       });
 
-      if (!result.canceled && result.assets && result.assets[0]) {
-        const newPhoto = result.assets[0].uri;
-        addPhotoToSalon(newPhoto);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const currentPhotos = formData.photos || [];
+        const newPhotos = [...currentPhotos, result.assets[0].uri];
+        setFormData(prev => ({ ...prev, photos: newPhotos }));
       }
     } catch (error) {
-      console.error('Erreur lors de la prise de photo:', error);
-      Alert.alert('Erreur', 'Impossible de prendre une photo');
+      console.error('Error taking photo:', error);
+      Alert.alert('Erreur', 'Impossible de prendre cette photo');
     }
+  };
+
+  const handleAddressSelect = (city: any) => {
+    setFormData(prev => ({
+      ...prev,
+      address: city.name,
+      latitude: city.latitude,
+      longitude: city.longitude
+    }));
   };
 
   const addPhotoToSalon = async (photoUri: string) => {
@@ -323,14 +342,23 @@ export default function BarberSalonTab() {
 
             <View style={styles.infoRow}>
               <Text style={styles.label}>Adresse *</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.address}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, address: text }))}
-                placeholder="Adresse complète du salon"
-                multiline
-                numberOfLines={3}
-              />
+              <View style={styles.addressContainer}>
+                <TextInput
+                  style={[styles.input, styles.textArea, styles.addressInput]}
+                  value={formData.address}
+                  onChangeText={(text) => setFormData(prev => ({ ...prev, address: text }))}
+                  placeholder="Adresse complète du salon"
+                  multiline
+                  numberOfLines={3}
+                />
+                <TouchableOpacity
+                  style={styles.addressSelectorButton}
+                  onPress={() => setShowAddressSelector(true)}
+                >
+                  <Ionicons name="location" size={20} color="#007AFF" />
+                  <Text style={styles.addressSelectorText}>Choisir une ville</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.infoRow}>
@@ -405,6 +433,12 @@ export default function BarberSalonTab() {
             </TouchableOpacity>
           </View>
         </ScrollView>
+        <AddressSelector
+          visible={showAddressSelector}
+          onClose={() => setShowAddressSelector(false)}
+          onSelect={handleAddressSelect}
+          placeholder="Rechercher une ville en Côte d'Ivoire..."
+        />
       </SafeAreaView>
     );
   }
@@ -687,5 +721,30 @@ const styles = StyleSheet.create({
   },
   saveButtonDisabled: {
     backgroundColor: '#ccc',
+  },
+  addressContainer: {
+    position: 'relative',
+  },
+  addressInput: {
+    paddingRight: 120, // Space for the button
+  },
+  addressSelectorButton: {
+    position: 'absolute',
+    right: 10,
+    top: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f8ff',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  addressSelectorText: {
+    fontSize: 12,
+    color: '#007AFF',
+    marginLeft: 4,
+    fontWeight: '500',
   },
 });
