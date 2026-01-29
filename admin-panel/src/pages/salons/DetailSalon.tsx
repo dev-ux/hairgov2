@@ -214,26 +214,56 @@ const DetailSalon: React.FC = () => {
             </Typography>
             {salon.photos && salon.photos.length > 0 ? (
               <Box display="flex" flexWrap="wrap" gap={2}>
-                {salon.photos.map((photo, index) => (
-                  <Box
-                    key={index}
-                    component="img"
-                    src={formatImageUrl(photo)}
-                    alt={`${salon.name} ${index + 1}`}
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.src = 'https://via.placeholder.com/200x150?text=Image+non+disponible';
-                    }}
-                    sx={{
-                      width: 200,
-                      height: 150,
-                      objectFit: 'cover',
-                      borderRadius: 1,
-                      border: '1px solid #eee',
-                    }}
-                  />
-                ))}
+                {salon.photos.map((photo, index) => {
+                  const isLocalFile = photo.startsWith('file://');
+                  const imageUrl = isLocalFile ? null : formatImageUrl(photo);
+                  
+                  return (
+                    <Box key={index}>
+                      {isLocalFile ? (
+                        // Affichage pour les fichiers locaux
+                        <Box
+                          sx={{
+                            width: 200,
+                            height: 150,
+                            borderRadius: 1,
+                            backgroundColor: '#f5f5f5',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: '2px dashed #ccc',
+                          }}
+                        >
+                          <Typography variant="body2" color="text.secondary" align="center">
+                            Photo locale
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" align="center">
+                            (Non accessible depuis le web)
+                          </Typography>
+                        </Box>
+                      ) : (
+                        // Affichage normal pour les URLs web
+                        <img
+                          src={imageUrl || ''}
+                          alt={`${salon.name} ${index + 1}`}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null;
+                            target.src = 'https://via.placeholder.com/200x150?text=Image+non+disponible';
+                          }}
+                          style={{
+                            width: 200,
+                            height: 150,
+                            objectFit: 'cover',
+                            borderRadius: 4,
+                            border: '1px solid #eee',
+                          }}
+                        />
+                      )}
+                    </Box>
+                  );
+                })}
               </Box>
             ) : (
               <Typography color="textSecondary">Aucune photo disponible</Typography>
