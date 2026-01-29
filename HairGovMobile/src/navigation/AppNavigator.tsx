@@ -12,7 +12,6 @@ import { Onboarding3 } from '../screens/Onboarding3';
 import HomeScreen from '../screens/HomeScreen';
 import MapScreen from '../screens/MapScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
-import LoginScreen from '../screens/auth/LoginScreen';
 import { VerifyOtpScreen } from '../screens/auth/VerifyOtpScreen';
 import BookingScreen from '../screens/BookingScreen';
 import CreateBookingScreen from '../screens/CreateBookingScreen';
@@ -33,6 +32,7 @@ import NotificationDetailScreen from '../screens/NotificationDetailScreen';
 import AllSalonsScreen from '../screens/AllSalonsScreen';
 import BarberHomePage from '../screens/BarberHomePage';
 import ReservationDetailScreen from '../screens/ReservationDetailScreen';
+import LoginScreen from '@screens/auth/LoginScreen';
 
 // Définition des types pour la navigation
 export type RootStackParamList = {

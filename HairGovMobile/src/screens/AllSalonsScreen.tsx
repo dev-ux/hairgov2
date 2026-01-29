@@ -27,24 +27,22 @@ const formatImageUrl = (url: string) => {
 
     console.log('URL originale reçue:', url);
 
-    // Nettoyer l'URL (supprimer les accolades, espaces, guillemets et autres caractères invalides)
-    let cleanUrl = url.replace(/[{}"']/g, '').trim();
+    // Nettoyer l'URL
+    let cleanUrl = url.trim();
+    
+    // Si c'est une URL file:// (photo locale), la retourner telle quelle
+    if (cleanUrl.startsWith('file://')) {
+      console.log('URL locale détectée:', cleanUrl);
+      return cleanUrl;
+    }
 
-    // Si l'URL est déjà une URL complète, la retourner telle quelle
+    // Si l'URL est déjà complète (http/https), la retourner telle quelle
     if (cleanUrl.startsWith('http')) {
       console.log('URL complète détectée:', cleanUrl);
       return cleanUrl;
     }
 
-    // Si l'URL commence par /uploads/photos/, la nettoyer et construire l'URL complète
-    if (cleanUrl.startsWith('/uploads/photos/')) {
-      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-      const fullUrl = `${baseUrl}${cleanUrl}`;
-      console.log('URL uploads/photos détectée, URL finale:', fullUrl);
-      return fullUrl;
-    }
-
-    // Si l'URL commence par /uploads/, la nettoyer et construire l'URL complète
+    // Si l'URL commence par /uploads/, construire l'URL complète
     if (cleanUrl.startsWith('/uploads/')) {
       const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
       const fullUrl = `${baseUrl}${cleanUrl}`;
@@ -52,27 +50,10 @@ const formatImageUrl = (url: string) => {
       return fullUrl;
     }
 
-    // Si l'URL commence par photos-, construire l'URL complète
-    if (cleanUrl.startsWith('photos-')) {
-      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-      const fullUrl = `${baseUrl}/uploads/photos/${cleanUrl}`;
-      console.log('Nom de fichier photos- détecté, URL finale:', fullUrl);
-      return fullUrl;
-    }
-
-    // Si l'URL ne contient que le nom du fichier sans préfixe
-    if (!cleanUrl.includes('/')) {
-      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-      const fullUrl = `${baseUrl}/uploads/photos/${cleanUrl}`;
-      console.log('Nom de fichier simple détecté, URL finale:', fullUrl);
-      return fullUrl;
-    }
-
-    // Pour tout autre cas, essayer de construire avec /uploads/photos/
+    // Si l'URL est un chemin relatif simple, construire l'URL complète
     const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-    const fileName = cleanUrl.split('/').pop();
-    const fullUrl = `${baseUrl}/uploads/photos/${fileName}`;
-    console.log('Cas par défaut, URL finale:', fullUrl);
+    const fullUrl = `${baseUrl}/uploads/photos/${cleanUrl}`;
+    console.log('URL relative détectée, URL finale:', fullUrl);
     return fullUrl;
   } catch (error) {
     console.error('Erreur lors du formatage de l\'URL:', error);
@@ -140,7 +121,19 @@ export default function AllSalonsScreen() {
   }, []);
 
   const renderSalonItem = ({ item }: { item: Salon }) => {
-    const imageUrl = item.photos?.[0] ? formatImageUrl(item.photos[0]) : null;
+    // Vérifier si le salon a des photos
+    const hasPhotos = item.photos && Array.isArray(item.photos) && item.photos.length > 0;
+    const firstPhoto = hasPhotos ? item.photos[0] : null;
+    const imageUrl = firstPhoto ? formatImageUrl(firstPhoto) : null;
+    const hasValidImageUrl = imageUrl && imageUrl.trim() !== '';
+    
+    console.log(`Salon ${item.name}:`, {
+      hasPhotos,
+      photosCount: hasPhotos ? item.photos.length : 0,
+      firstPhoto,
+      imageUrl,
+      hasValidImageUrl
+    });
     
     return (
       <TouchableOpacity
@@ -148,25 +141,32 @@ export default function AllSalonsScreen() {
         onPress={() => navigation.navigate('SalonDetail', { salonId: item.id })}
       >
         <Image 
-          source={imageErrors[item.id] || !imageUrl 
-            ? defaultSalonImage 
-            : { uri: imageUrl }}
+          source={
+            imageErrors[item.id] || !hasValidImageUrl 
+              ? defaultSalonImage 
+              : { uri: imageUrl }
+          }
           style={styles.salonImage} 
           resizeMode="cover"
-          onError={() => handleImageError(item.id)}
-          defaultSource={defaultSalonImage}
+          onError={() => {
+            console.log(`Erreur de chargement de l'image pour le salon ${item.name}, URL: ${imageUrl}`);
+            handleImageError(item.id);
+          }}
+          onLoad={() => {
+            console.log(`Image chargée avec succès pour le salon ${item.name}`);
+          }}
         />
-      <View style={styles.salonInfo}>
-        <Text style={styles.salonName}>{item.name}</Text>
-        <Text style={styles.salonAddress} numberOfLines={1}>
-          {item.address}
-        </Text>
-        <View style={styles.ratingContainer}>
-          <Ionicons name="star" size={16} color="#FFD700" />
-          <Text style={styles.ratingText}>
-            {item.average_rating ? item.average_rating.toFixed(1) : 'N/A'}
+        <View style={styles.salonInfo}>
+          <Text style={styles.salonName}>{item.name}</Text>
+          <Text style={styles.salonAddress} numberOfLines={1}>
+            {item.address}
           </Text>
-        </View>
+          <View style={styles.ratingContainer}>
+            <Ionicons name="star" size={16} color="#FFD700" />
+            <Text style={styles.ratingText}>
+              {item.average_rating ? item.average_rating.toFixed(1) : 'N/A'}
+            </Text>
+          </View>
         </View>
       </TouchableOpacity>
     );
