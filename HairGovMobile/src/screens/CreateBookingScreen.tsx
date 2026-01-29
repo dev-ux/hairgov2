@@ -47,8 +47,11 @@ const CreateBookingScreen = ({ navigation }: any) => {
       const response = await fetch(`${API_URL}/salons`);
       const result = await response.json();
       
+      console.log('CreateBookingScreen - API Response:', result);
+      
       if (result.success && result.data) {
         setSalons(result.data);
+        console.log('CreateBookingScreen - Salons loaded:', result.data.length);
       } else {
         setError('Erreur lors de la récupération des salons');
       }
@@ -85,8 +88,17 @@ const CreateBookingScreen = ({ navigation }: any) => {
   const formatImageUrl = (photoUrl: string) => {
     if (!photoUrl) return null;
     
+    console.log('CreateBookingScreen - formatImageUrl input:', photoUrl);
+    
+    // Si l'URL commence par file://, c'est une photo locale (non accessible depuis le web)
+    if (photoUrl.startsWith('file://')) {
+      console.log('CreateBookingScreen - Local file detected, returning null');
+      return null;
+    }
+    
     // Si l'URL commence déjà par http, la retourner telle quelle
     if (photoUrl.startsWith('http')) {
+      console.log('CreateBookingScreen - HTTP URL detected:', photoUrl);
       return photoUrl;
     }
   
@@ -95,20 +107,35 @@ const CreateBookingScreen = ({ navigation }: any) => {
   
     // Si l'URL commence par "photos-", construire l'URL complète vers /uploads/photos/
     if (photoUrl.startsWith('photos-')) {
-      return `${baseUrl}/uploads/photos/${photoUrl}`;
+      const fullUrl = `${baseUrl}/uploads/photos/${photoUrl}`;
+      console.log('CreateBookingScreen - Photos- URL constructed:', fullUrl);
+      return fullUrl;
     }
   
     // Si c'est juste un nom de fichier, construire l'URL complète
     if (!photoUrl.includes('/')) {
-      return `${baseUrl}/uploads/photos/${photoUrl}`;
+      const fullUrl = `${baseUrl}/uploads/photos/${photoUrl}`;
+      console.log('CreateBookingScreen - Filename URL constructed:', fullUrl);
+      return fullUrl;
     }
   
     // Sinon, ajouter l'URL de base
-    return `${baseUrl}${photoUrl}`;
+    const fullUrl = `${baseUrl}${photoUrl}`;
+    console.log('CreateBookingScreen - Base URL constructed:', fullUrl);
+    return fullUrl;
   };
 
   const renderSalonItem = ({ item }: { item: Salon }) => {
-    const imageUrl = formatImageUrl(item.photos[0]);
+    const hasPhotos = item.photos && item.photos.length > 0;
+    const imageUrl = hasPhotos ? formatImageUrl(item.photos[0]) : null;
+    
+    console.log('CreateBookingScreen - Rendering salon:', {
+      salonName: item.name,
+      hasPhotos,
+      photosCount: item.photos?.length || 0,
+      firstPhoto: item.photos?.[0],
+      imageUrl
+    });
     
     return (
       <TouchableOpacity 
@@ -120,7 +147,13 @@ const CreateBookingScreen = ({ navigation }: any) => {
             <Image 
               source={{ uri: imageUrl }} 
               style={styles.salonImage}
-              defaultSource={require('../assets/url_de_l_image_1.jpg')}
+              onError={(e) => {
+                console.log('CreateBookingScreen - Image load error:', e.nativeEvent.error);
+                console.log('CreateBookingScreen - Failed URL:', imageUrl);
+              }}
+              onLoad={() => {
+                console.log('CreateBookingScreen - Image loaded successfully:', imageUrl);
+              }}
             />
           ) : (
             <View style={styles.placeholderImage}>
