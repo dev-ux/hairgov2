@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 
@@ -37,6 +38,7 @@ const IMAGE_PICKER_OPTIONS = ['Prendre une photo', 'Choisir depuis la galerie', 
 const UserProfileScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
+  const { colors } = useTheme();
   
   // States
   const [editModalVisible, setEditModalVisible] = useState(false);
@@ -200,27 +202,27 @@ const UserProfileScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* En-tête personnalisé avec bouton de retour */}
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { borderBottomColor: colors.border }]}>
         <TouchableOpacity 
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Profil</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Profil</Text>
         <TouchableOpacity 
           onPress={handleEditProfile}
           style={styles.editButton}
         >
-          <Ionicons name="create-outline" size={24} color="#6C63FF" />
+          <Ionicons name="create-outline" size={24} color={colors.primary} />
         </TouchableOpacity>
       </View>
       
       <ScrollView style={styles.content}>
         {/* Section Profil */}
-        <View style={styles.profileSection}>
+        <View style={[styles.profileSection, { backgroundColor: colors.card }]}>
           <View style={styles.avatarContainer}>
             {profileImage ? (
               <Image 
@@ -233,8 +235,8 @@ const UserProfileScreen = () => {
                 resizeMode="cover"
               />
             ) : (
-              <View style={styles.defaultAvatar}>
-                <Ionicons name="person" size={50} color="#6C63FF" />
+              <View style={[styles.defaultAvatar, { backgroundColor: colors.input }]}>
+                <Ionicons name="person" size={50} color={colors.primary} />
               </View>
             )}
             <TouchableOpacity 
@@ -249,10 +251,10 @@ const UserProfileScreen = () => {
               )}
             </TouchableOpacity>
           </View>
-          <Text style={styles.userName}>
+          <Text style={[styles.userName, { color: colors.text }]}>
             {user?.full_name || 'Utilisateur'}
           </Text>
-          <Text style={styles.userType}>
+          <Text style={[styles.userType, { backgroundColor: `${colors.primary}20` }]}>
             {getUserTypeLabel(user?.user_type)}
           </Text>
           <View style={styles.statusContainer}>
@@ -260,110 +262,107 @@ const UserProfileScreen = () => {
               styles.statusDot, 
               { backgroundColor: user?.is_active !== false ? '#4CAF50' : '#FF5252' }
             ]} />
-            <Text style={styles.statusText}>
+            <Text style={[styles.statusText, { color: colors.textSecondary }]}>
               {user?.is_active !== false ? 'Compte actif' : 'Compte inactif'}
             </Text>
           </View>
         </View>
 
         {/* Section Informations Personnelles */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Informations Personnelles</Text>
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Informations Personnelles</Text>
           
-          <View style={styles.infoRow}>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
             <View style={styles.infoLeft}>
-              <Ionicons name="person-outline" size={20} color="#6C63FF" />
-              <Text style={styles.infoLabel}>Nom complet</Text>
+              <Ionicons name="person-outline" size={20} color={colors.primary} />
+              <Text style={[styles.infoLabel, { color: colors.text }]}>Nom complet</Text>
             </View>
-            <Text style={styles.infoValue}>{user?.full_name || 'Non défini'}</Text>
+            <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{user?.full_name || 'Non défini'}</Text>
           </View>
 
-          <View style={styles.infoRow}>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
             <View style={styles.infoLeft}>
-              <Ionicons name="call-outline" size={20} color="#6C63FF" />
-              <Text style={styles.infoLabel}>Téléphone</Text>
+              <Ionicons name="call-outline" size={20} color={colors.primary} />
+              <Text style={[styles.infoLabel, { color: colors.text }]}>Téléphone</Text>
             </View>
-            <Text style={styles.infoValue}>{user?.phone || 'Non défini'}</Text>
+            <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{user?.phone || 'Non défini'}</Text>
           </View>
 
-          <View style={styles.infoRow}>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
             <View style={styles.infoLeft}>
-              <Ionicons name="mail-outline" size={20} color="#6C63FF" />
-              <Text style={styles.infoLabel}>Email</Text>
+              <Ionicons name="mail-outline" size={20} color={colors.primary} />
+              <Text style={[styles.infoLabel, { color: colors.text }]}>Email</Text>
             </View>
-            <Text style={styles.infoValue}>{user?.email || 'Non défini'}</Text>
+            <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{user?.email || 'Non défini'}</Text>
           </View>
 
-          <View style={styles.infoRow}>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
             <View style={styles.infoLeft}>
-              <Ionicons name="checkmark-circle-outline" size={20} color="#6C63FF" />
-              <Text style={styles.infoLabel}>Vérification</Text>
+              <Ionicons name="checkmark-circle-outline" size={20} color={colors.primary} />
+              <Text style={[styles.infoLabel, { color: colors.text }]}>Vérification</Text>
             </View>
-            <Text style={[
-              styles.infoValue,
-              { color: user?.is_verified ? '#4CAF50' : '#FF9800' }
-            ]}>
+            <Text style={[styles.infoValue, { color: user?.is_verified ? '#4CAF50' : '#FF9800' }]}>
               {user?.is_verified ? 'Vérifié' : 'Non vérifié'}
             </Text>
           </View>
 
-          <View style={styles.infoRow}>
+          <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
             <View style={styles.infoLeft}>
-              <Ionicons name="calendar-outline" size={20} color="#6C63FF" />
-              <Text style={styles.infoLabel}>Date d'inscription</Text>
+              <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+              <Text style={[styles.infoLabel, { color: colors.text }]}>Date d'inscription</Text>
             </View>
-            <Text style={styles.infoValue}>{formatDate(user?.created_at || '')}</Text>
+            <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{formatDate(user?.created_at || '')}</Text>
           </View>
 
           <View style={styles.infoRow}>
             <View style={styles.infoLeft}>
-              <Ionicons name="time-outline" size={20} color="#6C63FF" />
-              <Text style={styles.infoLabel}>Dernière mise à jour</Text>
+              <Ionicons name="time-outline" size={20} color={colors.primary} />
+              <Text style={[styles.infoLabel, { color: colors.text }]}>Dernière mise à jour</Text>
             </View>
-            <Text style={styles.infoValue}>{formatDate(user?.updated_at || '')}</Text>
+            <Text style={[styles.infoValue, { color: colors.textSecondary }]}>{formatDate(user?.updated_at || '')}</Text>
           </View>
         </View>
 
         {/* Section Statistiques */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Statistiques</Text>
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Statistiques</Text>
           
           <View style={styles.statsContainer}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>0</Text>
-              <Text style={styles.statLabel}>Réservations</Text>
+              <Text style={[styles.statNumber, { color: colors.primary }]}>0</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Réservations</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>0</Text>
-              <Text style={styles.statLabel}>Favoris</Text>
+              <Text style={[styles.statNumber, { color: colors.primary }]}>0</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Favoris</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>0</Text>
-              <Text style={styles.statLabel}>Avis</Text>
+              <Text style={[styles.statNumber, { color: colors.primary }]}>0</Text>
+              <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Avis</Text>
             </View>
           </View>
         </View>
 
         {/* Section Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Actions</Text>
+        <View style={[styles.section, { backgroundColor: colors.card }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Actions</Text>
           
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="lock-closed-outline" size={20} color="#6C63FF" />
-            <Text style={styles.actionButtonText}>Changer le mot de passe</Text>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
+          <TouchableOpacity style={[styles.actionButton, { borderBottomColor: colors.border }]}>
+            <Ionicons name="lock-closed-outline" size={20} color={colors.primary} />
+            <Text style={[styles.actionButtonText, { color: colors.text }]}>Changer le mot de passe</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.actionButton, { borderBottomColor: colors.border }]}>
+            <Ionicons name="shield-checkmark-outline" size={20} color={colors.primary} />
+            <Text style={[styles.actionButtonText, { color: colors.text }]}>Sécurité du compte</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="shield-checkmark-outline" size={20} color="#6C63FF" />
-            <Text style={styles.actionButtonText}>Sécurité du compte</Text>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.actionButton}>
-            <Ionicons name="notifications-outline" size={20} color="#6C63FF" />
-            <Text style={styles.actionButtonText}>Préférences de notification</Text>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
+            <Ionicons name="notifications-outline" size={20} color={colors.primary} />
+            <Text style={[styles.actionButtonText, { color: colors.text }]}>Préférences de notification</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -374,52 +373,55 @@ const UserProfileScreen = () => {
         animationType="slide"
         presentationStyle="pageSheet"
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <TouchableOpacity onPress={() => setEditModalVisible(false)}>
-              <Text style={styles.modalCancelText}>Annuler</Text>
+              <Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>Annuler</Text>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Modifier le profil</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Modifier le profil</Text>
             <TouchableOpacity onPress={handleSaveProfile} disabled={loading}>
               {loading ? (
-                <ActivityIndicator size="small" color="#6C63FF" />
+                <ActivityIndicator size="small" color={colors.primary} />
               ) : (
-                <Text style={styles.modalSaveText}>Enregistrer</Text>
+                <Text style={[styles.modalSaveText, { color: colors.primary }]}>Enregistrer</Text>
               )}
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.modalContent}>
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Nom complet</Text>
+              <Text style={[styles.inputLabel, { color: colors.text }]}>Nom complet</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.input, color: colors.text, borderColor: colors.border }]}
                 value={editForm.full_name}
                 onChangeText={(text: string) => setEditForm({...editForm, full_name: text})}
                 placeholder="Entrez votre nom complet"
+                placeholderTextColor={colors.textSecondary}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Email</Text>
+              <Text style={[styles.inputLabel, { color: colors.text }]}>Email</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.input, color: colors.text, borderColor: colors.border }]}
                 value={editForm.email}
                 onChangeText={(text: string) => setEditForm({...editForm, email: text})}
                 placeholder="Entrez votre email"
                 keyboardType="email-address"
                 autoCapitalize="none"
+                placeholderTextColor={colors.textSecondary}
               />
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Téléphone</Text>
+              <Text style={[styles.inputLabel, { color: colors.text }]}>Téléphone</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { backgroundColor: colors.input, color: colors.text, borderColor: colors.border }]}
                 value={editForm.phone}
                 onChangeText={(text: string) => setEditForm({...editForm, phone: text})}
                 placeholder="Entrez votre numéro de téléphone"
                 keyboardType="phone-pad"
+                placeholderTextColor={colors.textSecondary}
               />
             </View>
           </ScrollView>

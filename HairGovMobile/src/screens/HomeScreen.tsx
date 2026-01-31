@@ -18,6 +18,7 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { API_URL } from '../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../contexts/ThemeContext';
 import { homeScreenStyles } from './styles/HomeScreen.styles';
 // Import de l'image par défaut
 const defaultSalonImage = require('../assets/url_de_l_image_1.jpg');
@@ -111,6 +112,7 @@ interface UserData {
 export default function HomeScreen() {
   type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
   const navigation = useNavigation<NavigationProp>();
+  const { colors } = useTheme();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [salons, setSalons] = useState<Salon[] | null>(null);
@@ -296,22 +298,22 @@ export default function HomeScreen() {
 
 
   return (
-    <SafeAreaView style={homeScreenStyles.container}>
+    <SafeAreaView style={[homeScreenStyles.container, { backgroundColor: colors.background }]}>
       <ScrollView style={homeScreenStyles.scrollView}>
         {/* En-tête */}
         <View style={homeScreenStyles.header}>
           <View>
-            <Text style={homeScreenStyles.greeting}>
+            <Text style={[homeScreenStyles.greeting, { color: colors.textSecondary }]}>
               Bonjour, {user?.full_name || 'Client'}
             </Text>
-            <Text style={homeScreenStyles.title}>Trouvez votre salon</Text>
+            <Text style={[homeScreenStyles.title, { color: colors.text }]}>Trouvez votre salon</Text>
           </View>
 
           <TouchableOpacity
             style={homeScreenStyles.notificationButton}
             onPress={() => navigation.navigate('Notifications')}
           >
-            <Ionicons name="notifications-outline" size={24} color="#6C63FF" />
+            <Ionicons name="notifications-outline" size={24} color={colors.primary} />
             <View style={homeScreenStyles.notificationBadge} />
           </TouchableOpacity>
 
@@ -319,19 +321,19 @@ export default function HomeScreen() {
             style={homeScreenStyles.profileButton}
             onPress={() => navigation.navigate('Profile')}
           >
-            <Ionicons name="person" size={24} color="#6C63FF" />
+            <Ionicons name="person" size={24} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
         {/* Barre de recherche */}
-        <View style={homeScreenStyles.searchContainer}>
-          <Ionicons name="search" size={20} color="#666" style={homeScreenStyles.searchIcon} />
+        <View style={[homeScreenStyles.searchContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="search" size={20} color={colors.textSecondary} style={homeScreenStyles.searchIcon} />
           <TextInput
-            style={homeScreenStyles.searchInput}
+            style={[homeScreenStyles.searchInput, { color: colors.text }]}
             placeholder="Rechercher un salon ou un service..."
+            placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor="#999"
           />
         </View>
 
@@ -344,7 +346,6 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             pagingEnabled
             keyExtractor={(item) => item.id}
-            initialScrollIndex={currentPromoIndex}
             onMomentumScrollEnd={(event) => {
               const index = Math.round(event.nativeEvent.contentOffset.x / (width - 40));
               setCurrentPromoIndex(index);
@@ -381,23 +382,23 @@ export default function HomeScreen() {
             {/* Filtres */}
         <View style={homeScreenStyles.section}>
           <View style={homeScreenStyles.sectionHeader}>
-            <Text style={homeScreenStyles.sectionTitle}>Près de vous</Text>
+            <Text style={[homeScreenStyles.sectionTitle, { color: colors.text }]}>Près de vous</Text>
             <TouchableOpacity onPress={() => { /* Gérer l'action "Plus" */ }}>
-              <Text style={homeScreenStyles.seeAll}>Plus</Text>
+              <Text style={[homeScreenStyles.seeAll, { color: colors.primary }]}>Plus</Text>
             </TouchableOpacity>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={homeScreenStyles.filterContainer}>
-            <TouchableOpacity style={[homeScreenStyles.filterButton, homeScreenStyles.filterButtonActive]}>
+            <TouchableOpacity style={[homeScreenStyles.filterButton, { backgroundColor: colors.primary }]}>
               <Text style={homeScreenStyles.filterButtonTextActive}>Offre spéciales</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={homeScreenStyles.filterButton}>
-              <Text style={homeScreenStyles.filterButtonText}>Coiffure tendances</Text>
+            <TouchableOpacity style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Coiffure tendances</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={homeScreenStyles.filterButton}>
-              <Text style={homeScreenStyles.filterButtonText}>Spécialiste</Text>
+            <TouchableOpacity style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Spécialiste</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={homeScreenStyles.filterButton}>
-              <Text style={homeScreenStyles.filterButtonText}>Historique</Text>
+            <TouchableOpacity style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Historique</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
@@ -405,55 +406,41 @@ export default function HomeScreen() {
         {/* Liste des salons */}
         <View style={homeScreenStyles.section}>
           <View style={homeScreenStyles.sectionHeader}>
-            <Text style={homeScreenStyles.sectionTitle}>Nos Salons</Text>
+            <Text style={[homeScreenStyles.sectionTitle, { color: colors.text }]}>Nos Salons</Text>
             <TouchableOpacity onPress={() => navigation.navigate('AllSalons')}>
-              <Text style={homeScreenStyles.seeAll}>Voir tout</Text>
+              <Text style={[homeScreenStyles.seeAll, { color: colors.primary }]}>Voir tout</Text>
             </TouchableOpacity>
           </View>
 
           {loading ? (
-            <ActivityIndicator size="large" color="#6C63FF" style={homeScreenStyles.loader} />
+            <ActivityIndicator size="large" color={colors.primary} style={homeScreenStyles.loader} />
           ) : error ? (
             <View style={homeScreenStyles.errorContainer}>
-              <Text style={homeScreenStyles.errorText}>{error}</Text>
-              <Text style={homeScreenStyles.errorDetail}>Vérifiez que le serveur est en cours d'exécution sur {API_URL}</Text>
+              <Text style={[homeScreenStyles.errorText, { color: colors.text }]}>{error}</Text>
+              <Text style={[homeScreenStyles.errorDetail, { color: colors.textSecondary }]}>Vérifiez que le serveur est en cours d'exécution sur {API_URL}</Text>
             </View>
           ) : salons === null ? (
-            <Text style={homeScreenStyles.emptyText}>Chargement des données en cours...</Text>
+            <Text style={[homeScreenStyles.emptyText, { color: colors.textSecondary }]}>Chargement des données en cours...</Text>
           ) : salons.length === 0 ? (
-            <Text style={homeScreenStyles.emptyText}>Aucun salon disponible pour le moment</Text>
+            <Text style={[homeScreenStyles.emptyText, { color: colors.textSecondary }]}>Aucun salon disponible pour le moment</Text>
           ) : (
             <FlatList
               data={salons.slice(0, 5)} // Afficher seulement les 5 premiers salons
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={homeScreenStyles.salonCard}
+                  style={[homeScreenStyles.salonCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                   onPress={() => navigation.navigate('SalonDetail', { salonId: item.id })}
                 >
                   <View style={homeScreenStyles.salonImageContainer}>
                     <Image
                       source={(() => {
                         const imageUrl = item.photos?.[0];
-                        const formattedUrl = imageUrl ? formatImageUrl(imageUrl) : null;
-
-                        console.log('Chargement de l\'image pour le salon:', {
-                          nom: item.name,
-                          id: item.id,
-                          urlOriginale: imageUrl,
-                          urlFormatee: formattedUrl,
-                          aDesPhotos: item.photos?.length > 0
-                        });
-
-                        if (formattedUrl) {
-                          // Vérifier si l'URL semble valide
-                          if (formattedUrl.includes('undefined') || !formattedUrl.includes('http')) {
-                            console.warn('URL d\'image potentiellement invalide:', formattedUrl);
-                            return defaultSalonImage;
-                          }
-                          return {
-                            uri: formattedUrl,
-                            cache: 'reload'
-                          };
+                        if (imageUrl) {
+                          // Vérifier si l'URL est relative ou absolue
+                          const fullImageUrl = imageUrl.startsWith('http') 
+                            ? imageUrl 
+                            : `${API_URL}${imageUrl}`;
+                          return { uri: fullImageUrl };
                         }
                         return defaultSalonImage;
                       })()}
@@ -461,30 +448,20 @@ export default function HomeScreen() {
                       resizeMode="cover"
                       defaultSource={defaultSalonImage}
                       onError={(e) => {
-                        try {
-                          console.error('Erreur de chargement de l\'image:', {
-                            error: e?.nativeEvent?.error || 'Unknown error',
-                            salon: item.name,
-                            id: item.id,
-                            photoUrl: item.photos?.[0],
-                            formattedUrl: item.photos?.[0] ? formatImageUrl(item.photos[0]) : null
-                          });
-                        } catch (logError) {
-                          console.error('Erreur lors du logging de l\'erreur image:', logError);
-                        }
+                        console.log('Erreur de chargement de l\'image du salon:', item.name, e);
                       }}
                     />
                     <View style={homeScreenStyles.ratingContainer}>
                       <Ionicons name="star" size={14} color="#FFD700" />
-                      <Text style={homeScreenStyles.ratingText}>
+                      <Text style={[homeScreenStyles.ratingText, { color: colors.text }]}>
                         {item.average_rating > 0 ? item.average_rating.toFixed(1) : 'Nouveau'}
                       </Text>
                     </View>
                   </View>
                   <View style={homeScreenStyles.salonInfo}>
-                    <Text style={homeScreenStyles.salonName} numberOfLines={1}>{item.name}</Text>
-                    <Text style={homeScreenStyles.salonAddress} numberOfLines={1}>{item.address}</Text>
-                    <Text style={homeScreenStyles.hairdresserName} numberOfLines={1}>
+                    <Text style={[homeScreenStyles.salonName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+                    <Text style={[homeScreenStyles.salonAddress, { color: colors.textSecondary }]} numberOfLines={1}>{item.address}</Text>
+                    <Text style={[homeScreenStyles.hairdresserName, { color: colors.primary }]} numberOfLines={1}>
                       {item.hairdresser?.full_name || 'Coiffeur non spécifié'}
                     </Text>
                   </View>

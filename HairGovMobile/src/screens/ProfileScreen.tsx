@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 // Constants
 const API_BASE_URL = 'https://hairgov2.onrender.com';
@@ -49,6 +50,7 @@ type RootStackParamList = {
 const ProfileScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
+  const { colors } = useTheme();
 
   // Actions
   const handleLogout = async () => {
@@ -80,20 +82,20 @@ const ProfileScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* En-tête personnalisé avec bouton de retour */}
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { borderBottomColor: colors.border }]}>
         <TouchableOpacity 
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mon Profil</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Mon Profil</Text>
         <View style={{ width: 24 }} /> {/* Pour équilibrer le flexbox */}
       </View>
       
-      <View style={styles.header}>
+      <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.avatarContainer}>
           {getProfileImageUrl(user?.profile_photo, user?.profile_picture) ? (
             <Image 
@@ -102,12 +104,12 @@ const ProfileScreen = () => {
               resizeMode="cover"
             />
           ) : (
-            <View style={styles.defaultAvatar}>
-              <Ionicons name="person" size={50} color="#6C63FF" />
+            <View style={[styles.defaultAvatar, { backgroundColor: colors.input }]}>
+              <Ionicons name="person" size={50} color={colors.primary} />
             </View>
           )}
         </View>
-        <Text style={styles.userName}>
+        <Text style={[styles.userName, { color: colors.text }]}>
           {user?.full_name || 'Utilisateur'}
         </Text>
       </View>
@@ -116,14 +118,14 @@ const ProfileScreen = () => {
         {menuItems.map((item) => (
           <TouchableOpacity
             key={item.id}
-            style={styles.menuItem}
+            style={[styles.menuItem, { borderBottomColor: colors.border }]}
             onPress={() => handleMenuItemPress(item.screen)}
           >
             <View style={styles.menuItemLeft}>
-              <Ionicons name={item.icon as any} size={24} color="#6C63FF" style={styles.menuIcon} />
-              <Text style={styles.menuItemText}>{item.title}</Text>
+              <Ionicons name={item.icon as any} size={24} color={colors.primary} style={styles.menuIcon} />
+              <Text style={[styles.menuItemText, { color: colors.text }]}>{item.title}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={20} color="#999" />
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         ))}
       </ScrollView>
