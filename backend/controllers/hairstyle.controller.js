@@ -234,6 +234,13 @@ exports.seedHairstyles = async (req, res) => {
         
         if (result.rows.length > 0) {
           insertedHairstyles.push(result.rows[0]);
+        } else {
+          // Si pas de retour, vérifier si le hairstyle existe déjà
+          const checkQuery = 'SELECT * FROM hairstyles WHERE name = $1';
+          const checkResult = await query(checkQuery, [hairstyle.name]);
+          if (checkResult.rows.length > 0) {
+            insertedHairstyles.push(checkResult.rows[0]);
+          }
         }
       } catch (error) {
         console.error(`Erreur lors de l'ajout de ${hairstyle.name}:`, error);
