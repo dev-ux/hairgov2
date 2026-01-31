@@ -132,7 +132,7 @@ exports.addHairstyleTemp = async (req, res) => {
     `;
 
     const values = [
-      uuidv4(), // Générer un nouvel ID
+      require('uuid').v4(), // Générer un nouvel ID
       name,
       description,
       photo, // Utiliser la photo fournie directement
