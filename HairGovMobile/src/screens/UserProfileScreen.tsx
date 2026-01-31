@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  ScrollView, 
-  Image, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Image,
   Alert,
   Modal,
   TextInput,
   ActivityIndicator,
-  ActionSheetIOS,
   Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,24 +19,38 @@ import { useAuth } from '../contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 
+// Types
+interface EditForm {
+  full_name: string;
+  email: string;
+  phone: string;
+}
+
 type RootStackParamList = {
   Settings: undefined;
 };
 
+// Constants
+const API_BASE_URL = 'https://hairgov2.onrender.com';
+const IMAGE_PICKER_OPTIONS = ['Prendre une photo', 'Choisir depuis la galerie', 'Annuler'];
+
 const UserProfileScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
+  
+  // States
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [profileImage, setProfileImage] = useState<string | null>(
     user?.profile_photo || user?.profile_picture || null
   );
-  const [editForm, setEditForm] = useState({
+  const [editForm, setEditForm] = useState<EditForm>({
     full_name: user?.full_name || '',
     email: user?.email || '',
     phone: user?.phone || ''
   });
 
+  // Actions
   const handleEditProfile = () => {
     setEditForm({
       full_name: user?.full_name || '',
@@ -47,53 +60,35 @@ const UserProfileScreen = () => {
     setEditModalVisible(true);
   };
 
+  // Image Picker
   const handleImagePicker = () => {
-    const options = [
-      'Prendre une photo',
-      'Choisir depuis la galerie',
-      'Annuler'
-    ];
-
     if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options,
-          cancelButtonIndex: 2,
-        },
-        (buttonIndex) => {
-          if (buttonIndex === 0) {
-            openCamera();
-          } else if (buttonIndex === 1) {
-            openImageLibrary();
-          }
-        }
+      Alert.alert(
+        'Photo de profil',
+        'Choisissez une option',
+        [
+          { text: 'Prendre une photo', onPress: openCamera },
+          { text: 'Choisir depuis la galerie', onPress: openImageLibrary },
+          { text: 'Annuler', style: 'cancel' }
+        ]
       );
     } else {
       Alert.alert(
         'Photo de profil',
         'Choisissez une option',
         [
-          {
-            text: 'Prendre une photo',
-            onPress: openCamera,
-          },
-          {
-            text: 'Choisir depuis la galerie',
-            onPress: openImageLibrary,
-          },
-          {
-            text: 'Annuler',
-            style: 'cancel',
-          },
+          { text: 'Prendre une photo', onPress: openCamera },
+          { text: 'Choisir depuis la galerie', onPress: openImageLibrary },
+          { text: 'Annuler', style: 'cancel' }
         ]
       );
     }
   };
 
+  // Image Functions
   const openCamera = async () => {
     const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    
-    if (permissionResult.granted === false) {
+    if (!permissionResult.granted) {
       Alert.alert('Permission refusée', 'Vous devez autoriser l\'accès à la caméra');
       return;
     }
@@ -105,15 +100,14 @@ const UserProfileScreen = () => {
       quality: 0.7,
     });
 
-    if (!result.canceled && result.assets && result.assets[0]) {
+    if (!result.canceled && result.assets?.[0]) {
       await uploadProfileImage(result.assets[0].uri);
     }
   };
 
   const openImageLibrary = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (permissionResult.granted === false) {
+    if (!permissionResult.granted) {
       Alert.alert('Permission refusée', 'Vous devez autoriser l\'accès à la galerie');
       return;
     }
@@ -125,16 +119,16 @@ const UserProfileScreen = () => {
       quality: 0.7,
     });
 
-    if (!result.canceled && result.assets && result.assets[0]) {
+    if (!result.canceled && result.assets?.[0]) {
       await uploadProfileImage(result.assets[0].uri);
     }
   };
 
+  // Upload Function
   const uploadProfileImage = async (imageUri: string) => {
     try {
       setLoading(true);
       
-      // Créer FormData pour l'upload
       const formData = new FormData();
       formData.append('profile_photo', {
         uri: imageUri,
@@ -142,8 +136,7 @@ const UserProfileScreen = () => {
         name: 'profile_photo.jpg',
       } as any);
 
-      // Tenter l'upload vers le backend
-      const response = await fetch('https://hairgov2.onrender.com/api/v1/auth/update-profile', {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/update-profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -156,28 +149,15 @@ const UserProfileScreen = () => {
         const data = await response.json();
         setProfileImage(imageUri);
         Alert.alert('Succès', 'Photo de profil mise à jour avec succès');
-        
-        // Mettre à jour les données utilisateur dans le contexte
-        if (data.data?.user) {
-          // Ici vous devriez mettre à jour le contexte utilisateur
-          // updateUser(data.data.user);
-        }
+      } else if (response.status === 404) {
+        // Fallback si la route n'existe pas encore
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        setProfileImage(imageUri);
+        Alert.alert('Succès', 'Photo de profil mise à jour localement (en attente du déploiement backend)');
       } else {
-        // Si la route n'existe pas encore (404), utiliser la simulation
-        if (response.status === 404) {
-          console.log('📸 Route pas encore déployée, simulation pour:', imageUri);
-          
-          // Simuler un délai d'upload
-          await new Promise(resolve => setTimeout(resolve, 2000));
-          
-          setProfileImage(imageUri);
-          Alert.alert('Succès', 'Photo de profil mise à jour localement (en attente du déploiement backend)');
-        } else {
-          const data = await response.json();
-          Alert.alert('Erreur', data.message || 'Impossible de mettre à jour la photo');
-        }
+        const data = await response.json();
+        Alert.alert('Erreur', data.message || 'Impossible de mettre à jour la photo');
       }
-      
     } catch (error) {
       console.error('Erreur upload photo:', error);
       Alert.alert('Erreur', 'Une erreur est survenue lors de la mise à jour');
@@ -186,12 +166,11 @@ const UserProfileScreen = () => {
     }
   };
 
+  // Save Profile
   const handleSaveProfile = async () => {
     setLoading(true);
     try {
-      // Ici vous pourriez appeler une API pour mettre à jour le profil
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
       Alert.alert('Succès', 'Profil mis à jour avec succès');
       setEditModalVisible(false);
     } catch (error) {
@@ -201,6 +180,7 @@ const UserProfileScreen = () => {
     }
   };
 
+  // Utility Functions
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Non défini';
     return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -208,6 +188,15 @@ const UserProfileScreen = () => {
       month: 'long',
       year: 'numeric'
     });
+  };
+
+  const getUserTypeLabel = (userType?: string) => {
+    switch (userType) {
+      case 'hairdresser': return 'Coiffeur';
+      case 'admin': return 'Administrateur';
+      case 'guest': return 'Invité';
+      default: return 'Client';
+    }
   };
 
   return (
@@ -264,9 +253,7 @@ const UserProfileScreen = () => {
             {user?.full_name || 'Utilisateur'}
           </Text>
           <Text style={styles.userType}>
-            {user?.user_type === 'hairdresser' ? 'Coiffeur' : 
-             user?.user_type === 'admin' ? 'Administrateur' : 
-             user?.user_type === 'guest' ? 'Invité' : 'Client'}
+            {getUserTypeLabel(user?.user_type)}
           </Text>
           <View style={styles.statusContainer}>
             <View style={[

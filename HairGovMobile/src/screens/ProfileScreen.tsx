@@ -6,11 +6,10 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 
-type RootStackParamList = {
-  Login: undefined;
-  // Ajoutez d'autres écrans si nécessaire
-};
+// Constants
+const API_BASE_URL = 'https://hairgov2.onrender.com';
 
+// Types
 type MenuItem = {
   id: string;
   title: string;
@@ -18,6 +17,7 @@ type MenuItem = {
   screen: string;
 };
 
+// Menu Items Configuration
 const menuItems: MenuItem[] = [
   { id: '1', title: 'Favoris', icon: 'heart-outline', screen: 'Favorites' },
   { id: '2', title: 'Historique', icon: 'time-outline', screen: 'History' },
@@ -28,17 +28,32 @@ const menuItems: MenuItem[] = [
   { id: '7', title: 'Deconnexion', icon: 'log-out-outline', screen: 'Logout' },
 ];
 
+// Utility Functions
+const getProfileImageUrl = (profilePhoto?: string, profilePicture?: string): string | null => {
+  const photo = profilePhoto || profilePicture;
+  if (!photo) return null;
+  return photo.startsWith('http') ? photo : `${API_BASE_URL}${photo}`;
+};
+
+type RootStackParamList = {
+  Settings: undefined;
+  Login: undefined;
+  Favorites: undefined;
+  History: undefined;
+  Statistics: undefined;
+  Bookings: undefined;
+  Payments: undefined;
+  Logout: undefined;
+};
+
 const ProfileScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user } = useAuth();
 
-    const handleLogout = async () => {
+  // Actions
+  const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('userToken');
-      // Si vous utilisez un contexte d'authentification, ajoutez ici la logique de déconnexion
-      // par exemple: authContext.signOut();
-      
-      // Rediriger vers l'écran de connexion
       navigation.reset({
         index: 0,
         routes: [{ name: 'Login' }],
@@ -60,8 +75,7 @@ const ProfileScreen = () => {
         ]
       );
     } else {
-      // @ts-ignore - Nous gérons la navigation de manière sûre
-      navigation.navigate(screen);
+      navigation.navigate(screen as any);
     }
   };
 
@@ -81,13 +95,9 @@ const ProfileScreen = () => {
       
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
-          {user?.profile_photo || user?.profile_picture ? (
+          {getProfileImageUrl(user?.profile_photo, user?.profile_picture) ? (
             <Image 
-              source={{ 
-                uri: (user?.profile_photo || user?.profile_picture)?.startsWith('http') 
-                  ? (user.profile_photo || user.profile_picture)
-                  : `https://hairgov2.onrender.com${user.profile_photo || user.profile_picture}`
-              }}
+              source={{ uri: getProfileImageUrl(user?.profile_photo, user?.profile_picture)! }}
               style={styles.avatarImage}
               resizeMode="cover"
             />
