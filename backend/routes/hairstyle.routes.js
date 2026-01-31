@@ -14,6 +14,12 @@ router.post(
   hairstyleController.addHairstyle
 );
 
+// Route temporaire pour ajouter des hairstyles sans authentification
+router.post(
+  '/temp-add',
+  hairstyleController.addHairstyleTemp
+);
+
 // Route pour ajouter les hairstyles de base (seed) - temporairement publique
 router.post(
   '/seed',
