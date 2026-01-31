@@ -14,7 +14,7 @@ router.post(
   hairstyleController.addHairstyle
 );
 
-// Route pour ajouter les hairstyles de base (seed)
+// Route pour ajouter les hairstyles de base (seed) - temporairement publique
 router.post(
   '/seed',
   hairstyleController.seedHairstyles
