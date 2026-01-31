@@ -125,15 +125,17 @@ exports.addHairstyleTemp = async (req, res) => {
     const { name, description, photo, estimated_duration, category, is_active } = req.body;
 
     const queryText = `
-      INSERT INTO hairstyles (name, description, photo, estimated_duration, category, is_active)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO hairstyles 
+        (id, name, description, photo, estimated_duration, category, is_active, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
       RETURNING *
     `;
 
     const values = [
+      uuidv4(), // Générer un nouvel ID
       name,
       description,
-      photo,
+      photo, // Utiliser la photo fournie directement
       estimated_duration,
       category,
       is_active === 'true' || is_active === true
