@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { useTheme } from '../contexts/ThemeContext';
 
 const SettingItem = ({ 
   icon, 
@@ -21,37 +22,41 @@ const SettingItem = ({
   isSwitch?: boolean;
   switchValue?: boolean;
   onValueChange?: (value: boolean) => void;
-}) => (
-  <TouchableOpacity 
-    style={styles.settingItem} 
-    onPress={!isSwitch ? onPress : undefined}
-    disabled={isSwitch}
-  >
-    <View style={styles.settingLeft}>
-      <Ionicons name={icon as any} size={22} color="#666" style={styles.settingIcon} />
-      <View>
-        <Text style={styles.settingTitle}>{title}</Text>
-        {value && <Text style={styles.settingValue}>{value}</Text>}
+}) => {
+  const { colors } = useTheme();
+  
+  return (
+    <TouchableOpacity 
+      style={[styles.settingItem, { borderBottomColor: colors.border }]}
+      onPress={onPress}
+      disabled={isSwitch}
+    >
+      <View style={styles.settingLeft}>
+        <Ionicons name={icon as any} size={24} color={colors.primary} style={styles.settingIcon} />
+        <View>
+          <Text style={[styles.settingTitle, { color: colors.text }]}>{title}</Text>
+          {value && <Text style={[styles.settingValue, { color: colors.textSecondary }]}>{value}</Text>}
+        </View>
       </View>
-    </View>
-    {isSwitch ? (
-      <Switch
-        value={switchValue}
-        onValueChange={onValueChange}
-        trackColor={{ false: '#f0f0f0', true: '#007AFF' }}
-        thumbColor="#fff"
-      />
-    ) : (
-      <Ionicons name="chevron-forward" size={20} color="#ccc" />
-    )}
-  </TouchableOpacity>
-);
+      {isSwitch ? (
+        <Switch
+          value={switchValue}
+          onValueChange={onValueChange}
+          trackColor={{ false: '#767577', true: colors.primary }}
+          thumbColor="#fff"
+        />
+      ) : (
+        <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+      )}
+    </TouchableOpacity>
+  );
+};
 
 export const SettingsScreen = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(true);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isDarkMode, toggleTheme, colors } = useTheme();
 
   const handleLogout = () => {
     Alert.alert(
@@ -71,20 +76,20 @@ export const SettingsScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* En-tête personnalisé avec bouton de retour */}
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { borderBottomColor: colors.border }]}>
         <TouchableOpacity 
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Paramètres</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Paramètres</Text>
       </View> 
       <ScrollView>
-        <Text style={styles.sectionHeader}>Compte</Text>
-        <View style={styles.sectionContainer}>
+        <Text style={[styles.sectionHeader, { color: colors.text }]}>Compte</Text>
+        <View style={[styles.sectionContainer, { backgroundColor: colors.surface }]}>
           <SettingItem 
             icon="person-outline" 
             title="Profil" 
@@ -100,12 +105,13 @@ export const SettingsScreen = () => {
           <SettingItem 
             icon="card-outline" 
             title="Moyens de paiement" 
+            value="Ajoutez une carte"
             onPress={() => {}}
           />
         </View>
 
-        <Text style={styles.sectionHeader}>Préférences</Text>
-        <View style={styles.sectionContainer}>
+        <Text style={[styles.sectionHeader, { color: colors.text }]}>Préférences</Text>
+        <View style={[styles.sectionContainer, { backgroundColor: colors.surface }]}>
           <SettingItem 
             icon="notifications-outline" 
             title="Notifications" 
@@ -117,8 +123,8 @@ export const SettingsScreen = () => {
             icon="moon-outline" 
             title="Mode sombre" 
             isSwitch
-            switchValue={darkMode}
-            onValueChange={setDarkMode}
+            switchValue={isDarkMode}
+            onValueChange={toggleTheme}
           />
           <SettingItem 
             icon="finger-print-outline" 
@@ -159,13 +165,6 @@ export const SettingsScreen = () => {
           />
         </View>
 
-        <TouchableOpacity 
-          style={styles.logoutButton}
-          onPress={handleLogout}
-        >
-          <Ionicons name="log-out-outline" size={22} color="#FF3B30" />
-          <Text style={styles.logoutText}>Déconnexion</Text>
-        </TouchableOpacity>
 
         <View style={styles.versionContainer}>
           <Text style={styles.versionText}>Version 1.0.0</Text>
