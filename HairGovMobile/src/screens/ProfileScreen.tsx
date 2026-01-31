@@ -81,18 +81,20 @@ const ProfileScreen = () => {
       
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
-          {user?.profile_picture ? (
+          {user?.profile_photo || user?.profile_picture ? (
             <Image 
-              source={{ uri: user.profile_picture }}
+              source={{ 
+                uri: (user?.profile_photo || user?.profile_picture)?.startsWith('http') 
+                  ? (user.profile_photo || user.profile_picture)
+                  : `https://hairgov2.onrender.com${user.profile_photo || user.profile_picture}`
+              }}
               style={styles.avatarImage}
               resizeMode="cover"
             />
           ) : (
-            <Image 
-              source={require('../assets/profil.png')}
-              style={styles.avatarImage}
-              resizeMode="cover"
-            />
+            <View style={styles.defaultAvatar}>
+              <Ionicons name="person" size={50} color="#6C63FF" />
+            </View>
           )}
         </View>
         <Text style={styles.userName}>
@@ -163,6 +165,14 @@ const styles = StyleSheet.create({
   avatarImage: {
     width: '100%',
     height: '100%',
+    borderRadius: 60,
+  },
+  defaultAvatar: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
     borderRadius: 60,
   },
   userName: {

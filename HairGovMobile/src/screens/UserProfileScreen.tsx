@@ -235,7 +235,11 @@ const UserProfileScreen = () => {
           <View style={styles.avatarContainer}>
             {profileImage ? (
               <Image 
-                source={{ uri: profileImage }}
+                source={{ 
+                  uri: profileImage.startsWith('http') 
+                    ? profileImage
+                    : `https://hairgov2.onrender.com${profileImage}`
+                }}
                 style={styles.avatarImage}
                 resizeMode="cover"
               />
