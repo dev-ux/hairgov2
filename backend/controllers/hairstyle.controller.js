@@ -212,7 +212,12 @@ exports.seedHairstyles = async (req, res) => {
         const queryText = `
           INSERT INTO hairstyles (name, description, photo, estimated_duration, category, is_active)
           VALUES ($1, $2, $3, $4, $5, $6)
-          ON CONFLICT (name) DO NOTHING
+          ON CONFLICT (name) DO UPDATE SET
+            description = EXCLUDED.description,
+            photo = EXCLUDED.photo,
+            estimated_duration = EXCLUDED.estimated_duration,
+            category = EXCLUDED.category,
+            is_active = EXCLUDED.is_active
           RETURNING *
         `;
         
