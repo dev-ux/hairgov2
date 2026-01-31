@@ -64,7 +64,6 @@ const ProtectedRoutes = () => (
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/salons" element={<SalonsPage />} />
           <Route path="/salons/:id" element={<DetailSalon />} />
-          <Route path="/salons/edit/:id" element={<EditSalon />} />
           <Route path="/hairdressers" element={<HairdressersPage />} />
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="/users" element={<UsersPage />} />

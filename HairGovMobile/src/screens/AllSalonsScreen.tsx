@@ -121,19 +121,7 @@ export default function AllSalonsScreen() {
   }, []);
 
   const renderSalonItem = ({ item }: { item: Salon }) => {
-    // Vérifier si le salon a des photos
-    const hasPhotos = item.photos && Array.isArray(item.photos) && item.photos.length > 0;
-    const firstPhoto = hasPhotos ? item.photos[0] : null;
-    const imageUrl = firstPhoto ? formatImageUrl(firstPhoto) : null;
-    const hasValidImageUrl = imageUrl && imageUrl.trim() !== '';
-    
-    console.log(`Salon ${item.name}:`, {
-      hasPhotos,
-      photosCount: hasPhotos ? item.photos.length : 0,
-      firstPhoto,
-      imageUrl,
-      hasValidImageUrl
-    });
+    const imageUrl = item.photos?.[0] ? formatImageUrl(item.photos[0]) : null;
     
     return (
       <TouchableOpacity
@@ -141,32 +129,25 @@ export default function AllSalonsScreen() {
         onPress={() => navigation.navigate('SalonDetail', { salonId: item.id })}
       >
         <Image 
-          source={
-            imageErrors[item.id] || !hasValidImageUrl 
-              ? defaultSalonImage 
-              : { uri: imageUrl }
-          }
+          source={imageErrors[item.id] || !imageUrl 
+            ? defaultSalonImage 
+            : { uri: imageUrl }}
           style={styles.salonImage} 
           resizeMode="cover"
-          onError={() => {
-            console.log(`Erreur de chargement de l'image pour le salon ${item.name}, URL: ${imageUrl}`);
-            handleImageError(item.id);
-          }}
-          onLoad={() => {
-            console.log(`Image chargée avec succès pour le salon ${item.name}`);
-          }}
+          onError={() => handleImageError(item.id)}
+          defaultSource={defaultSalonImage}
         />
-        <View style={styles.salonInfo}>
-          <Text style={styles.salonName}>{item.name}</Text>
-          <Text style={styles.salonAddress} numberOfLines={1}>
-            {item.address}
+      <View style={styles.salonInfo}>
+        <Text style={styles.salonName}>{item.name}</Text>
+        <Text style={styles.salonAddress} numberOfLines={1}>
+          {item.address}
+        </Text>
+        <View style={styles.ratingContainer}>
+          <Ionicons name="star" size={16} color="#FFD700" />
+          <Text style={styles.ratingText}>
+            {item.average_rating ? item.average_rating.toFixed(1) : 'N/A'}
           </Text>
-          <View style={styles.ratingContainer}>
-            <Ionicons name="star" size={16} color="#FFD700" />
-            <Text style={styles.ratingText}>
-              {item.average_rating ? item.average_rating.toFixed(1) : 'N/A'}
-            </Text>
-          </View>
+        </View>
         </View>
       </TouchableOpacity>
     );

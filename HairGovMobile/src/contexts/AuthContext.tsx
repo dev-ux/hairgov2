@@ -7,8 +7,13 @@ interface User {
   full_name: string;
   email: string;
   phone: string;
-  user_type: 'client' | 'hairdresser' | 'guest';
+  user_type: 'client' | 'hairdresser' | 'admin' | 'guest';
+  profile_photo?: string;
   profile_picture?: string;
+  is_active?: boolean;
+  is_verified?: boolean;
+  created_at?: string;
+  updated_at?: string;
   // Ajoutez d'autres champs utilisateur si nécessaire
 }
 

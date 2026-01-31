@@ -767,3 +767,95 @@ exports.registerAdmin = async (req, res) => {
     });
   }
 };
+
+/**
+ * Mettre à jour le profil utilisateur
+ */
+exports.updateProfile = async (req, res) => {
+  try {
+    const { User } = require('../models');
+    const userId = req.user.userId;
+
+    // Trouver l'utilisateur
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'Utilisateur non trouvé'
+        }
+      });
+    }
+
+    // Gérer l'upload de la photo de profil
+    if (req.file) {
+      const profilePhoto = req.file;
+      
+      // Validation du fichier
+      if (!profilePhoto.mimetype.startsWith('image/')) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_FILE_TYPE',
+            message: 'Le fichier doit être une image'
+          }
+        });
+      }
+
+      // Taille maximale 5MB (déjà gérée par multer, mais vérification supplémentaire)
+      if (profilePhoto.size > 5 * 1024 * 1024) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'FILE_TOO_LARGE',
+            message: 'L\'image ne doit pas dépasser 5MB'
+          }
+        });
+      }
+
+      // Utiliser l'URL du fichier uploadé
+      const imageUrl = `/uploads/profiles/${profilePhoto.filename}`;
+      
+      user.profile_photo = imageUrl;
+    }
+
+    // Mettre à jour les autres champs si fournis
+    const { full_name, email, phone } = req.body;
+    
+    if (full_name) user.full_name = full_name;
+    if (email) user.email = email;
+    if (phone) user.phone = phone;
+
+    user.updated_at = new Date();
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Profil mis à jour avec succès',
+      data: {
+        user: {
+          id: user.id,
+          full_name: user.full_name,
+          email: user.email,
+          phone: user.phone,
+          profile_photo: user.profile_photo,
+          user_type: user.user_type,
+          is_verified: user.is_verified,
+          is_active: user.is_active
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'UPDATE_PROFILE_ERROR',
+        message: 'Erreur lors de la mise à jour du profil',
+        details: error.message
+      }
+    });
+  }
+};

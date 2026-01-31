@@ -302,66 +302,33 @@ const EditSalon: React.FC = () => {
             
             {salon.photos && salon.photos.length > 0 ? (
               <Grid container spacing={2}>
-                {salon.photos.map((photo, index) => {
-                  const isLocalFile = photo.startsWith('file://');
-                  return (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
-                      <Box sx={{ position: 'relative' }}>
-                        {isLocalFile ? (
-                          // Affichage pour les fichiers locaux
-                          <Box
-                            sx={{
-                              width: '100%',
-                              height: 200,
-                              borderRadius: 2,
-                              backgroundColor: '#f5f5f5',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              border: '2px dashed #ccc',
-                            }}
-                          >
-                            <Typography variant="body2" color="text.secondary" align="center">
-                              Photo locale
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary" align="center">
-                              (Non accessible depuis le web)
-                            </Typography>
-                          </Box>
-                        ) : (
-                          // Affichage normal pour les URLs web
-                          <img
-                            src={photo}
-                            alt={`Photo ${index + 1}`}
-                            style={{
-                              width: '100%',
-                              height: 200,
-                              objectFit: 'cover',
-                              borderRadius: 8,
-                            }}
-                            onError={(e) => {
-                              e.currentTarget.src = '/placeholder-image.jpg';
-                            }}
-                          />
-                        )}
-                        {!isLocalFile && (
-                          <IconButton
-                            sx={{
-                              position: 'absolute',
-                              top: 8,
-                              right: 8,
-                              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                            }}
-                            onClick={() => handleDeletePhoto(index)}
-                          >
-                            <DeleteIcon color="error" />
-                          </IconButton>
-                        )}
-                      </Box>
-                    </Grid>
-                  );
-                })}
+                {salon.photos.map((photo, index) => (
+                  <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+                    <Box sx={{ position: 'relative' }}>
+                      <img
+                        src={photo}
+                        alt={`Photo ${index + 1}`}
+                        style={{
+                          width: '100%',
+                          height: 200,
+                          objectFit: 'cover',
+                          borderRadius: 8,
+                        }}
+                      />
+                      <IconButton
+                        sx={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                        }}
+                        onClick={() => handleDeletePhoto(index)}
+                      >
+                        <DeleteIcon color="error" />
+                      </IconButton>
+                    </Box>
+                  </Grid>
+                ))}
               </Grid>
             ) : (
               <Typography color="text.secondary">

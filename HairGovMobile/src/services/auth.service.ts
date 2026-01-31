@@ -51,6 +51,8 @@ export const AuthService = {
   // Connexion utilisateur
   async login(phone: string, password: string) {
     try {
+      console.log('🔑 Login attempt:', { phone, passwordLength: password.length });
+      
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {

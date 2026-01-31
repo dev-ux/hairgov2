@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
 const SettingItem = ({ 
   icon, 
@@ -49,6 +51,7 @@ export const SettingsScreen = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(true);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const handleLogout = () => {
     Alert.alert(
@@ -66,7 +69,6 @@ export const SettingsScreen = () => {
       ]
     );
   };
-  const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
@@ -87,7 +89,7 @@ export const SettingsScreen = () => {
             icon="person-outline" 
             title="Profil" 
             value="Gérez vos informations personnelles"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('UserProfile')}
           />
           <SettingItem 
             icon="key-outline" 

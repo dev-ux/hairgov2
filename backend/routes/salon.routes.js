@@ -15,6 +15,13 @@ const {
 const { authenticate } = require('../middleware/auth.middleware');
 
 /**
+ * @route   GET /api/v1/salons/all
+ * @desc    Obtenir la liste de tous les salons (publique)
+ * @access  Public
+ */
+router.get('/all', getAllSalons);
+
+/**
  * @route   GET /api/v1/salons
  * @desc    Obtenir la liste de tous les salons
  * @access  Public

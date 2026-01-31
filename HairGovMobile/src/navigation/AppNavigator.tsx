@@ -33,6 +33,7 @@ import AllSalonsScreen from '../screens/AllSalonsScreen';
 import BarberHomePage from '../screens/BarberHomePage';
 import ReservationDetailScreen from '../screens/ReservationDetailScreen';
 import LoginScreen from '@screens/auth/LoginScreen';
+import UserProfileScreen from '../screens/UserProfileScreen';
 
 // Définition des types pour la navigation
 export type RootStackParamList = {
@@ -53,6 +54,7 @@ export type RootStackParamList = {
   Home: undefined;
   // Profil
   Profile: undefined;
+  UserProfile: undefined;
   // Autres écrans
   AllSalons: undefined;
   // Réservation
@@ -369,6 +371,25 @@ export const AppNavigator = () => {
           component={SettingsScreen}
           options={({ navigation }) => ({
             title: 'Paramètres',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        <Stack.Screen 
+          name="UserProfile" 
+          component={UserProfileScreen}
+          options={({ navigation }) => ({
+            title: 'Profil',
             animation: 'slide_from_right',
             headerLeft: () => (
               <TouchableOpacity 

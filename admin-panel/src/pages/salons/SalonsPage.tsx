@@ -333,9 +333,8 @@ const SalonsPage: React.FC = () => {
                         <IconButton
                           color="primary"
                           size="small"
-                          onClick={(e) => {
-                            e.stopPropagation(); // Empêcher la redirection vers les détails
-                            navigate(`/salons/edit/${salon.id}`);
+                          onClick={() => {
+                            // Logique de modification
                           }}
                         >
                           <EditIcon fontSize="small" />
