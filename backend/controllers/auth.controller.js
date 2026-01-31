@@ -774,7 +774,7 @@ exports.registerAdmin = async (req, res) => {
 exports.updateProfile = async (req, res) => {
   try {
     const { User } = require('../models');
-    const userId = req.user.userId;
+    const userId = req.userId;
 
     // Trouver l'utilisateur
     const user = await User.findByPk(userId);
