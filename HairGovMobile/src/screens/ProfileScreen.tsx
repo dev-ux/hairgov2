@@ -84,7 +84,7 @@ const ProfileScreen = () => {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* En-tête personnalisé avec bouton de retour */}
-      {/* <View style={[styles.headerContainer, { borderBottomColor: colors.border }]}>
+      {/* <View style={[styles.headerContainer, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <TouchableOpacity 
           onPress={() => navigation.goBack()}
           style={styles.backButton}
@@ -95,7 +95,7 @@ const ProfileScreen = () => {
         <View style={{ width: 24 }} /> 
       </View> */}
       
-      <View style={[styles.header, { borderBottomColor: colors.border }]}>
+      <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
         <View style={styles.avatarContainer}>
           {getProfileImageUrl(user?.profile_photo, user?.profile_picture) ? (
             <Image 
@@ -136,7 +136,6 @@ const ProfileScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   headerContainer: {
     flexDirection: 'row',
@@ -144,8 +143,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    backgroundColor: '#fff',
   },
   backButton: {
     padding: 5,
@@ -153,20 +150,17 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
   },
   header: {
     alignItems: 'center',
     padding: 20,
     paddingTop: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   avatarContainer: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#f0f0f0',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -190,12 +184,10 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
     marginTop: 10,
   },
   userEmail: {
     fontSize: 16,
-    color: '#666',
     marginTop: 5,
   },
   menuContainer: {
