@@ -84,7 +84,7 @@ const ProfileScreen = () => {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* En-tête personnalisé avec bouton de retour */}
-      <View style={[styles.headerContainer, { borderBottomColor: colors.border }]}>
+      {/* <View style={[styles.headerContainer, { borderBottomColor: colors.border }]}>
         <TouchableOpacity 
           onPress={() => navigation.goBack()}
           style={styles.backButton}
@@ -92,8 +92,8 @@ const ProfileScreen = () => {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Mon Profil</Text>
-        <View style={{ width: 24 }} /> {/* Pour équilibrer le flexbox */}
-      </View>
+        <View style={{ width: 24 }} /> 
+      </View> */}
       
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.avatarContainer}>

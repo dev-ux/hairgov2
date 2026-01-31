@@ -141,8 +141,8 @@ export const SettingsScreen = () => {
           />
         </View>
 
-        <Text style={styles.sectionHeader}>Aide & Support</Text>
-        <View style={styles.sectionContainer}>
+        <Text style={[styles.sectionHeader, { color: colors.text }]}>Aide & Support</Text>
+        <View style={[styles.sectionContainer, { backgroundColor: colors.surface }]}>
           <SettingItem 
             icon="help-circle-outline" 
             title="Centre d'aide" 
@@ -165,9 +165,8 @@ export const SettingsScreen = () => {
           />
         </View>
 
-
-        <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>Version 1.0.0</Text>
+        <View style={[styles.versionContainer, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.versionText, { color: colors.textSecondary }]}>Version 1.0.0</Text>
         </View>
       </ScrollView>
     </View>
@@ -177,18 +176,15 @@ export const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
     paddingTop: 60,
   },
   sectionHeader: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
     paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 8,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   headerContainer: {
     flexDirection: 'row',
@@ -199,12 +195,10 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
   },
   sectionContainer: {
-    backgroundColor: '#fff',
     marginBottom: 16,
     borderRadius: 12,
     marginHorizontal: 16,
@@ -216,8 +210,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   settingLeft: {
     flexDirection: 'row',
@@ -229,38 +221,34 @@ const styles = StyleSheet.create({
   },
   settingTitle: {
     fontSize: 16,
-    color: '#333',
+    fontWeight: '500',
+    marginLeft: 12,
   },
   settingValue: {
     fontSize: 14,
-    color: '#999',
+    color: '#666',
     marginTop: 2,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
     marginHorizontal: 16,
     padding: 16,
     borderRadius: 12,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#FF3B30',
+    marginBottom: 16,
   },
   logoutText: {
-    color: '#FF3B30',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
   },
   versionContainer: {
     alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 32,
+    padding: 20,
   },
   versionText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#999',
   },
 });
