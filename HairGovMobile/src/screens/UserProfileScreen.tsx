@@ -99,7 +99,7 @@ const UserProfileScreen = () => {
     }
 
     const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,
@@ -119,7 +119,7 @@ const UserProfileScreen = () => {
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.7,
@@ -142,7 +142,7 @@ const UserProfileScreen = () => {
         name: 'profile_photo.jpg',
       } as any);
 
-      // Appeler l'API pour mettre à jour la photo
+      // Tenter l'upload vers le backend
       const response = await fetch('https://hairgov2.onrender.com/api/v1/auth/update-profile', {
         method: 'PUT',
         headers: {
@@ -152,9 +152,8 @@ const UserProfileScreen = () => {
         body: formData,
       });
 
-      const data = await response.json();
-
       if (response.ok) {
+        const data = await response.json();
         setProfileImage(imageUri);
         Alert.alert('Succès', 'Photo de profil mise à jour avec succès');
         
@@ -164,8 +163,21 @@ const UserProfileScreen = () => {
           // updateUser(data.data.user);
         }
       } else {
-        Alert.alert('Erreur', data.message || 'Impossible de mettre à jour la photo');
+        // Si la route n'existe pas encore (404), utiliser la simulation
+        if (response.status === 404) {
+          console.log('📸 Route pas encore déployée, simulation pour:', imageUri);
+          
+          // Simuler un délai d'upload
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          setProfileImage(imageUri);
+          Alert.alert('Succès', 'Photo de profil mise à jour localement (en attente du déploiement backend)');
+        } else {
+          const data = await response.json();
+          Alert.alert('Erreur', data.message || 'Impossible de mettre à jour la photo');
+        }
       }
+      
     } catch (error) {
       console.error('Erreur upload photo:', error);
       Alert.alert('Erreur', 'Une erreur est survenue lors de la mise à jour');
