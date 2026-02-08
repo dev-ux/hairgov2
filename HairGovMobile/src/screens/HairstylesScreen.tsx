@@ -10,26 +10,34 @@ const { width } = Dimensions.get('window');
 // Fonction utilitaire pour formater les URLs d'images
 const formatImageUrl = (url: string) => {
   try {
+    console.log('Hairstyle URL originale reçue:', url);
+    
     if (!url) {
+      console.log('Aucune URL fournie pour la coiffure');
       return null;
     }
 
     // Si l'URL est déjà complète (commence par http), la retourner telle quelle
-    if (url.startsWith('http')) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      console.log('URL complète détectée pour la coiffure:', url);
       return url;
     }
 
     // Si l'URL commence par /uploads/, construire l'URL complète
     if (url.startsWith('/uploads/')) {
       const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-      return `${baseUrl}${url}`;
+      const fullUrl = `${baseUrl}${url}`;
+      console.log('URL uploads détectée pour la coiffure, URL finale:', fullUrl);
+      return fullUrl;
     }
 
     // Si l'URL est un chemin relatif simple, construire l'URL complète
     const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-    return `${baseUrl}/uploads/hairstyles/${url}`;
+    const fullUrl = `${baseUrl}/uploads/hairstyles/${url}`;
+    console.log('URL relative détectée pour la coiffure, URL finale:', fullUrl);
+    return fullUrl;
   } catch (error) {
-    console.error('Erreur lors du formatage de l\'URL:', error);
+    console.error('Erreur lors du formatage de l\'URL de la coiffure:', error);
     return null;
   }
 };
@@ -76,6 +84,10 @@ const HairstylesScreen = () => {
             source={{ uri: formatImageUrl(item.photo) || item.photo }} 
             style={styles.hairstyleImage} 
             resizeMode="cover" 
+            onError={(e) => {
+              console.log('Erreur de chargement de l\'image hairstyle:', item.name, e);
+              console.log('URL tentée:', formatImageUrl(item.photo));
+            }}
           />
         ) : (
           <View style={[styles.defaultImageContainer, { backgroundColor: colors.surface }]}>
