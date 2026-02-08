@@ -500,7 +500,7 @@ export default function HomeScreen() {
                   onPress={() => navigation.navigate('HairstyleDetail', { hairstyleId: item.id })}
                 >
                   <Image
-                    source={item.photo ? { uri: `${API_URL}/uploads/hairstyles/${item.photo}` } : require('../assets/url_de_l_image_1.jpg')}
+                    source={item.photo ? { uri: formatImageUrl(item.photo) } : require('../assets/url_de_l_image_1.jpg')}
                     style={homeScreenStyles.hairstyleImage}
                     resizeMode="cover"
                     onError={(e) => {

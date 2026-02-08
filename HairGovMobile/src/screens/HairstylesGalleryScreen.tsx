@@ -118,6 +118,10 @@ const HairstylesGalleryScreen = () => {
       }).start();
     };
 
+    // Utiliser uniquement l'URL formatée, avec fallback
+    const finalImageUrl = imageUrl || item.photo;
+    console.log('URL finale utilisée:', finalImageUrl);
+
     return (
       <Animated.View
         style={[
@@ -136,14 +140,14 @@ const HairstylesGalleryScreen = () => {
           onPress={() => setSelectedHairstyle(item)}
         >
           <View style={styles.imageContainer}>
-            {imageUrl ? (
+            {finalImageUrl ? (
               <Image
-                source={{ uri: imageUrl }}
+                source={{ uri: finalImageUrl }}
                 style={styles.hairstyleImage}
                 resizeMode="cover"
                 onError={(e) => {
                   console.log('ERREUR IMAGE GALLERY:', item.name, e);
-                  console.log('URL tentée:', imageUrl);
+                  console.log('URL tentée:', finalImageUrl);
                 }}
               />
             ) : (
