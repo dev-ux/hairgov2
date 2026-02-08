@@ -334,7 +334,7 @@ const SalonsPage: React.FC = () => {
                           color="primary"
                           size="small"
                           onClick={() => {
-                            // Logique de modification
+                            navigate(`/salons/edit/${salon.id}`);
                           }}
                         >
                           <EditIcon fontSize="small" />
