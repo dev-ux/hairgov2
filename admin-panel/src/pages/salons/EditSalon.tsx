@@ -19,6 +19,7 @@ import {
   Phone as PhoneIcon,
   Email as EmailIcon,
   Delete as DeleteIcon,
+  Add as AddIcon,
 } from '@mui/icons-material';
 import api from '../../services/api';
 
@@ -52,6 +53,7 @@ const EditSalon: React.FC = () => {
     latitude: '',
     longitude: '',
   });
+  const [newPhotos, setNewPhotos] = useState<File[]>([]);
 
   // Fonction pour formater les URLs des photos
   const formatPhotoUrl = (photo: string) => {
@@ -107,12 +109,40 @@ const EditSalon: React.FC = () => {
     }));
   };
 
+  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      setNewPhotos(prev => [...prev, ...Array.from(files)]);
+    }
+  };
+
+  const handleRemoveNewPhoto = (index: number) => {
+    setNewPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleSave = async () => {
     if (!salon) return;
 
     try {
       setSaving(true);
-      const response = await api.put(`/admin/salons/${salon.id}`, formData);
+      
+      // Créer FormData pour gérer l'upload des fichiers
+      const formDataToSend = new FormData();
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('address', formData.address);
+      formDataToSend.append('latitude', formData.latitude);
+      formDataToSend.append('longitude', formData.longitude);
+      
+      // Ajouter les nouvelles photos
+      newPhotos.forEach((photo) => {
+        formDataToSend.append('photos', photo);
+      });
+
+      const response = await api.put(`/admin/salons/${salon.id}`, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       
       if (response.data.success) {
         alert('Salon mis à jour avec succès');
@@ -353,6 +383,60 @@ const EditSalon: React.FC = () => {
                 Aucune photo disponible pour ce salon
               </Typography>
             )}
+            
+            {/* Ajouter de nouvelles photos */}
+            <Box sx={{ mt: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                Ajouter de nouvelles photos
+              </Typography>
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<AddIcon />}
+                sx={{ mb: 2 }}
+              >
+                Choisir des photos
+                <input
+                  type="file"
+                  hidden
+                  multiple
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                />
+              </Button>
+              
+              {newPhotos.length > 0 && (
+                <Grid container spacing={2}>
+                  {newPhotos.map((photo, index) => (
+                    <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+                      <Box sx={{ position: 'relative' }}>
+                        <img
+                          src={URL.createObjectURL(photo)}
+                          alt={`Nouvelle photo ${index + 1}`}
+                          style={{
+                            width: '100%',
+                            height: 200,
+                            objectFit: 'cover',
+                            borderRadius: 8,
+                          }}
+                        />
+                        <IconButton
+                          sx={{
+                            position: 'absolute',
+                            top: 8,
+                            right: 8,
+                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                          }}
+                          onClick={() => handleRemoveNewPhoto(index)}
+                        >
+                          <DeleteIcon color="error" />
+                        </IconButton>
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+            </Box>
           </Paper>
         </Grid>
       </Grid>
