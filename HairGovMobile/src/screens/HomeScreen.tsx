@@ -436,11 +436,10 @@ export default function HomeScreen() {
                       source={(() => {
                         const imageUrl = item.photos?.[0];
                         if (imageUrl) {
-                          // Vérifier si l'URL est relative ou absolue
-                          const fullImageUrl = imageUrl.startsWith('http') 
-                            ? imageUrl 
-                            : `${API_URL}${imageUrl}`;
-                          return { uri: fullImageUrl };
+                          const formattedUrl = formatImageUrl(imageUrl);
+                          if (formattedUrl) {
+                            return { uri: formattedUrl };
+                          }
                         }
                         return defaultSalonImage;
                       })()}
