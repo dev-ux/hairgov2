@@ -500,7 +500,20 @@ export default function HomeScreen() {
                   onPress={() => navigation.navigate('HairstyleDetail', { hairstyleId: item.id })}
                 >
                   <Image
-                    source={item.photo ? { uri: formatImageUrl(item.photo) } : require('../assets/url_de_l_image_1.jpg')}
+                    source={(() => {
+                      if (item.photo) {
+                        const formattedUrl = formatImageUrl(item.photo);
+                        console.log('=== HOMESCREEN HAIRSTYLE DEBUG ===');
+                        console.log('Hairstyle:', item.name);
+                        console.log('Photo originale:', item.photo);
+                        console.log('URL formatée:', formattedUrl);
+                        console.log('==================================');
+                        return { uri: formattedUrl };
+                      } else {
+                        console.log('Pas de photo pour:', item.name);
+                        return require('../assets/url_de_l_image_1.jpg');
+                      }
+                    })()}
                     style={homeScreenStyles.hairstyleImage}
                     resizeMode="cover"
                     onError={(e) => {
