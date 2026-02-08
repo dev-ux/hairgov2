@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import {
   Box,
   Typography,
-  Button,
   Paper,
   Table,
   TableBody,
@@ -12,14 +10,21 @@ import {
   TableHead,
   TableRow,
   TablePagination,
+  Button,
   IconButton,
-  Tooltip,
+  Chip,
   CircularProgress,
   Alert,
   Avatar,
-  Chip,
+  Tooltip,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+} from '@mui/icons-material';
+import { useSnackbar } from 'notistack';
+import api from '../../services/api';
 import AddHairstyleForm, { HairstyleFormData } from './AddHairstyleForm';
 import { enqueueSnackbar } from 'notistack';
 
@@ -35,8 +40,6 @@ interface Hairstyle {
   updated_at: string;
 }
 
-const API_URL = 'https://hairgov2.onrender.com/api/v1';
-
 const HairstylesPage: React.FC = () => {
   const [hairstyles, setHairstyles] = useState<Hairstyle[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -44,17 +47,18 @@ const HairstylesPage: React.FC = () => {
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
   const [openAddForm, setOpenAddForm] = useState<boolean>(false);
+  const { enqueueSnackbar } = useSnackbar();
 
   // Récupérer la liste des coiffures
   const fetchHairstyles = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/api/v1/hairstyles`);
+      const response = await api.get('/hairstyles');
       setHairstyles(response.data.data || []);
       setError(null);
     } catch (err) {
       console.error('Erreur lors de la récupération des coiffures:', err);
-      setError('Impossible de charger les coiffures. Veuillez réessayer.');
+      setError('Erreur lors du chargement des coiffures');
       enqueueSnackbar('Erreur lors du chargement des coiffures', { variant: 'error' });
     } finally {
       setLoading(false);
@@ -90,10 +94,9 @@ const HairstylesPage: React.FC = () => {
         formDataToSend.append('photo', formData.photos[0]);
       }
       
-      await axios.post(`${API_URL}/api/v1/hairstyles`, formDataToSend, {
+      await api.post('/hairstyles', formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       
@@ -114,7 +117,7 @@ const HairstylesPage: React.FC = () => {
   const handleDeleteHairstyle = async (id: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cette coiffure ?')) {
       try {
-        await axios.delete(`${API_URL}/api/v1/hairstyles/${id}`);
+        await api.delete(`/hairstyles/${id}`);
         enqueueSnackbar('Coiffure supprimée avec succès', { variant: 'success' });
         fetchHairstyles();
       } catch (err) {
@@ -196,7 +199,7 @@ const HairstylesPage: React.FC = () => {
                     <TableRow hover key={hairstyle.id}>
                       <TableCell>
                         <Avatar
-                          src={hairstyle.photo ? `${API_URL}${hairstyle.photo}` : '/default-hairstyle.jpg'}
+                          src={hairstyle.photo ? `https://hairgov2.onrender.com${hairstyle.photo}` : '/default-hairstyle.jpg'}
                           alt={hairstyle.name}
                           variant="rounded"
                           sx={{ width: 56, height: 56 }}
