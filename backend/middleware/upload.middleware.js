@@ -49,6 +49,26 @@ const profileStorage = multer.diskStorage({
   }
 });
 
+// Configuration du stockage pour les photos de salons
+const salonPhotosStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const type = 'photos';
+    const dir = path.join(uploadDir, type);
+    
+    // Créer le dossier s'il n'existe pas
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    
+    cb(null, dir);
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = `${Date.now()}-${uuidv4()}`;
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, `photos-${uniqueSuffix}${ext}`);
+  }
+});
+
 // Filtre des fichiers
 const fileFilter = (req, file, cb) => {
   const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
@@ -78,13 +98,23 @@ const profileMulterConfig = {
   }
 };
 
+// Configuration pour les photos de salons
+const salonPhotosMulterConfig = {
+  storage: salonPhotosStorage,
+  fileFilter: fileFilter,
+  limits: { 
+    fileSize: 5 * 1024 * 1024 // 5MB limit per file
+  }
+};
+
 // Créer différentes instances de multer pour différents cas d'utilisation
 const upload = multer(multerConfig);
 const profileUpload = multer(profileMulterConfig);
+const salonPhotosUpload = multer(salonPhotosMulterConfig);
 const uploadSingle = upload.single('photo'); // Pour un seul fichier
 const uploadProfilePhoto = profileUpload.single('profile_photo'); // Pour la photo de profil
 const uploadAny = upload.any(); // Pour les téléchargements génériques
-const uploadFields = upload.fields([
+const uploadFields = salonPhotosUpload.fields([
   { name: 'photos', maxCount: 10 },
   { name: 'logo', maxCount: 1 }
 ]);

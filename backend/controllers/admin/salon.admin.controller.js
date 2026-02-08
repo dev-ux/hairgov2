@@ -87,14 +87,22 @@ exports.createSalon = async (req, res) => {
 
     await transaction.commit();
     
+    // Récupérer le salon complet avec les photos
+    const createdSalon = await db.Salon.findByPk(salon.id, {
+      include: [{
+        model: db.Hairdresser,
+        as: 'hairdresser',
+        include: [{
+          model: db.User,
+          as: 'user',
+          attributes: ['id', 'full_name', 'email', 'phone', 'profile_photo']
+        }]
+      }]
+    });
+    
     res.status(201).json({
       success: true,
-      data: {
-        id: salon.id,
-        name: salon.name,
-        address: salon.address,
-        is_validated: salon.is_validated
-      }
+      data: createdSalon
     });
   } catch (error) {
     await transaction.rollback();
