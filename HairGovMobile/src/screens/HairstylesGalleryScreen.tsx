@@ -72,12 +72,26 @@ const HairstylesGalleryScreen = () => {
       const response = await fetch(`${API_URL}/hairstyles`);
       const data = await response.json();
       
+      console.log('=== HAIRSTYLES API RESPONSE ===');
+      console.log('Success:', data.success);
+      console.log('Count:', data.count);
+      console.log('Data length:', data.data?.length);
+      
+      if (data.data && data.data.length > 0) {
+        console.log('Sample hairstyle data:');
+        console.log('First item:', data.data[0]);
+        console.log('Photo field:', data.data[0].photo);
+        console.log('All photo fields:', data.data.map(item => ({ name: item.name, photo: item.photo })));
+      }
+      console.log('================================');
+      
       if (data.success) {
         setHairstyles(data.data);
       } else {
         setError('Erreur lors du chargement des coiffures');
       }
     } catch (error) {
+      console.error('Erreur fetchHairstyles:', error);
       setError('Impossible de charger les coiffures');
     } finally {
       setLoading(false);
