@@ -83,6 +83,12 @@ const HairstylesGalleryScreen = () => {
 
   const renderHairstyleCard = ({ item, index }) => {
     const imageUrl = formatImageUrl(item.photo);
+    console.log('=== GALLERY DEBUG ===');
+    console.log('Item:', item);
+    console.log('Photo originale:', item.photo);
+    console.log('URL formatée:', imageUrl);
+    console.log('==================');
+    
     const animatedValue = new Animated.Value(0);
     
     const handlePressIn = () => {
@@ -123,7 +129,8 @@ const HairstylesGalleryScreen = () => {
                 style={styles.hairstyleImage}
                 resizeMode="cover"
                 onError={(e) => {
-                  console.log('Erreur de chargement de l\'image hairstyle:', item.name, e);
+                  console.log('ERREUR IMAGE GALLERY:', item.name, e);
+                  console.log('URL tentée:', imageUrl);
                 }}
               />
             ) : (
