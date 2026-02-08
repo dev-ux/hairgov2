@@ -3,7 +3,7 @@ const router = express.Router();
 const { authenticate, isAdmin } = require('../middleware/auth.middleware');
 const { getUsersList } = require('../controllers/admin.controller');
 const { getDashboardStats } = require('../controllers/dashboard.controller');
-const { createSalon, validateSalon } = require('../controllers/admin/salon.admin.controller');
+const { createSalon, updateSalon, validateSalon } = require('../controllers/admin/salon.admin.controller');
 const { 
   validateHairdresser, 
   getHairdressers: getHairdressersAdmin,
@@ -198,6 +198,17 @@ router.post(
   '/salons',
   uploadFields,
   createSalon
+);
+
+/**
+ * @route   PUT /api/v1/admin/salons/:id
+ * @desc    Mettre à jour un salon (Admin uniquement)
+ * @access  Private/Admin
+ */
+router.put(
+  '/salons/:id',
+  uploadFields,
+  updateSalon
 );
 
 /**
