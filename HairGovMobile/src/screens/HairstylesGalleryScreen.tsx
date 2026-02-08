@@ -22,6 +22,12 @@ const { width, height } = Dimensions.get('window');
 const formatImageUrl = (url: string) => {
   try {
     console.log('HairstyleGallery URL originale reçue:', url);
+    console.log('Type d\'URL:', {
+      isEmpty: !url,
+      isExternal: url.includes('://'),
+      isUploads: url.startsWith('/uploads/'),
+      isRelative: !url.includes('://') && !url.startsWith('/uploads/')
+    });
     
     if (!url) return null;
 
