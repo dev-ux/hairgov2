@@ -7,6 +7,33 @@ import { API_URL } from '../config/constants';
 
 const { width } = Dimensions.get('window');
 
+// Fonction utilitaire pour formater les URLs d'images
+const formatImageUrl = (url: string) => {
+  try {
+    if (!url) {
+      return null;
+    }
+
+    // Si l'URL est déjà complète (commence par http), la retourner telle quelle
+    if (url.startsWith('http')) {
+      return url;
+    }
+
+    // Si l'URL commence par /uploads/, construire l'URL complète
+    if (url.startsWith('/uploads/')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      return `${baseUrl}${url}`;
+    }
+
+    // Si l'URL est un chemin relatif simple, construire l'URL complète
+    const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+    return `${baseUrl}/uploads/hairstyles/${url}`;
+  } catch (error) {
+    console.error('Erreur lors du formatage de l\'URL:', error);
+    return null;
+  }
+};
+
 const HairstylesScreen = () => {
   const navigation = useNavigation();
   const { colors } = useTheme();
@@ -45,7 +72,11 @@ const HairstylesScreen = () => {
     >
       <View style={styles.hairstyleImageContainer}>
         {item.photo ? (
-          <Image source={{ uri: item.photo }} style={styles.hairstyleImage} resizeMode="cover" />
+          <Image 
+            source={{ uri: formatImageUrl(item.photo) || item.photo }} 
+            style={styles.hairstyleImage} 
+            resizeMode="cover" 
+          />
         ) : (
           <View style={[styles.defaultImageContainer, { backgroundColor: colors.surface }]}>
             <Ionicons name="image-outline" size={40} color={colors.textSecondary} />
