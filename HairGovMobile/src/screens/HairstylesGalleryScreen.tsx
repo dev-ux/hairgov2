@@ -21,22 +21,29 @@ const { width, height } = Dimensions.get('window');
 // Fonction utilitaire pour formater les URLs d'images
 const formatImageUrl = (url: string) => {
   try {
+    console.log('HairstyleGallery URL originale reçue:', url);
+    
     if (!url) return null;
 
     // Vérifier si l'URL contient déjà un domaine (URL externe)
     if (url.includes('://') && (url.includes('.com') || url.includes('.jpg') || url.includes('.png') || url.includes('.unsplash'))) {
+      console.log('URL externe détectée pour la coiffure:', url);
       return url;
     }
 
-    // Si l'URL commence par /uploads/, construire l'URL complète
+    // Si l'URL commence déjà par /uploads/, la retourner telle quelle
     if (url.startsWith('/uploads/')) {
       const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-      return `${baseUrl}${url}`;
+      const fullUrl = `${baseUrl}${url}`;
+      console.log('URL uploads détectée pour la coiffure, URL finale:', fullUrl);
+      return fullUrl;
     }
 
     // Si l'URL est un chemin relatif simple, construire l'URL complète
     const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-    return `${baseUrl}/uploads/hairstyles/${url}`;
+    const fullUrl = `${baseUrl}/uploads/hairstyles/${url}`;
+    console.log('URL relative détectée pour la coiffure, URL finale:', fullUrl);
+    return fullUrl;
   } catch (error) {
     console.error('Erreur lors du formatage de l\'URL:', error);
     return null;
@@ -56,7 +63,7 @@ const HairstylesGalleryScreen = () => {
   const fetchHairstyles = async () => {
     try {
       setError(null);
-      const response = await fetch(`${API_URL}/api/v1/hairstyles`);
+      const response = await fetch(`${API_URL}/hairstyles`);
       const data = await response.json();
       
       if (data.success) {
