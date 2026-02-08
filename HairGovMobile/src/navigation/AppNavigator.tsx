@@ -462,10 +462,21 @@ export const AppNavigator = () => {
         <Stack.Screen 
           name="AllSalons" 
           component={AllSalonsScreen}
-          options={{
+          options={({ navigation }) => ({
             title: 'Tous les salons',
             animation: 'slide_from_right',
-          }}
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
         />
       </Stack.Navigator>
     </NavigationContainer>

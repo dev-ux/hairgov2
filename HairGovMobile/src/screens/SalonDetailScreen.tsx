@@ -66,6 +66,22 @@ const formatImageUrl = (url: string) => {
   }
 };
 
+// Solution temporaire : mapper les URLs manquantes vers des images existantes
+const getWorkingImageUrl = (originalUrl: string): string => {
+  const urlMapping: { [key: string]: string } = {
+    'hairstyle-1770513464791-250ac316-33ea-4be5-a6e8-35e8472656c3.jpg': 'photos-1762358785558-9fb0fd5d-e8a9-4f47-9bc4-c2ec18a12da8.jpg',
+    'hairstyle-1770513424792-cdb056c9-fd44-40c6-8269-f4d02a5ed613.jpg': 'photos-1762358872925-cc14ac13-8b31-4145-abdf-ad86af4b1a9a.jpg'
+  };
+  
+  // Extraire le nom du fichier de l'URL
+  const filename = originalUrl.split('/').pop() || '';
+  const workingFilename = urlMapping[filename] || filename;
+  
+  // Construire l'URL correcte sans /api/v1/
+  const baseUrl = 'https://hairgov2.onrender.com';
+  return `${baseUrl}/uploads/photos/${workingFilename}`;
+};
+
 type RootStackParamList = {
     Home: undefined;
     SalonDetail: { salonId: string };
@@ -333,7 +349,7 @@ const SalonDetailScreen = () => {
                             contentContainerStyle={styles.photosContainer}
                         >
                             {salon.photos.map((photo, index) => {
-                                const imageUrl = formatImageUrl(photo);
+                                const imageUrl = getWorkingImageUrl(photo);
                                 return (
                                     <View key={index} style={styles.photoItem}>
                                         <Image
@@ -344,7 +360,7 @@ const SalonDetailScreen = () => {
                                                 console.error('Erreur de chargement de la photo du salon:', {
                                                     error: e.nativeEvent.error,
                                                     photo: photo,
-                                                    formattedUrl: imageUrl
+                                                    mappedUrl: imageUrl
                                                 });
                                             }}
                                         />

@@ -61,6 +61,22 @@ const formatImageUrl = (url: string) => {
   }
 };
 
+// Solution temporaire : mapper les URLs manquantes vers des images existantes
+const getWorkingImageUrl = (originalUrl: string): string => {
+  const urlMapping: { [key: string]: string } = {
+    'hairstyle-1770513464791-250ac316-33ea-4be5-a6e8-35e8472656c3.jpg': 'photos-1762358785558-9fb0fd5d-e8a9-4f47-9bc4-c2ec18a12da8.jpg',
+    'hairstyle-1770513424792-cdb056c9-fd44-40c6-8269-f4d02a5ed613.jpg': 'photos-1762358872925-cc14ac13-8b31-4145-abdf-ad86af4b1a9a.jpg'
+  };
+  
+  // Extraire le nom du fichier de l'URL
+  const filename = originalUrl.split('/').pop() || '';
+  const workingFilename = urlMapping[filename] || filename;
+  
+  // Construire l'URL correcte sans /api/v1/
+  const baseUrl = 'https://hairgov2.onrender.com';
+  return `${baseUrl}/uploads/photos/${workingFilename}`;
+};
+
 const { width } = Dimensions.get('window');
 
 export default function AllSalonsScreen() {
@@ -121,7 +137,8 @@ export default function AllSalonsScreen() {
   }, []);
 
   const renderSalonItem = ({ item }: { item: Salon }) => {
-    const imageUrl = item.photos?.[0] ? formatImageUrl(item.photos[0]) : null;
+    const originalImageUrl = item.photos?.[0] ? formatImageUrl(item.photos[0]) : null;
+    const imageUrl = originalImageUrl ? getWorkingImageUrl(item.photos[0]) : null;
     
     return (
       <TouchableOpacity
@@ -171,17 +188,6 @@ export default function AllSalonsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Tous les salons</Text>
-        <View style={styles.headerRight} />
-      </View>
-
       <FlatList
         data={salons}
         renderItem={renderSalonItem}
@@ -197,24 +203,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  headerRight: {
-    width: 24,
-  },
-  backButton: {
-    padding: 8,
   },
   listContent: {
     padding: 16,

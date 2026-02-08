@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../contexts/AuthContext';
-import { createSalon, getMySalon, updateSalon, Salon as SalonType, CreateSalonData } from '../services/salon.service';
+import { createSalonWithPhotos, createSalon, getMySalon, updateSalon, Salon as SalonType, CreateSalonData } from '../services/salon.service';
 import AddressSelector from './AddressSelector';
 
 const { width } = Dimensions.get('window');
@@ -228,8 +228,12 @@ export default function BarberSalonTab() {
 
     try {
       if (creatingMode) {
-        // Create new salon
-        const response = await createSalon(formData);
+        // Create new salon avec photos si disponibles
+        const hasPhotos = formData.photos && formData.photos.length > 0;
+        const response = hasPhotos 
+          ? await createSalonWithPhotos(formData)
+          : await createSalon(formData);
+          
         if (response.success) {
           setSalon(response.data);
           setCreatingMode(false);

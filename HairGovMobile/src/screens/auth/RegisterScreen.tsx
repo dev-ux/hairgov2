@@ -11,21 +11,15 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, RouteProp, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { useAuth } from '../../contexts/AuthContext';
-import DateTimePicker from '@react-native-community/datetimepicker';
-
-type UserType = 'client' | 'coiffeur';
-type RegisterScreenRouteProp = RouteProp<RootStackParamList, 'Register'>;
 
 export const RegisterScreen = () => {
-  const route = useRoute<RegisterScreenRouteProp>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { registerClient, registerHairdresser, isLoading, error: authError, clearError } = useAuth();
+  const { registerClient, isLoading, error: authError, clearError } = useAuth();
   
-  const [userType, setUserType] = useState<UserType>(route.params?.userType || 'client');
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -33,14 +27,8 @@ export const RegisterScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [profession, setProfession] = useState('');
-  const [residentialAddress, setResidentialAddress] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [idCardNumber, setIdCardNumber] = useState('');
-  const [hasSalon, setHasSalon] = useState(false);
   const [localError, setLocalError] = useState('');
+  const [acceptCGU, setAcceptCGU] = useState(false);
 
   // Gérer les erreurs du contexte d'authentification
   useEffect(() => {
@@ -50,32 +38,8 @@ export const RegisterScreen = () => {
     }
   }, [authError, clearError]);
 
-  const showDatePickerModal = () => {
-    setShowDatePicker(true);
-  };
-
-  const hideDatePickerModal = () => {
-    setShowDatePicker(false);
-  };
-
-  const handleDateConfirm = () => {
-    const day = selectedDate.getDate().toString().padStart(2, '0');
-    const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
-    const year = selectedDate.getFullYear();
-    const formattedDate = `${day}/${month}/${year}`;
-    setDateOfBirth(formattedDate);
-    setShowDatePicker(false);
-  };
-
-  const formatDateDisplay = (dateString: string) => {
-    if (!dateString) return 'JJ/MM/AAAA';
-    return dateString;
-  };
-
   const handleRegister = async () => {
-    const requiredFields = userType === 'client' 
-      ? [fullName, phone, password, confirmPassword]
-      : [fullName, phone, password, confirmPassword, profession, residentialAddress, dateOfBirth, idCardNumber];
+    const requiredFields = [fullName, phone, password, confirmPassword];
     
     if (requiredFields.some(field => !field)) {
       setLocalError('Veuillez remplir tous les champs obligatoires');
@@ -87,34 +51,22 @@ export const RegisterScreen = () => {
       return;
     }
 
+    if (!acceptCGU) {
+      setLocalError('Veuillez accepter les conditions générales d\'utilisation');
+      return;
+    }
+
     setLocalError('');
 
     const userData = {
       full_name: fullName,
       email: email || undefined,
       phone,
-      password,
-      ...(userType === 'coiffeur' && { 
-        profession,
-        residential_address: residentialAddress,
-        date_of_birth: dateOfBirth,
-        id_card_number: idCardNumber,
-        has_salon: hasSalon
-      })
+      password
     };
 
     try {
-      if (userType === 'client') {
-        await registerClient(userData, navigation);
-      } else {
-        const result = await registerHairdresser(userData);
-        if (result) {
-          navigation.navigate('VerifyOtp', { 
-            email: userData.email, 
-            phone: userData.phone 
-          });
-        }
-      }
+      await registerClient(userData, navigation);
     } catch (error) {
       console.error('Erreur lors de l\'inscription:', error);
       setLocalError('Une erreur est survenue lors de l\'inscription');
@@ -134,36 +86,9 @@ export const RegisterScreen = () => {
           >
             <Ionicons name="arrow-back" size={24} color="#333" />
           </TouchableOpacity>
-          <Text style={styles.title}>
-            {userType === 'client' ? 'Créer un compte client' : 'Devenir coiffeur'}
-          </Text>
-          <Text style={styles.subtitle}>
-            {userType === 'client' 
-              ? 'Rejoignez HairGov et réservez vos rendez-vous'
-              : 'Rejoignez notre réseau de coiffeurs professionnels'
-            }
-          </Text>
+          <Text style={styles.title}>Créer un compte client</Text>
+          
         </View>
-
-        <View style={styles.toggleContainer}>
-          <TouchableOpacity 
-            style={[styles.toggleButton, userType === 'client' && styles.activeToggle]}
-            onPress={() => setUserType('client')}
-          >
-            <Text style={[styles.toggleText, userType === 'client' && styles.activeToggleText]}>
-              Client
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.toggleButton, userType === 'coiffeur' && styles.activeToggle]}
-            onPress={() => setUserType('coiffeur')}
-          >
-            <Text style={[styles.toggleText, userType === 'coiffeur' && styles.activeToggleText]}>
-              Coiffeur
-            </Text>
-          </TouchableOpacity>
-        </View>
-
 
         <View style={styles.formContainer}>
           <View style={styles.inputContainer}>
@@ -177,70 +102,8 @@ export const RegisterScreen = () => {
             />
           </View>
 
-          {userType === 'coiffeur' && (
-            <>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Date de naissance *</Text>
-                <TouchableOpacity 
-                  style={styles.dateInput}
-                  onPress={showDatePickerModal}
-                >
-                  <Text style={[
-                    styles.dateInputText, 
-                    !dateOfBirth && styles.placeholderText
-                  ]}>
-                    {formatDateDisplay(dateOfBirth)}
-                  </Text>
-                  <Ionicons name="calendar" size={20} color="#666" />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Numéro de carte d'identité *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Numéro de votre carte d'identité"
-                  value={idCardNumber}
-                  onChangeText={setIdCardNumber}
-                />
-              </View>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Profession *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Votre profession (ex: Coiffeur, Barbier...)"
-                  value={profession}
-                  onChangeText={setProfession}
-                  autoCapitalize="words"
-                />
-              </View>
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Adresse résidentielle *</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Votre adresse complète"
-                  value={residentialAddress}
-                  onChangeText={setResidentialAddress}
-                  autoCapitalize="words"
-                />
-              </View>
-              <View style={styles.checkboxContainer}>
-                <TouchableOpacity 
-                  style={styles.checkbox}
-                  onPress={() => setHasSalon(!hasSalon)}
-                >
-                  <Ionicons 
-                    name={hasSalon ? "checkmark-circle" : "ellipse-outline"} 
-                    size={20} 
-                    color="#6C63FF" 
-                  />
-                </TouchableOpacity>
-                <Text style={styles.checkboxLabel}>Je possède un salon</Text>
-              </View>
-            </>
-          )}
-
           <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email {userType === 'client' ? '(optionnel)' : '*'}</Text>
+            <Text style={styles.label}>Email (optionnel)</Text>
             <TextInput
               style={styles.input}
               placeholder="Votre adresse email"
@@ -313,21 +176,38 @@ export const RegisterScreen = () => {
 
           {localError ? <Text style={styles.errorText}>{localError}</Text> : null}
 
+          <View style={styles.checkboxContainer}>
+            <TouchableOpacity 
+              style={styles.checkbox}
+              onPress={() => setAcceptCGU(!acceptCGU)}
+            >
+              <Ionicons 
+                name={acceptCGU ? "checkmark-circle" : "ellipse-outline"} 
+                size={20} 
+                color="#6C63FF" 
+              />
+            </TouchableOpacity>
+            <Text style={styles.checkboxLabel}>
+              J'accepte les {' '}
+              <TouchableOpacity onPress={() => console.log('Afficher les CGU')}>
+                <Text style={styles.cguLink}>conditions générales d'utilisation</Text>
+              </TouchableOpacity>
+            </Text>
+          </View>
+
           <TouchableOpacity 
             style={[
               styles.registerButton,
-              (isLoading || !fullName || !phone || !password || !confirmPassword) && 
+              (isLoading || !fullName || !phone || !password || !confirmPassword || !acceptCGU) && 
               styles.disabledButton
             ]}
             onPress={handleRegister}
-            disabled={isLoading || !fullName || !phone || !password || !confirmPassword || (userType === 'coiffeur' && (!profession || !residentialAddress || !dateOfBirth || !idCardNumber))}
+            disabled={isLoading || !fullName || !phone || !password || !confirmPassword || !acceptCGU}
           >
             {isLoading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.registerButtonText}>
-                {userType === 'client' ? 'Créer mon compte' : 'Devenir coiffeur'}
-              </Text>
+              <Text style={styles.registerButtonText}>Créer mon compte</Text>
             )}
           </TouchableOpacity>
 
@@ -339,26 +219,6 @@ export const RegisterScreen = () => {
           </View>
         </View>
       </ScrollView>
-
-      {showDatePicker && (
-        <DateTimePicker
-          value={selectedDate}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          maximumDate={new Date()}
-          onChange={(event, selectedDate) => {
-            setShowDatePicker(false);
-            if (event.type === 'set' && selectedDate) {
-              setSelectedDate(selectedDate);
-              const day = selectedDate.getDate().toString().padStart(2, '0');
-              const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
-              const year = selectedDate.getFullYear();
-              const formattedDate = `${day}/${month}/${year}`;
-              setDateOfBirth(formattedDate);
-            }
-          }}
-        />
-      )}
     </KeyboardAvoidingView>
   );
 };
@@ -387,39 +247,11 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: 'bold',
     color: '#333',
+    marginRight: 70
   },
   subtitle: {
     fontSize: 16,
     color: '#666',
-  },
-  toggleContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 10,
-    padding: 5,
-    marginBottom: 25,
-  },
-  toggleButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  activeToggle: {
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  toggleText: {
-    color: '#666',
-    fontWeight: '500',
-  },
-  activeToggleText: {
-    color: '#6C63FF',
-    fontWeight: '600',
   },
   formContainer: {
     width: '100%',
@@ -500,33 +332,19 @@ const styles = StyleSheet.create({
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 20,
     paddingHorizontal: 15,
   },
   checkbox: {
     marginRight: 10,
   },
   checkboxLabel: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#333',
-  },
-  dateInput: {
     flex: 1,
-    height: 50,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    color: '#333',
-    fontSize: 16,
   },
-  dateInputText: {
-    flex: 1,
-    height: 50,
-    color: '#333',
-    fontSize: 16,
-    paddingTop: 15,
-  },
-  placeholderText: {
-    color: '#999',
+  cguLink: {
+    color: '#6C63FF',
+    textDecorationLine: 'underline',
   },
 });
