@@ -60,7 +60,7 @@ const EditSalon: React.FC = () => {
   const fetchSalon = async () => {
     try {
       setLoading(true);
-      const response = await api.get(`/salons/${id}`);
+      const response = await api.get(`/admin/salons/${id}`);
       
       if (response.data.success) {
         const salonData = response.data.data;
@@ -94,7 +94,7 @@ const EditSalon: React.FC = () => {
 
     try {
       setSaving(true);
-      const response = await api.put(`/salons/${salon.id}`, formData);
+      const response = await api.put(`/admin/salons/${salon.id}`, formData);
       
       if (response.data.success) {
         alert('Salon mis à jour avec succès');
@@ -116,7 +116,7 @@ const EditSalon: React.FC = () => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cette photo ?')) {
       try {
         const updatedPhotos = salon.photos.filter((_, index) => index !== photoIndex);
-        const response = await api.put(`/salons/${salon.id}`, {
+        const response = await api.put(`/admin/salons/${salon.id}`, {
           photos: updatedPhotos
         });
         
