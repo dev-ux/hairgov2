@@ -17,9 +17,9 @@ const formatImageUrl = (url: string) => {
       return null;
     }
 
-    // Si l'URL est déjà complète (commence par http), la retourner telle quelle
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      console.log('URL complète détectée pour la coiffure:', url);
+    // Vérifier si l'URL contient déjà un domaine (URL externe)
+    if (url.includes('://') && (url.includes('.com') || url.includes('.jpg') || url.includes('.png') || url.includes('.unsplash'))) {
+      console.log('URL externe détectée pour la coiffure:', url);
       return url;
     }
 
@@ -80,15 +80,25 @@ const HairstylesScreen = () => {
     >
       <View style={styles.hairstyleImageContainer}>
         {item.photo ? (
-          <Image 
-            source={{ uri: formatImageUrl(item.photo) || item.photo }} 
-            style={styles.hairstyleImage} 
-            resizeMode="cover" 
-            onError={(e) => {
-              console.log('Erreur de chargement de l\'image hairstyle:', item.name, e);
-              console.log('URL tentée:', formatImageUrl(item.photo));
-            }}
-          />
+          (() => {
+            const formattedUrl = formatImageUrl(item.photo);
+            console.log('=== DEBUG COIFFURE ===');
+            console.log('Nom:', item.name);
+            console.log('Photo originale:', item.photo);
+            console.log('URL formatée:', formattedUrl);
+            console.log('========================');
+            return (
+              <Image 
+                source={{ uri: formattedUrl || item.photo }} 
+                style={styles.hairstyleImage} 
+                resizeMode="cover" 
+                onError={(e) => {
+                  console.log('Erreur de chargement de l\'image hairstyle:', item.name, e);
+                  console.log('URL tentée:', formattedUrl);
+                }}
+              />
+            );
+          })()
         ) : (
           <View style={[styles.defaultImageContainer, { backgroundColor: colors.surface }]}>
             <Ionicons name="image-outline" size={40} color={colors.textSecondary} />
