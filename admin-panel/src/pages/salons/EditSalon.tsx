@@ -53,6 +53,24 @@ const EditSalon: React.FC = () => {
     longitude: '',
   });
 
+  // Fonction pour formater les URLs des photos
+  const formatPhotoUrl = (photo: string) => {
+    if (!photo) return '';
+    
+    // Si l'URL est déjà complète, la retourner telle quelle
+    if (photo.startsWith('http')) {
+      return photo;
+    }
+    
+    // Si l'URL commence par /uploads/, construire l'URL complète
+    if (photo.startsWith('/uploads/')) {
+      return `https://hairgov2.onrender.com${photo}`;
+    }
+    
+    // Sinon, construire l'URL complète
+    return `https://hairgov2.onrender.com/uploads/photos/${photo}`;
+  };
+
   useEffect(() => {
     fetchSalon();
   }, [id]);
@@ -306,7 +324,7 @@ const EditSalon: React.FC = () => {
                   <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
                     <Box sx={{ position: 'relative' }}>
                       <img
-                        src={photo}
+                        src={formatPhotoUrl(photo)}
                         alt={`Photo ${index + 1}`}
                         style={{
                           width: '100%',
