@@ -212,6 +212,48 @@ router.put(
 );
 
 /**
+ * @route   DELETE /api/v1/admin/salons/:id
+ * @desc    Supprimer un salon (Admin uniquement)
+ * @access  Private/Admin
+ */
+router.delete('/salons/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Vérifier si le salon existe
+    const salon = await db.Salon.findByPk(id);
+    
+    if (!salon) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'SALON_NOT_FOUND',
+          message: 'Salon non trouvé'
+        }
+      });
+    }
+
+    // Supprimer le salon
+    await salon.destroy();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Salon supprimé avec succès'
+    });
+  } catch (error) {
+    console.error('Erreur lors de la suppression du salon:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Une erreur est survenue lors de la suppression du salon',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      }
+    });
+  }
+});
+
+/**
  * @route   PATCH /api/v1/admin/salons/:id/validate
  * @desc    Valider ou invalider un salon (Admin uniquement)
  * @body    {boolean} is_validated - Statut de validation (true/false)
