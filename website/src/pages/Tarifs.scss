@@ -1,0 +1,272 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.tarifs {
+  min-height: 100vh;
+  background: $gray-100;
+}
+
+.tarifs-main {
+  padding-top: 80px;
+}
+
+.tarifs-hero {
+  background: linear-gradient(135deg, rgba($primary-color, 0.05), rgba($secondary-color, 0.05));
+  padding: $spacing-3xl 0;
+}
+
+.tarifs-header {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.tarifs-title {
+  @include heading-1;
+  margin-bottom: $spacing-md;
+}
+
+.tarifs-subtitle {
+  @include body-text;
+  font-size: $font-size-lg;
+  color: $gray-600;
+}
+
+.pricing-section {
+  padding: $spacing-3xl 0;
+}
+
+.pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: $spacing-xl;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.pricing-card {
+  @include card;
+  background: $white;
+  padding: $spacing-2xl;
+  border-radius: $border-radius-xl;
+  position: relative;
+  transition: all $transition-normal;
+  border: 2px solid transparent;
+
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: $shadow-xl;
+  }
+
+  &.popular {
+    border-color: $primary-color;
+    transform: scale(1.05);
+
+    .btn-primary {
+      background: linear-gradient(135deg, $primary-color, $secondary-color);
+    }
+  }
+}
+
+.popular-badge {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, $primary-color, $secondary-color);
+  color: $white;
+  padding: $spacing-xs $spacing-md;
+  border-radius: $border-radius-full;
+  font-size: $font-size-sm;
+  font-weight: 600;
+}
+
+.pricing-header {
+  text-align: center;
+  margin-bottom: $spacing-xl;
+}
+
+.pricing-name {
+  @include heading-3;
+  margin-bottom: $spacing-md;
+  color: $gray-800;
+}
+
+.pricing-price {
+  margin-bottom: $spacing-md;
+
+  .price {
+    font-size: $font-size-4xl;
+    font-weight: 700;
+    color: $primary-color;
+    display: block;
+  }
+}
+
+.pricing-description {
+  @include body-text;
+  color: $gray-600;
+}
+
+.pricing-features {
+  margin-bottom: $spacing-xl;
+
+  ul {
+    list-style: none;
+    padding: 0;
+
+    li {
+      display: flex;
+      align-items: center;
+      margin-bottom: $spacing-sm;
+      @include body-text;
+
+      i {
+        color: $success-color;
+        margin-right: $spacing-sm;
+        font-size: $font-size-sm;
+      }
+    }
+  }
+}
+
+.pricing-action {
+  text-align: center;
+
+  .btn {
+    width: 100%;
+  }
+}
+
+.additional-services {
+  padding: $spacing-3xl 0;
+  background: $white;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: $spacing-3xl;
+}
+
+.section-title {
+  @include heading-2;
+  margin-bottom: $spacing-md;
+}
+
+.section-subtitle {
+  @include body-text;
+  font-size: $font-size-lg;
+  color: $gray-600;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: $spacing-lg;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.service-item {
+  @include card;
+  background: $gray-100;
+  padding: $spacing-lg;
+  text-align: center;
+  border: 1px solid $gray-200;
+  transition: all $transition-normal;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-md;
+  }
+}
+
+.service-name {
+  @include heading-4;
+  margin-bottom: $spacing-sm;
+  color: $gray-800;
+}
+
+.service-price {
+  @include body-text;
+  color: $primary-color;
+  font-weight: 600;
+}
+
+.cta-section {
+  padding: $spacing-3xl 0;
+  background: linear-gradient(135deg, $primary-color 0%, $secondary-color 100%);
+  color: $white;
+}
+
+.cta-content {
+  text-align: center;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.cta-title {
+  @include heading-2;
+  margin-bottom: $spacing-md;
+  color: $white;
+}
+
+.cta-description {
+  @include body-text;
+  font-size: $font-size-lg;
+  margin-bottom: $spacing-2xl;
+  opacity: 0.9;
+}
+
+.cta-buttons {
+  display: flex;
+  gap: $spacing-md;
+  justify-content: center;
+  flex-wrap: wrap;
+
+  .btn-primary {
+    background: $white;
+    color: $primary-color;
+
+    &:hover {
+      background: rgba($white, 0.9);
+    }
+  }
+
+  .btn-outline {
+    border-color: $white;
+    color: $white;
+
+    &:hover {
+      background: $white;
+      color: $primary-color;
+    }
+  }
+}
+
+@include mobile {
+  .pricing-grid {
+    grid-template-columns: 1fr;
+    gap: $spacing-lg;
+  }
+
+  .pricing-card.popular {
+    transform: none;
+  }
+
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cta-buttons {
+    flex-direction: column;
+    align-items: center;
+
+    .btn {
+      width: 100%;
+      max-width: 280px;
+    }
+  }
+}

@@ -1,0 +1,371 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.how-it-works {
+  background: $white;
+  position: relative;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: $spacing-3xl;
+}
+
+.section-title {
+  @include heading-2;
+  margin-bottom: $spacing-md;
+  
+  .text-primary {
+    background: linear-gradient(135deg, $primary-color, $secondary-color);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+.section-subtitle {
+  @include body-text;
+  font-size: $font-size-lg;
+  color: $gray-500;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.how-it-works-content {
+  margin-bottom: $spacing-3xl;
+}
+
+.steps-section {
+  margin-bottom: $spacing-3xl;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.steps-title {
+  @include heading-3;
+  text-align: center;
+  margin-bottom: $spacing-2xl;
+  color: $gray-600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+
+  i {
+    font-size: $font-size-2xl;
+  }
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: $spacing-lg;
+}
+
+.step-card {
+  @include card;
+  text-align: center;
+  padding: $spacing-xl;
+  background: $white;
+  border: 2px solid $gray-200;
+  position: relative;
+  transition: all $transition-normal;
+
+  &:hover {
+    transform: translateY(-8px);
+    border-color: $primary-color;
+    box-shadow: $shadow-xl;
+
+    .step-icon {
+      transform: scale(1.1);
+    }
+
+    .step-number {
+      background: linear-gradient(135deg, $primary-color, $secondary-color);
+      color: $white;
+    }
+  }
+
+  &.client:hover {
+    border-color: $secondary-color;
+
+    .step-number {
+      background: linear-gradient(135deg, $secondary-color, $secondary-dark);
+    }
+  }
+}
+
+.step-number {
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 30px;
+  background: $gray-100;
+  color: $primary-color;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: $font-size-sm;
+  transition: all $transition-normal;
+}
+
+.step-icon {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto $spacing-md;
+  background: linear-gradient(135deg, rgba($primary-color, 0.1), rgba($secondary-color, 0.1));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all $transition-normal;
+
+  i {
+    font-size: $font-size-xl;
+    color: $primary-color;
+  }
+}
+
+.step-card.client .step-icon i {
+  color: $secondary-color;
+}
+
+.step-title {
+  @include heading-3;
+  margin-bottom: $spacing-sm;
+  color: $gray-600;
+  font-size: $font-size-lg;
+}
+
+.step-description {
+  @include body-text;
+  margin-bottom: 0;
+  color: $gray-500;
+  font-size: $font-size-sm;
+  line-height: $line-height-relaxed;
+}
+
+.app-download {
+  background: linear-gradient(135deg, rgba($primary-color, 0.05), rgba($secondary-color, 0.05));
+  border-radius: $border-radius-xl;
+  padding: $spacing-3xl;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $spacing-3xl;
+  align-items: center;
+  border: 1px solid $gray-200;
+}
+
+.download-content {
+  max-width: 500px;
+}
+
+.download-title {
+  @include heading-2;
+  margin-bottom: $spacing-md;
+  line-height: 1.3;
+  
+  .text-primary {
+    background: linear-gradient(135deg, $primary-color, $secondary-color);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+.download-description {
+  @include body-text;
+  margin-bottom: $spacing-xl;
+  color: $gray-500;
+}
+
+.download-buttons {
+  display: flex;
+  gap: $spacing-md;
+  flex-wrap: wrap;
+}
+
+.download-btn {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: $spacing-sm $spacing-md;
+  background: $black;
+  color: $white;
+  text-decoration: none;
+  border-radius: $border-radius-md;
+  transition: all $transition-normal;
+  min-width: 160px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-lg;
+  }
+
+  &.app-store {
+    background: linear-gradient(135deg, #000, #333);
+  }
+
+  &.google-play {
+    background: linear-gradient(135deg, #01875F, #4285F4);
+  }
+
+  i {
+    font-size: $font-size-2xl;
+  }
+}
+
+.btn-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.btn-small {
+  font-size: $font-size-xs;
+  opacity: 0.8;
+}
+
+.btn-large {
+  font-size: $font-size-base;
+  font-weight: 600;
+}
+
+.download-visual {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.phone-mockup-small {
+  width: 200px;
+  height: 400px;
+  position: relative;
+  animation: float 4s ease-in-out infinite;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(3deg);
+  }
+}
+
+@include mobile {
+  .how-it-works {
+    padding: $spacing-2xl 0;
+  }
+
+  .section-header {
+    margin-bottom: $spacing-2xl;
+  }
+
+  .section-title {
+    font-size: $font-size-2xl;
+  }
+
+  .section-subtitle {
+    font-size: $font-size-base;
+  }
+
+  .how-it-works-content {
+    margin-bottom: $spacing-2xl;
+  }
+
+  .steps-section {
+    margin-bottom: $spacing-xl;
+  }
+
+  .steps-title {
+    font-size: $font-size-xl;
+    margin-bottom: $spacing-lg;
+  }
+
+  .steps-grid {
+    grid-template-columns: 1fr;
+    gap: $spacing-md;
+  }
+
+  .step-card {
+    padding: $spacing-lg;
+  }
+
+  .step-icon {
+    width: 50px;
+    height: 50px;
+    margin-bottom: $spacing-sm;
+
+    i {
+      font-size: $font-size-lg;
+    }
+  }
+
+  .step-title {
+    font-size: $font-size-base;
+  }
+
+  .step-description {
+    font-size: $font-size-xs;
+  }
+
+  .app-download {
+    grid-template-columns: 1fr;
+    gap: $spacing-xl;
+    padding: $spacing-xl;
+  }
+
+  .download-content {
+    max-width: 100%;
+    text-align: center;
+  }
+
+  .download-title {
+    font-size: $font-size-xl;
+  }
+
+  .download-description {
+    font-size: $font-size-sm;
+  }
+
+  .download-buttons {
+    justify-content: center;
+  }
+
+  .download-btn {
+    min-width: 140px;
+    padding: $spacing-sm;
+  }
+
+  .btn-large {
+    font-size: $font-size-sm;
+  }
+
+  .phone-mockup-small {
+    width: 150px;
+    height: 300px;
+  }
+}
+
+@include tablet {
+  .steps-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .app-download {
+    gap: $spacing-xl;
+  }
+}

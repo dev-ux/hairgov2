@@ -1,0 +1,11 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.home {
+  min-height: 100vh;
+  background-color: $white;
+}
+
+main {
+  padding-top: 0; // Le header est fixed, donc pas besoin de padding
+}

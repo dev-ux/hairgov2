@@ -1,0 +1,191 @@
+@use 'variables' as *;
+@use 'mixins' as *;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: $font-family;
+  line-height: $line-height-normal;
+  color: $gray-600;
+  background-color: $white;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+// Classes utilitaires
+.container {
+  @include container;
+}
+
+.section {
+  @include section;
+}
+
+.heading-1 {
+  @include heading-1;
+}
+
+.heading-2 {
+  @include heading-2;
+}
+
+.heading-3 {
+  @include heading-3;
+}
+
+.body-text {
+  @include body-text;
+}
+
+.small-text {
+  @include small-text;
+}
+
+.btn-primary {
+  @include button-primary;
+}
+
+.btn-secondary {
+  @include button-secondary;
+}
+
+.btn-outline {
+  @include button-outline;
+}
+
+.card {
+  @include card;
+}
+
+// Animations
+.fade-in {
+  @include fade-in;
+}
+
+.slide-in-left {
+  @include slide-in-left;
+}
+
+.slide-in-right {
+  @include slide-in-right;
+}
+
+// Classes pour les couleurs
+.text-primary {
+  color: $primary-color;
+}
+
+.text-secondary {
+  color: $secondary-color;
+}
+
+.bg-primary {
+  background-color: $primary-color;
+}
+
+.bg-secondary {
+  background-color: $secondary-color;
+}
+
+.bg-light {
+  background-color: $gray-100;
+}
+
+// Classes pour l'espacement
+.mt-xs { margin-top: $spacing-xs; }
+.mt-sm { margin-top: $spacing-sm; }
+.mt-md { margin-top: $spacing-md; }
+.mt-lg { margin-top: $spacing-lg; }
+.mt-xl { margin-top: $spacing-xl; }
+.mt-2xl { margin-top: $spacing-2xl; }
+.mt-3xl { margin-top: $spacing-3xl; }
+
+.mb-xs { margin-bottom: $spacing-xs; }
+.mb-sm { margin-bottom: $spacing-sm; }
+.mb-md { margin-bottom: $spacing-md; }
+.mb-lg { margin-bottom: $spacing-lg; }
+.mb-xl { margin-bottom: $spacing-xl; }
+.mb-2xl { margin-bottom: $spacing-2xl; }
+.mb-3xl { margin-bottom: $spacing-3xl; }
+
+.p-xs { padding: $spacing-xs; }
+.p-sm { padding: $spacing-sm; }
+.p-md { padding: $spacing-md; }
+.p-lg { padding: $spacing-lg; }
+.p-xl { padding: $spacing-xl; }
+.p-2xl { padding: $spacing-2xl; }
+.p-3xl { padding: $spacing-3xl; }
+
+// Classes pour le texte
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.font-light { font-weight: 300; }
+.font-normal { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+
+// Classes pour la flexbox
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.justify-center { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-around { justify-content: space-around; }
+.items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
+
+// Classes pour la grille
+.grid { display: grid; }
+.grid-cols-1 { grid-template-columns: repeat(1, 1fr); }
+.grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+.gap-sm { gap: $spacing-sm; }
+.gap-md { gap: $spacing-md; }
+.gap-lg { gap: $spacing-lg; }
+.gap-xl { gap: $spacing-xl; }
+
+// Responsive
+@include mobile {
+  .mobile-hidden {
+    display: none;
+  }
+  
+  .mobile-flex {
+    display: flex;
+  }
+  
+  .mobile-block {
+    display: block;
+  }
+}
+
+@include desktop {
+  .desktop-hidden {
+    display: none;
+  }
+  
+  .desktop-flex {
+    display: flex;
+  }
+  
+  .desktop-block {
+    display: block;
+  }
+}
