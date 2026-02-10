@@ -229,6 +229,124 @@ exports.seedHairstyles = async (req, res) => {
   }
 };
 
+// Modifier une coiffure existante
+exports.updateHairstyle = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, estimated_duration, category, is_active } = req.body;
+    let photoUrl = '';
+
+    // Gestion de l'upload de la photo
+    if (req.file) {
+      try {
+        const file = req.file;
+        const fileExt = path.extname(file.originalname).toLowerCase();
+        const filename = `${uuidv4()}${fileExt}`;
+        const filePath = path.join(uploadDir, filename);
+        
+        // Déplacer le fichier vers le dossier d'uploads
+        fs.renameSync(file.path, filePath);
+        
+        // Enregistrer le chemin relatif dans la base de données
+        photoUrl = `/uploads/hairstyles/${filename}`;
+      } catch (error) {
+        console.error('Erreur lors de l\'upload de la photo:', error);
+        return res.status(500).json({
+          success: false,
+          message: 'Erreur lors de l\'upload de la photo',
+          error: error.message
+        });
+      }
+    }
+
+    const updateQuery = `
+      UPDATE hairstyles 
+      SET name = $1, 
+          description = $2, 
+          estimated_duration = $3, 
+          category = $4, 
+          is_active = $5,
+          photo = COALESCE($6, photo),
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = $7
+    `;
+
+    const values = [name, description, estimated_duration, category, is_active, photoUrl, id];
+    const result = await query(updateQuery, values);
+
+    if (result.rowCount > 0) {
+      res.status(200).json({
+        success: true,
+        message: 'Coiffure modifiée avec succès',
+        data: { id, name, description, estimated_duration, category, is_active, photo: photoUrl }
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        message: 'Coiffure non trouvée'
+      });
+    }
+  } catch (error) {
+    console.error('Erreur lors de la modification de la coiffure:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la modification de la coiffure',
+      error: error.message
+    });
+  }
+};
+
+// Supprimer une coiffure
+exports.deleteHairstyle = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Vérifier d'abord si la coiffure existe
+    const checkQuery = 'SELECT * FROM hairstyles WHERE id = $1';
+    const checkResult = await query(checkQuery, [id]);
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'Coiffure non trouvée'
+      });
+    }
+
+    // Supprimer la photo associée si elle existe
+    const hairstyle = checkResult.rows[0];
+    if (hairstyle.photo && hairstyle.photo.includes('/uploads/hairstyles/')) {
+      const photoPath = path.join(__dirname, '../../public', hairstyle.photo);
+      if (fs.existsSync(photoPath)) {
+        fs.unlinkSync(photoPath);
+        console.log(`🗑️ Photo supprimée: ${photoPath}`);
+      }
+    }
+
+    // Supprimer la coiffure de la base de données
+    const deleteQuery = 'DELETE FROM hairstyles WHERE id = $1';
+    const result = await query(deleteQuery, [id]);
+
+    if (result.rowCount > 0) {
+      res.status(200).json({
+        success: true,
+        message: 'Coiffure supprimée avec succès'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Erreur lors de la suppression de la coiffure'
+      });
+    }
+  } catch (error) {
+    console.error('Erreur lors de la suppression de la coiffure:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la suppression de la coiffure',
+      error: error.message
+    });
+  }
+};
+
 // Récupérer toutes les coiffures
 exports.getHairstyles = async (req, res) => {
   try {
