@@ -116,14 +116,14 @@ require('fs').mkdirSync(hairstylesDir, { recursive: true });
 console.log('Dossier des uploads:', uploadsDir);
 console.log('Dossier des coiffures:', hairstylesDir);
 
-// Configuration pour servir les fichiers statiques
-app.use('/uploads', (req, res, next) => {
-  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
-  next();
-});
-
-// Servir les fichiers statiques depuis le dossier racine /public/uploads
-app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+// Configuration pour servir les fichiers statiques avec les bons headers
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads'), {
+  setHeaders: (res, path) => {
+    res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Cache-Control', 'public, max-age=3600');
+  }
+}));
 
 // Route racine (AVANT rate limit)
 app.get('/', (req, res) => {
