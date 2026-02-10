@@ -117,7 +117,7 @@ console.log('Dossier des uploads:', uploadsDir);
 console.log('Dossier des coiffures:', hairstylesDir);
 
 // Configuration pour servir les fichiers statiques avec les bons headers
-app.use('/uploads', express.static(path.join(__dirname, '../public/uploads'), {
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'), {
   setHeaders: (res, path) => {
     res.header('Cross-Origin-Resource-Policy', 'cross-origin');
     res.header('Access-Control-Allow-Origin', '*');
