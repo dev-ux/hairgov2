@@ -358,6 +358,14 @@ exports.deleteHairstyle = async (req, res) => {
         });
       }
     }
+  } catch (error) {
+    console.error('Erreur lors de la suppression de la coiffure:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de la suppression de la coiffure',
+      error: error.message
+    });
+  }
 };
 
 // Récupérer toutes les coiffures
