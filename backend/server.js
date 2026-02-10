@@ -51,7 +51,9 @@ app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 const allowedOrigins = [
   'http://localhost:3000', // Panel admin
   'http://localhost:3001', // Backend (si nécessaire)
+  'http://localhost:3002', // Frontend développement
   'https://hairgov2.onrender.com', // Backend production
+  'https://scizzwebsite.vercel.app', // Frontend Vercel production ⭐
   'exp://192.168.0.29:8081', // Expo Go local
   'exp://192.168.0.29:19006', // Expo Go local
   ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [])
