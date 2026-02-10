@@ -44,6 +44,7 @@ interface AddHairstyleFormProps {
   onClose: () => void;
   onSubmit: (data: Omit<HairstyleFormData, 'photoPreviews'>) => void;
   loading?: boolean;
+  editingHairstyle?: any; // Ajout de la prop pour l'édition
 }
 
 const StyledDropZone = styled(Paper)(({ theme }) => ({
@@ -108,6 +109,7 @@ const AddHairstyleForm: React.FC<AddHairstyleFormProps> = ({
   onClose,
   onSubmit,
   loading = false,
+  editingHairstyle,
 }) => {
   const [formData, setFormData] = useState<HairstyleFormData>({
     name: '',
@@ -118,6 +120,32 @@ const AddHairstyleForm: React.FC<AddHairstyleFormProps> = ({
     photos: [],
     photoPreviews: [],
   });
+
+  // Initialiser le formulaire avec les données de la coiffure à éditer
+  React.useEffect(() => {
+    if (editingHairstyle && open) {
+      setFormData({
+        name: editingHairstyle.name || '',
+        description: editingHairstyle.description || '',
+        estimated_duration: editingHairstyle.estimated_duration || 30,
+        category: editingHairstyle.category || '',
+        is_active: editingHairstyle.is_active !== undefined ? editingHairstyle.is_active : true,
+        photos: [],
+        photoPreviews: editingHairstyle.photo ? [editingHairstyle.photo] : [],
+      });
+    } else if (!editingHairstyle && open) {
+      // Réinitialiser le formulaire pour l'ajout
+      setFormData({
+        name: '',
+        description: '',
+        estimated_duration: 30,
+        category: '',
+        is_active: true,
+        photos: [],
+        photoPreviews: [],
+      });
+    }
+  }, [editingHairstyle, open]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent) => {
     const { name, value } = e.target;
@@ -195,7 +223,9 @@ const AddHairstyleForm: React.FC<AddHairstyleFormProps> = ({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Ajouter une nouvelle coiffure</DialogTitle>
+      <DialogTitle>
+        {editingHairstyle ? 'Modifier la coiffure' : 'Ajouter une nouvelle coiffure'}
+      </DialogTitle>
       <form onSubmit={handleSubmit}>
         <DialogContent>
           <Grid container spacing={3}>
@@ -294,7 +324,7 @@ const AddHairstyleForm: React.FC<AddHairstyleFormProps> = ({
             disabled={loading || !formData.name || !formData.category}
             startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
           >
-            {loading ? 'Enregistrement...' : 'Enregistrer'}
+            {loading ? 'Enregistrement...' : (editingHairstyle ? 'Mettre à jour' : 'Enregistrer')}
           </Button>
         </DialogActions>
       </form>

@@ -47,6 +47,8 @@ const HairstylesPage: React.FC = () => {
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
   const [openAddForm, setOpenAddForm] = useState<boolean>(false);
+  const [editingHairstyle, setEditingHairstyle] = useState<Hairstyle | null>(null);
+  const [openEditForm, setOpenEditForm] = useState<boolean>(false);
   const { enqueueSnackbar } = useSnackbar();
 
   // Récupérer la liste des coiffures
@@ -110,6 +112,48 @@ const HairstylesPage: React.FC = () => {
   const handleCloseAddForm = (added = false) => {
     setOpenAddForm(false);
     if (added) {
+      fetchHairstyles();
+    }
+  };
+
+  const handleEditHairstyle = (hairstyle: Hairstyle) => {
+    setEditingHairstyle(hairstyle);
+    setOpenEditForm(true);
+  };
+
+  const handleUpdateHairstyle = async (formData: Omit<HairstyleFormData, 'photoPreviews'>) => {
+    try {
+      const formDataToSend = new FormData();
+      
+      // Ajouter les champs du formulaire
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('estimated_duration', formData.estimated_duration.toString());
+      formDataToSend.append('category', formData.category);
+      formDataToSend.append('is_active', formData.is_active.toString());
+      
+      // Ajouter le premier fichier comme 'photo' si nouvelle photo
+      if (formData.photos && formData.photos.length > 0 && formData.photos[0] instanceof File) {
+        formDataToSend.append('photo', formData.photos[0]);
+      }
+      
+      await api.put(`/hairstyles/${editingHairstyle?.id}`, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+      
+      handleCloseEditForm(true);
+    } catch (error) {
+      console.error('Erreur lors de la modification de la coiffure:', error);
+      enqueueSnackbar('Erreur lors de la modification de la coiffure', { variant: 'error' });
+    }
+  };
+
+  const handleCloseEditForm = (updated = false) => {
+    setOpenEditForm(false);
+    setEditingHairstyle(null);
+    if (updated) {
       fetchHairstyles();
     }
   };
@@ -241,7 +285,10 @@ const HairstylesPage: React.FC = () => {
                       </TableCell>
                       <TableCell align="right">
                         <Tooltip title="Modifier">
-                          <IconButton size="small">
+                          <IconButton 
+                            size="small"
+                            onClick={() => handleEditHairstyle(hairstyle)}
+                          >
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
@@ -285,6 +332,13 @@ const HairstylesPage: React.FC = () => {
         open={openAddForm} 
         onClose={handleCloseAddForm}
         onSubmit={handleAddHairstyle}
+      />
+      
+      <AddHairstyleForm 
+        open={openEditForm} 
+        onClose={handleCloseEditForm}
+        onSubmit={handleUpdateHairstyle}
+        editingHairstyle={editingHairstyle}
       />
     </Box>
   );
