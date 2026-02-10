@@ -192,4 +192,4 @@ app.listen(PORT, () => {
   console.log(`📍 Environnement: ${process.env.NODE_ENV || 'development'}`);
 });
 
-module.exports = app;
+module.exports = app;// Force deployment - Tue Feb 10 03:46:36 CET 2026
