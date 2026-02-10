@@ -21,6 +21,7 @@ const { width, height } = Dimensions.get('window');
 // Fonction utilitaire pour formater les URLs d'images
 const formatImageUrl = (url: string) => {
   try {
+    console.log('🔥🔥🔥 NOUVELLE VERSION formatImageUrl appelée 🔥🔥🔥');
     console.log('=== IMAGE URL DEBUG ===');
     console.log('URL originale reçue:', url);
     console.log('API_URL:', API_URL);
@@ -40,7 +41,7 @@ const formatImageUrl = (url: string) => {
     if (url.startsWith('/uploads/hairstyles')) {
       const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
       const fullUrl = `${baseUrl}${url}`;
-      console.log('URL uploads détectée:');
+      console.log('✅ URL uploads/hairstyles détectée:');
       console.log('- Base URL:', baseUrl);
       console.log('- URL finale:', fullUrl);
       return fullUrl;
