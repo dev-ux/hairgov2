@@ -21,34 +21,35 @@ const { width, height } = Dimensions.get('window');
 // Fonction utilitaire pour formater les URLs d'images
 const formatImageUrl = (url: string) => {
   try {
-    console.log('HairstyleGallery URL originale reçue:', url);
-    console.log('Type d\'URL:', {
-      isEmpty: !url,
-      isExternal: url.includes('://'),
-      isUploads: url.startsWith('/uploads/'),
-      isRelative: !url.includes('://') && !url.startsWith('/uploads/')
-    });
+    console.log('=== IMAGE URL DEBUG ===');
+    console.log('URL originale reçue:', url);
+    console.log('API_URL:', API_URL);
     
-    if (!url) return null;
+    if (!url) {
+      console.log('URL vide, retourne null');
+      return null;
+    }
 
-    // Vérifier si l'URL contient déjà un domaine (URL externe)
+    // Vérifier si l'URL contient déjà un domaine (URL externe comme Unsplash)
     if (url.includes('://') && (url.includes('.com') || url.includes('.jpg') || url.includes('.png') || url.includes('.unsplash'))) {
       console.log('URL externe détectée pour la coiffure:', url);
       return url;
     }
 
-    // Si l'URL commence déjà par /uploads/, la retourner telle quelle
+    // Si l'URL commence déjà par /uploads/, la retourner avec le domaine complet
     if (url.startsWith('/uploads/')) {
       const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
       const fullUrl = `${baseUrl}${url}`;
-      console.log('URL uploads détectée pour la coiffure, URL finale:', fullUrl);
+      console.log('URL uploads détectée:');
+      console.log('- Base URL:', baseUrl);
+      console.log('- URL finale:', fullUrl);
       return fullUrl;
     }
 
     // Si l'URL est un chemin relatif simple, construire l'URL complète
     const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-    const fullUrl = `${baseUrl}/uploads/hairstyles/${url}`;
-    console.log('URL relative détectée pour la coiffure, URL finale:', fullUrl);
+    const fullUrl = `${baseUrl}${url}`;
+    console.log('URL relative détectée, URL finale:', fullUrl);
     return fullUrl;
   } catch (error) {
     console.error('Erreur lors du formatage de l\'URL:', error);
@@ -59,11 +60,11 @@ const formatImageUrl = (url: string) => {
 const HairstylesGalleryScreen = () => {
   const navigation = useNavigation();
   const { colors } = useTheme();
-  const [hairstyles, setHairstyles] = useState([]);
+  const [hairstyles, setHairstyles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
-  const [selectedHairstyle, setSelectedHairstyle] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedHairstyle, setSelectedHairstyle] = useState<any>(null);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
   const fetchHairstyles = async () => {
@@ -81,7 +82,7 @@ const HairstylesGalleryScreen = () => {
         console.log('Sample hairstyle data:');
         console.log('First item:', data.data[0]);
         console.log('Photo field:', data.data[0].photo);
-        console.log('All photo fields:', data.data.map(item => ({ name: item.name, photo: item.photo })));
+        console.log('All photo fields:', data.data.map((item: any) => ({ name: item.name, photo: item.photo })));
       }
       console.log('================================');
       
@@ -108,7 +109,7 @@ const HairstylesGalleryScreen = () => {
     fetchHairstyles();
   };
 
-  const renderHairstyleCard = ({ item, index }) => {
+  const renderHairstyleCard = ({ item, index }: { item: any; index: number }) => {
     const imageUrl = formatImageUrl(item.photo);
     console.log('=== GALLERY DEBUG ===');
     console.log('Item:', item);

@@ -36,11 +36,19 @@ const formatImageUrl = (url: string) => {
     // Nettoyer l'URL (supprimer les accolades, espaces, guillemets et autres caractères invalides)
     let cleanUrl = url.replace(/[{}"']/g, '').trim();
     
-    // Si l'URL commence par /uploads/, la nettoyer et construire l'URL complète
+    // Si l'URL commence par /uploads/photos/, la nettoyer et construire l'URL complète
     if (cleanUrl.startsWith('/uploads/photos/')) {
       const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
       const fullUrl = `${baseUrl}${cleanUrl}`;
       console.log('URL uploads/photos détectée, URL finale:', fullUrl);
+      return fullUrl;
+    }
+
+    // Si l'URL commence par /uploads/hairstyles/, la nettoyer et construire l'URL complète
+    if (cleanUrl.startsWith('/uploads/hairstyles/')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      const fullUrl = `${baseUrl}${cleanUrl}`;
+      console.log('URL uploads/hairstyles détectée, URL finale:', fullUrl);
       return fullUrl;
     }
 
@@ -542,7 +550,7 @@ export default function HomeScreen() {
               contentContainerStyle={homeScreenStyles.hairstylesList}
             />
           )}
-        </View>
+        </View> 
 
         
   
