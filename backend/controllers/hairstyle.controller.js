@@ -325,27 +325,39 @@ exports.deleteHairstyle = async (req, res) => {
 
     // Supprimer la coiffure de la base de données
     const deleteQuery = 'DELETE FROM hairstyles WHERE id = $1';
-    const result = await query(deleteQuery, [id]);
+    
+    try {
+      const result = await query(deleteQuery, [id]);
 
-    if (result.rowCount > 0) {
-      res.status(200).json({
-        success: true,
-        message: 'Coiffure supprimée avec succès'
-      });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: 'Erreur lors de la suppression de la coiffure'
-      });
+      if (result.rowCount > 0) {
+        res.status(200).json({
+          success: true,
+          message: 'Coiffure supprimée avec succès'
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: 'Erreur lors de la suppression de la coiffure'
+        });
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la coiffure:', error);
+      
+      // Vérifier si c'est une erreur de contrainte étrangère
+      if (error.message && error.message.includes('violates foreign key constraint')) {
+        res.status(409).json({
+          success: false,
+          message: 'Impossible de supprimer cette coiffure car elle est utilisée dans des réservations existantes',
+          error: 'Cette coiffure est associée à des réservations et ne peut pas être supprimée'
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: 'Erreur lors de la suppression de la coiffure',
+          error: error.message
+        });
+      }
     }
-  } catch (error) {
-    console.error('Erreur lors de la suppression de la coiffure:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Erreur lors de la suppression de la coiffure',
-      error: error.message
-    });
-  }
 };
 
 // Récupérer toutes les coiffures
