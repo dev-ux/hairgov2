@@ -36,7 +36,7 @@ const formatImageUrl = (url: string) => {
       return url;
     }
 
-    // Si l'URL commence déjà par /uploads/, la retourner avec le domaine complet
+    // Si l'URL commence par /uploads/, la retourner avec le domaine complet
     if (url.startsWith('/uploads/')) {
       const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
       const fullUrl = `${baseUrl}${url}`;
