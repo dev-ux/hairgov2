@@ -74,7 +74,23 @@ const HairdresserRegistration = () => {
         id_card_number: 'ID-' + Date.now(), // Valeur temporaire
         has_salon: false, // Par défaut, travaille à domicile
         education_level: data.diploma?.trim() || 'CAP Coiffure',
-        hairstyle_ids: selectedSpecialties.map((specialty, index) => index + 1) // IDs temporaires
+        // Corriger le format des hairstyle_ids
+        hairstyle_ids: selectedSpecialties.map((specialty, index) => {
+          // Mapper les spécialités vers les IDs réels des hairstyles dans la base
+          const specialtyMap = {
+            'Coupe femme': 2,        // Brushing Lissant
+            'Coupe homme': 1,        // Coupe Dégradé Homme
+            'Coloration': 3,           // Coloration Ombré
+            'Mèches': 7,              // Mèches Balayage
+            'Balayage': 7,            // Mèches Balayage (même ID)
+            'Brushing': 2,            // Brushing Lissant (même ID que coupe femme)
+            'Coiffure enfant': 6,     // Coupe Enfant Mixte
+            'Tissage': 10,            // Tresse Africaine
+            'Barbe': 4,              // Barbe Traditionnelle
+            'Soins capillaires': 9     // Soin Capillaire Profond
+          };
+          return specialtyMap[specialty] || 2; // Default à Brushing Lissant
+        })
         
         // Champs supplémentaires selon votre schéma
         // id_card_photo: null, // À ajouter quand vous aurez l'upload
