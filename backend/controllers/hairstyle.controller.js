@@ -257,6 +257,13 @@ exports.updateHairstyle = async (req, res) => {
           error: error.message
         });
       }
+    } else {
+      // Si aucune nouvelle photo n'est uploadée, récupérer l'ancienne photo
+      const getPhotoQuery = 'SELECT photo FROM hairstyles WHERE id = $1';
+      const photoResult = await query(getPhotoQuery, [id]);
+      if (photoResult.rows.length > 0) {
+        photoUrl = photoResult.rows[0].photo;
+      }
     }
 
     const updateQuery = `
@@ -266,7 +273,7 @@ exports.updateHairstyle = async (req, res) => {
           estimated_duration = $3, 
           category = $4, 
           is_active = $5,
-          photo = COALESCE($6, photo),
+          photo = $6,
           updated_at = CURRENT_TIMESTAMP
       WHERE id = $7
     `;
