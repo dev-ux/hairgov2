@@ -312,8 +312,9 @@ exports.deleteHairstyle = async (req, res) => {
       });
     }
 
-    // Supprimer la photo associée si elle existe
     const hairstyle = checkResult.rows[0];
+    
+    // Supprimer la photo associée si elle existe
     if (hairstyle.photo && hairstyle.photo.includes('/uploads/hairstyles/')) {
       const photoPath = path.join(__dirname, '../../public', hairstyle.photo);
       if (fs.existsSync(photoPath)) {
