@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, RefreshControl, Dimensions } from 'react-native';
+import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, RefreshControl, Dimensions, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
@@ -10,6 +10,7 @@ const { width } = Dimensions.get('window');
 // Fonction utilitaire pour formater les URLs d'images
 const formatImageUrl = (url: string) => {
   try {
+    console.log('🔥 HairstylesScreen formatImageUrl appelée 🔥');
     console.log('Hairstyle URL originale reçue:', url);
     
     if (!url) {
@@ -27,13 +28,13 @@ const formatImageUrl = (url: string) => {
     if (url.startsWith('/uploads/')) {
       const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
       const fullUrl = `${baseUrl}${url}`;
-      console.log('URL uploads détectée pour la coiffure, URL finale:', fullUrl);
+      console.log('✅ URL uploads détectée pour la coiffure, URL finale:', fullUrl);
       return fullUrl;
     }
 
     // Si l'URL est un chemin relatif simple, construire l'URL complète
     const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-    const fullUrl = `${baseUrl}/uploads/hairstyles/${url}`;
+    const fullUrl = `${baseUrl}${url}`;
     console.log('URL relative détectée pour la coiffure, URL finale:', fullUrl);
     return fullUrl;
   } catch (error) {
@@ -45,15 +46,15 @@ const formatImageUrl = (url: string) => {
 const HairstylesScreen = () => {
   const navigation = useNavigation();
   const { colors } = useTheme();
-  const [hairstyles, setHairstyles] = useState([]);
+  const [hairstyles, setHairstyles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchHairstyles = async () => {
     try {
       setError(null);
-      const response = await fetch(`${API_URL}/api/v1/hairstyles`);
+      const response = await fetch(`${API_URL}/hairstyles`);
       const data = await response.json();
       
       if (data.success) {
@@ -73,7 +74,12 @@ const HairstylesScreen = () => {
     fetchHairstyles();
   }, []);
 
-  const renderHairstyle = ({ item }) => (
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchHairstyles();
+  };
+
+  const renderHairstyleCard = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={[styles.hairstyleCard, { backgroundColor: colors.card }]}
       onPress={() => console.log('Hairstyle selected:', item.name)}
@@ -174,7 +180,7 @@ const HairstylesScreen = () => {
       ) : (
         <FlatList
           data={hairstyles}
-          renderItem={renderHairstyle}
+          renderItem={renderHairstyleCard}
           keyExtractor={(item) => item.id}
           numColumns={2}
           contentContainerStyle={styles.listContainer}
