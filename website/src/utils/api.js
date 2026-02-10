@@ -1,10 +1,9 @@
 import axios from 'axios';
 
 // Configuration de l'API
-// Utiliser le proxy local pour contourner CORS (temporaire)
-const API_BASE_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:3003'  // Proxy local
-  : 'https://hairgov2.onrender.com'; // Backend production
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://hairgov2.onrender.com'  // Backend production
+  : 'http://localhost:3003'; // Proxy local pour développement
 
 // Créer une instance axios avec configuration par défaut
 const api = axios.create({

@@ -75,6 +75,12 @@ const HairdresserRegistration = () => {
         has_salon: false, // Par défaut, travaille à domicile
         education_level: data.diploma?.trim() || 'CAP Coiffure',
         hairstyle_ids: selectedSpecialties.map((specialty, index) => index + 1) // IDs temporaires
+        
+        // Champs supplémentaires selon votre schéma
+        // id_card_photo: null, // À ajouter quand vous aurez l'upload
+        // profile_photo: null,  // À ajouter quand vous aurez l'upload
+        // latitude: null,      // À ajouter avec géolocalisation
+        // longitude: null,     // À ajouter avec géolocalisation
       };
 
       console.log('📤 Envoi des données au backend:', registrationData);
