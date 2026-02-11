@@ -203,18 +203,14 @@ export default function AllSalonsScreen() {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color={colors.text} />
+          <Ionicons name="arrow-back" size={24} color={colors.text} style={{ marginTop: 50 }} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: colors.text }]}>Tous les Salons</Text>
+        <Text style={[styles.title, { color: colors.text, marginTop: 50 }]}>Tous les Salons</Text>
         <TouchableOpacity
           style={styles.viewModeButton}
           onPress={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
         >
-          <Ionicons 
-            name={viewMode === 'grid' ? 'list-outline' : 'grid-outline'} 
-            size={24} 
-            color={colors.text} 
-          />
+         
         </TouchableOpacity>
       </View>
       <FlatList

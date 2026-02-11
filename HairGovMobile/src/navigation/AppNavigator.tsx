@@ -472,7 +472,7 @@ export const AppNavigator = () => {
                 onPress={() => navigation.goBack()}
                 style={{
                   marginLeft: 10,
-                  padding: 8,
+                  padding: 10,
                 }}
               >
                 <Ionicons name="arrow-back" size={24} color="#000" />
