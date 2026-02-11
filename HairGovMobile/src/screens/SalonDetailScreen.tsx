@@ -19,67 +19,79 @@ import { API_URL } from '../config/constants';
 
 // Fonction utilitaire pour formater les URLs d'images
 const formatImageUrl = (url: string) => {
-  try {
-    if (!url) {
-      return null;
+    try {
+        if (!url) {
+            return null;
+        }
+
+        // Nettoyer l'URL (supprimer les accolades, espaces, guillemets et autres caractères invalides)
+        let cleanUrl = url.replace(/[{}"']/g, '').trim();
+
+        // Si l'URL est déjà une URL complète, la retourner telle quelle
+        if (cleanUrl.startsWith('http')) {
+            return cleanUrl;
+        }
+
+        // Si l'URL commence par /uploads/photos/, la nettoyer et construire l'URL complète
+        if (cleanUrl.startsWith('/uploads/photos/')) {
+            const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+            return `${baseUrl}${cleanUrl}`;
+        }
+
+        // Si l'URL commence par /uploads/, la nettoyer et construire l'URL complète
+        if (cleanUrl.startsWith('/uploads/')) {
+            const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+            return `${baseUrl}${cleanUrl}`;
+        }
+
+        // Si l'URL commence par photos-, construire l'URL complète
+        if (cleanUrl.startsWith('photos-')) {
+            const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+            return `${baseUrl}/uploads/photos/${cleanUrl}`;
+        }
+
+        // Si l'URL ne contient que le nom du fichier sans préfixe
+        if (!cleanUrl.includes('/')) {
+            const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+            return `${baseUrl}/uploads/photos/${cleanUrl}`;
+        }
+
+        // Pour tout autre cas, essayer de construire avec /uploads/photos/
+        const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+        const fileName = cleanUrl.split('/').pop();
+        return `${baseUrl}/uploads/photos/${fileName}`;
+    } catch (error) {
+        console.error('Erreur lors du formatage de l\'URL:', error);
+        return null;
     }
-
-    // Nettoyer l'URL (supprimer les accolades, espaces, guillemets et autres caractères invalides)
-    let cleanUrl = url.replace(/[{}"']/g, '').trim();
-
-    // Si l'URL est déjà une URL complète, la retourner telle quelle
-    if (cleanUrl.startsWith('http')) {
-      return cleanUrl;
-    }
-
-    // Si l'URL commence par /uploads/photos/, la nettoyer et construire l'URL complète
-    if (cleanUrl.startsWith('/uploads/photos/')) {
-      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-      return `${baseUrl}${cleanUrl}`;
-    }
-
-    // Si l'URL commence par /uploads/, la nettoyer et construire l'URL complète
-    if (cleanUrl.startsWith('/uploads/')) {
-      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-      return `${baseUrl}${cleanUrl}`;
-    }
-
-    // Si l'URL commence par photos-, construire l'URL complète
-    if (cleanUrl.startsWith('photos-')) {
-      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-      return `${baseUrl}/uploads/photos/${cleanUrl}`;
-    }
-
-    // Si l'URL ne contient que le nom du fichier sans préfixe
-    if (!cleanUrl.includes('/')) {
-      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-      return `${baseUrl}/uploads/photos/${cleanUrl}`;
-    }
-
-    // Pour tout autre cas, essayer de construire avec /uploads/photos/
-    const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-    const fileName = cleanUrl.split('/').pop();
-    return `${baseUrl}/uploads/photos/${fileName}`;
-  } catch (error) {
-    console.error('Erreur lors du formatage de l\'URL:', error);
-    return null;
-  }
 };
 
 // Solution temporaire : mapper les URLs manquantes vers des images existantes
 const getWorkingImageUrl = (originalUrl: string): string => {
-  const urlMapping: { [key: string]: string } = {
-    'hairstyle-1770513464791-250ac316-33ea-4be5-a6e8-35e8472656c3.jpg': 'photos-1762358785558-9fb0fd5d-e8a9-4f47-9bc4-c2ec18a12da8.jpg',
-    'hairstyle-1770513424792-cdb056c9-fd44-40c6-8269-f4d02a5ed613.jpg': 'photos-1762358872925-cc14ac13-8b31-4145-abdf-ad86af4b1a9a.jpg'
-  };
-  
-  // Extraire le nom du fichier de l'URL
-  const filename = originalUrl.split('/').pop() || '';
-  const workingFilename = urlMapping[filename] || filename;
-  
-  // Construire l'URL correcte sans /api/v1/
-  const baseUrl = 'https://hairgov2.onrender.com';
-  return `${baseUrl}/uploads/photos/${workingFilename}`;
+    // Si c'est déjà une URL complète (Cloudinary), la retourner directement
+    if (originalUrl.startsWith('http://') || originalUrl.startsWith('https://')) {
+        console.log('getWorkingImageUrl - URL complète détectée:', originalUrl);
+        return originalUrl;
+    }
+    
+    const urlMapping: { [key: string]: string } = {
+        'hairstyle-1770513464791-250ac316-33ea-4be5-a6e8-35e8472656c3.jpg': 'photos-1762358785558-9fb0fd5d-e8a9-4f47-9bc4-c2ec18a12da8.jpg',
+        'hairstyle-1770513424792-cdb056c9-fd44-40c6-8269-f4d02a5ed613.jpg': 'photos-1762358872925-cc14ac13-8b31-4145-abdf-ad86af4b1a9a.jpg',
+        // Mappings pour les photos locales qui retournent 404
+        'photos-1770845136428-17a270f8-bf2c-4d34-91c4-13ec040fb483.png': 'https://res.cloudinary.com/dfghcfcdb/image/upload/v1770845136428/hairstyles/photos-1770845136428-17a270f8-bf2c-4d34-91c4-13ec040fb483.png',
+        'photos-1770846353378-8604a8fd-522a-40b4-9969-66bb6783b6f7_gsysih.jpg': 'https://res.cloudinary.com/dfghcfcdb/image/upload/v1770846353378/hairstyles/photos-1770846353378-8604a8fd-522a-40b4-9969-66bb6783b6f7_gsysih.jpg',
+        'photos-1770846039904-b59cd200-b410-4f56-96ba-9514fac8b962_dqugon.jpg': 'https://res.cloudinary.com/dfghcfcdb/image/upload/v1770846039904/hairstyles/photos-1770846039904-b59cd200-b410-4f56-96ba-9514fac8b962_dqugon.jpg',
+        'hairstyle-1770822364995-44995564-a155-4199-8835-5a62f41692a3_f9rvdr.jpg': 'https://res.cloudinary.com/dfghcfcdb/image/upload/v1770822364995/hairstyles/hairstyle-1770822364995-44995564-a155-4199-8835-5a62f41692a3_f9rvdr.jpg',
+        'photos-1770774384200-38ad07af-495d-4e06-b5d4-48212418d8e1.jpg': 'https://res.cloudinary.com/dfghcfcdb/image/upload/v1770774384200/hairstyles/photos-1770774384200-38ad07af-495d-4e06-b5d4-48212418d8e1.jpg'
+    };
+
+    // Extraire le nom du fichier de l'URL
+    const filename = originalUrl.split('/').pop() || '';
+    const workingFilename = urlMapping[filename] || filename;
+
+    // Construire l'URL correcte sans /api/v1/
+    const baseUrl = 'https://hairgov2.onrender.com';
+    return `${baseUrl}/uploads/photos/${workingFilename}`;
 };
 
 type RootStackParamList = {
@@ -154,19 +166,19 @@ const SalonDetailScreen = () => {
         try {
             console.log('Récupération des détails du salon:', salonId);
             const response = await fetch(`${API_URL}/salons/${salonId}`);
-            
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
                 throw new Error(errorData.message || `Erreur HTTP: ${response.status}`);
             }
-            
+
             const data = await response.json();
             console.log('Données reçues:', JSON.stringify(data, null, 2));
 
             if (data.success && data.data) {
                 // Validation des données reçues
                 const salonData = data.data;
-                
+
                 // S'assurer que les coordonnées sont des nombres valides
                 if (salonData.latitude) {
                     salonData.latitude = parseFloat(salonData.latitude);
@@ -174,14 +186,14 @@ const SalonDetailScreen = () => {
                 if (salonData.longitude) {
                     salonData.longitude = parseFloat(salonData.longitude);
                 }
-                
+
                 // Validation des coordonnées
                 if (isNaN(salonData.latitude) || isNaN(salonData.longitude)) {
                     console.warn('Coordonnées GPS invalides, utilisation de valeurs par défaut');
                     salonData.latitude = 48.8566; // Paris par défaut
                     salonData.longitude = 2.3522;
                 }
-                
+
                 setSalon(salonData);
             } else {
                 throw new Error(data.message || 'Données du salon non disponibles');
@@ -316,9 +328,9 @@ const SalonDetailScreen = () => {
                             )}
                             <View>
                                 <Text style={styles.hairdresserName}>
-                                    {salon.hairdresser.full_name || 
-                                     `${salon.hairdresser.first_name || ''} ${salon.hairdresser.last_name || ''}`.trim() || 
-                                     'Nom non disponible'}
+                                    {salon.hairdresser.full_name ||
+                                        `${salon.hairdresser.first_name || ''} ${salon.hairdresser.last_name || ''}`.trim() ||
+                                        'Nom non disponible'}
                                 </Text>
                                 {salon.hairdresser.phone && (
                                     <TouchableOpacity
@@ -343,8 +355,8 @@ const SalonDetailScreen = () => {
                 {salon.photos && Array.isArray(salon.photos) && salon.photos.length > 0 && (
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Photos</Text>
-                        <ScrollView 
-                            horizontal 
+                        <ScrollView
+                            horizontal
                             showsHorizontalScrollIndicator={false}
                             contentContainerStyle={styles.photosContainer}
                         >

@@ -56,8 +56,6 @@ exports.createSalon = async (req, res) => {
       });
     }
 
-    // Un coiffeur peut avoir plusieurs salons, donc on ne vérifie pas s'il en a déjà
-
     // Créer le salon avec uniquement les champs qui existent dans la table
     const salonData = {
       name,

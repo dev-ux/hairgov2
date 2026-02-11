@@ -71,6 +71,7 @@ const DetailSalon: React.FC = () => {
         if (response.data.success) {
           console.log('Détails du salon:', response.data.data);
           console.log('Données du coiffeur:', response.data.data.hairdresser);
+          console.log('Logo du salon:', response.data.data.logo);
           setSalon({
             ...response.data.data,
             // S'assurer que les photos sont toujours un tableau
