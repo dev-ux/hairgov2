@@ -2,6 +2,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
+const { uploadToCloudinary } = require('../utils/cloudinary');
 
 // Configuration de la connexion à la base de données
 const pool = new Pool({
@@ -34,25 +35,24 @@ exports.addHairstyle = async (req, res) => {
     const { name, description, estimated_duration, category, is_active } = req.body;
     let photoUrl = '';
 
-    // Gestion de l'upload de la photo
+    // Gestion de l'upload de la photo avec Cloudinary
     if (req.file) {
       // Cas où on utilise upload.single()
       try {
         const file = req.file;
-        const fileExt = path.extname(file.originalname).toLowerCase();
-        const filename = `${uuidv4()}${fileExt}`;
-        const filePath = path.join(uploadDir, filename);
         
-        // Déplacer le fichier vers le dossier d'uploads
-        fs.renameSync(file.path, filePath);
+        // Uploader le fichier sur Cloudinary
+        const cloudinaryResult = await uploadToCloudinary(file.path);
         
-        // Enregistrer le chemin relatif dans la base de données
-        photoUrl = `/uploads/hairstyles/${filename}`;
+        if (cloudinaryResult) {
+          // Enregistrer l'URL de Cloudinary dans la base de données
+          photoUrl = cloudinaryResult.secure_url;
+        }
       } catch (uploadError) {
-        console.error('Erreur lors de l\'enregistrement de l\'image:', uploadError);
+        console.error('Erreur lors de l\'upload sur Cloudinary:', uploadError);
         return res.status(500).json({ 
           success: false, 
-          message: 'Erreur lors de l\'enregistrement de l\'image' 
+          message: 'Erreur lors de l\'upload de l\'image' 
         });
       }
     } else if (req.files) {
@@ -66,21 +66,20 @@ exports.addHairstyle = async (req, res) => {
         // Traiter uniquement la première photo pour l'instant
         if (photoFiles.length > 0) {
           const file = Array.isArray(photoFiles[0]) ? photoFiles[0][0] : photoFiles[0];
-          const fileExt = path.extname(file.originalname).toLowerCase();
-          const filename = `${uuidv4()}${fileExt}`;
-          const filePath = path.join(uploadDir, filename);
           
-          // Déplacer le fichier vers le dossier d'uploads
-          fs.renameSync(file.path, filePath);
+          // Uploader le fichier sur Cloudinary
+          const cloudinaryResult = await uploadToCloudinary(file.path);
           
-          // Enregistrer le chemin relatif dans la base de données
-          photoUrl = `/uploads/hairstyles/${filename}`;
+          if (cloudinaryResult) {
+            // Enregistrer l'URL de Cloudinary dans la base de données
+            photoUrl = cloudinaryResult.secure_url;
+          }
         }
       } catch (uploadError) {
-        console.error('Erreur lors de l\'enregistrement des images:', uploadError);
+        console.error('Erreur lors de l\'upload sur Cloudinary:', uploadError);
         return res.status(500).json({ 
           success: false, 
-          message: 'Erreur lors de l\'enregistrement des images' 
+          message: 'Erreur lors de l\'upload des images' 
         });
       }
     }
@@ -236,21 +235,20 @@ exports.updateHairstyle = async (req, res) => {
     const { name, description, estimated_duration, category, is_active } = req.body;
     let photoUrl = '';
 
-    // Gestion de l'upload de la photo
+    // Gestion de l'upload de la photo avec Cloudinary
     if (req.file) {
       try {
         const file = req.file;
-        const fileExt = path.extname(file.originalname).toLowerCase();
-        const filename = `${uuidv4()}${fileExt}`;
-        const filePath = path.join(uploadDir, filename);
         
-        // Déplacer le fichier vers le dossier d'uploads
-        fs.renameSync(file.path, filePath);
+        // Uploader le fichier sur Cloudinary
+        const cloudinaryResult = await uploadToCloudinary(file.path);
         
-        // Enregistrer le chemin relatif dans la base de données
-        photoUrl = `/uploads/hairstyles/${filename}`;
+        if (cloudinaryResult) {
+          // Enregistrer l'URL de Cloudinary dans la base de données
+          photoUrl = cloudinaryResult.secure_url;
+        }
       } catch (error) {
-        console.error('Erreur lors de l\'upload de la photo:', error);
+        console.error('Erreur lors de l\'upload sur Cloudinary:', error);
         return res.status(500).json({
           success: false,
           message: 'Erreur lors de l\'upload de la photo',
