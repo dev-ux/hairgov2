@@ -17,6 +17,7 @@ export const homeScreenStyles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 10,
+    marginTop:30
   },
   greeting: {
     fontSize: 16,

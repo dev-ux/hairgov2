@@ -234,7 +234,9 @@ full_name: h.user?.full_name || 'Nom inconnu',
           data={filteredHairdressers}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContainer}
+          numColumns={2}
+          contentContainerStyle={styles.gridContainer}
+          columnWrapperStyle={styles.row}
         />
       )}
     </View>
@@ -250,21 +252,30 @@ const styles = StyleSheet.create({
   listContainer: {
     padding: 16,
   },
+  gridContainer: {
+    padding: 8,
+  },
+  row: {
+    justifyContent: 'space-around',
+    paddingHorizontal: 4,
+  },
   card: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
+    padding: 12,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    flex: 1,
+    margin: 4,
+    minHeight: 180,
   },
   avatarContainer: {
-    marginRight: 16,
+    marginBottom: 8,
   },
   avatar: {
     width: 70,
@@ -273,6 +284,7 @@ const styles = StyleSheet.create({
   },
   // Style supprimé car nous utilisons maintenant une image par défaut
   infoContainer: {
+    alignItems: 'center',
     flex: 1,
   },
   name: {
