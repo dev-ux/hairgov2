@@ -1,5 +1,6 @@
 const db = require('../../models');
 const { Op } = require('sequelize');
+const { uploadToCloudinary } = require('../../utils/cloudinary');
 
 /**
  * Créer un nouveau salon en tant qu'administrateur
@@ -79,9 +80,26 @@ exports.createSalon = async (req, res) => {
     await hairdresser.update({ has_salon: true }, { transaction });
 
     // Gérer les photos si fournies
+    let photoUrls = [];
     if (req.files && req.files.photos) {
       const photoFiles = Array.isArray(req.files.photos) ? req.files.photos : [req.files.photos];
-      const photoUrls = photoFiles.map(file => `/uploads/photos/${file.filename}`);
+      
+      for (const photoFile of photoFiles) {
+        try {
+          const cloudinaryResult = await uploadToCloudinary(photoFile.path);
+          if (cloudinaryResult && cloudinaryResult.secure_url) {
+            photoUrls.push(cloudinaryResult.secure_url);
+          }
+        } catch (uploadError) {
+          console.error('Erreur lors de l\'upload sur Cloudinary:', uploadError);
+          await transaction.rollback();
+          return res.status(500).json({ 
+            success: false, 
+            message: 'Erreur lors de l\'upload des photos' 
+          });
+        }
+      }
+      
       await salon.update({ photos: photoUrls }, { transaction });
     }
 
@@ -171,7 +189,24 @@ exports.updateSalon = async (req, res) => {
     // Gérer les photos si fournies
     if (req.files && req.files.photos) {
       const photoFiles = Array.isArray(req.files.photos) ? req.files.photos : [req.files.photos];
-      const photoUrls = photoFiles.map(file => `/uploads/photos/${file.filename}`);
+      const photoUrls = [];
+      
+      for (const photoFile of photoFiles) {
+        try {
+          const cloudinaryResult = await uploadToCloudinary(photoFile.path);
+          if (cloudinaryResult && cloudinaryResult.secure_url) {
+            photoUrls.push(cloudinaryResult.secure_url);
+          }
+        } catch (uploadError) {
+          console.error('Erreur lors de l\'upload sur Cloudinary:', uploadError);
+          await transaction.rollback();
+          return res.status(500).json({ 
+            success: false, 
+            message: 'Erreur lors de l\'upload des photos' 
+          });
+        }
+      }
+      
       await salon.update({ photos: photoUrls }, { transaction });
     } else if (photos && Array.isArray(photos)) {
       // Si les photos sont envoyées comme URLs
