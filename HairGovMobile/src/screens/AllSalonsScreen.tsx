@@ -63,6 +63,12 @@ const formatImageUrl = (url: string) => {
 
 // Solution temporaire : mapper les URLs manquantes vers des images existantes
 const getWorkingImageUrl = (originalUrl: string): string => {
+  // Si c'est déjà une URL complète (Cloudinary), la retourner directement
+  if (originalUrl.startsWith('http://') || originalUrl.startsWith('https://')) {
+    console.log('AllSalonsScreen - URL complète détectée:', originalUrl);
+    return originalUrl;
+  }
+  
   const urlMapping: { [key: string]: string } = {
     'hairstyle-1770513464791-250ac316-33ea-4be5-a6e8-35e8472656c3.jpg': 'photos-1762358785558-9fb0fd5d-e8a9-4f47-9bc4-c2ec18a12da8.jpg',
     'hairstyle-1770513424792-cdb056c9-fd44-40c6-8269-f4d02a5ed613.jpg': 'photos-1762358872925-cc14ac13-8b31-4145-abdf-ad86af4b1a9a.jpg'
@@ -72,9 +78,8 @@ const getWorkingImageUrl = (originalUrl: string): string => {
   const filename = originalUrl.split('/').pop() || '';
   const workingFilename = urlMapping[filename] || filename;
   
-  // Construire l'URL correcte sans /api/v1/
-  const baseUrl = 'https://hairgov2.onrender.com';
-  return `${baseUrl}/uploads/photos/${workingFilename}`;
+  // Retourner l'URL Cloudinary si mappée, sinon l'URL locale
+  return workingFilename.startsWith('http') ? workingFilename : `https://hairgov2.onrender.com/uploads/photos/${workingFilename}`;
 };
 
 const { width } = Dimensions.get('window');
@@ -84,9 +89,14 @@ export default function AllSalonsScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'AllSalons'>;
   const navigation = useNavigation<NavigationProp>();
   const defaultSalonImage = require('../assets/url_de_l_image_1.jpg');
+  
+  const colors = {
+    text: '#333333'
+  };
   
   const handleImageError = (salonId: string) => {
     console.log(`Erreur de chargement de l'image pour le salon ${salonId}, utilisation de l'image par défaut`);
@@ -154,17 +164,17 @@ export default function AllSalonsScreen() {
           onError={() => handleImageError(item.id)}
           defaultSource={defaultSalonImage}
         />
-      <View style={styles.salonInfo}>
-        <Text style={styles.salonName}>{item.name}</Text>
-        <Text style={styles.salonAddress} numberOfLines={1}>
-          {item.address}
-        </Text>
-        <View style={styles.ratingContainer}>
-          <Ionicons name="star" size={16} color="#FFD700" />
-          <Text style={styles.ratingText}>
-            {item.average_rating ? item.average_rating.toFixed(1) : 'N/A'}
+        <View style={styles.salonInfo}>
+          <Text style={styles.salonName}>{item.name}</Text>
+          <Text style={styles.salonAddress} numberOfLines={1}>
+            {item.address}
           </Text>
-        </View>
+          <View style={styles.ratingContainer}>
+            <Ionicons name="star" size={16} color="#FFD700" />
+            <Text style={styles.ratingText}>
+              {item.average_rating ? item.average_rating.toFixed(1) : 'N/A'}
+            </Text>
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -188,6 +198,25 @@ export default function AllSalonsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: colors.text }]}>Tous les Salons</Text>
+        <TouchableOpacity
+          style={styles.viewModeButton}
+          onPress={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+        >
+          <Ionicons 
+            name={viewMode === 'grid' ? 'list-outline' : 'grid-outline'} 
+            size={24} 
+            color={colors.text} 
+          />
+        </TouchableOpacity>
+      </View>
       <FlatList
         data={salons}
         renderItem={renderSalonItem}
@@ -263,5 +292,25 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
     fontSize: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  backButton: {
+    padding: 8,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  viewModeButton: {
+    padding: 8,
   },
 });
