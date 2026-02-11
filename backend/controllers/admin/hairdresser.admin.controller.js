@@ -31,14 +31,14 @@ exports.getHairdresserById = async (req, res) => {
     let total_jobs = 0;
     
     try {
-      const ratingData = await db.Booking.findAll({
+      // Calculer la note moyenne depuis la table Rating
+      const ratingData = await db.Rating.findAll({
         where: {
-          hairdresser_id: id,
-          status: 'completed'
+          hairdresser_id: id
         },
         attributes: [
           [db.sequelize.fn('AVG', db.sequelize.col('rating')), 'average_rating'],
-          [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'total_jobs']
+          [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'total_ratings']
         ],
         raw: true
       });
@@ -46,8 +46,21 @@ exports.getHairdresserById = async (req, res) => {
       if (ratingData && ratingData.length > 0 && ratingData[0].average_rating) {
         average_rating = parseFloat(ratingData[0].average_rating);
       }
-      if (ratingData && ratingData.length > 0 && ratingData[0].total_jobs) {
-        total_jobs = parseInt(ratingData[0].total_jobs);
+
+      // Calculer le nombre de prestations depuis la table Booking
+      const bookingData = await db.Booking.findAll({
+        where: {
+          hairdresser_id: id,
+          status: 'completed'
+        },
+        attributes: [
+          [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'total_jobs']
+        ],
+        raw: true
+      });
+
+      if (bookingData && bookingData.length > 0 && bookingData[0].total_jobs) {
+        total_jobs = parseInt(bookingData[0].total_jobs);
       }
     } catch (ratingError) {
       console.error('Erreur lors du calcul des statistiques:', ratingError);
