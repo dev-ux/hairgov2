@@ -38,13 +38,14 @@ interface Salon {
   is_validated: boolean;
   created_at: string;
   updated_at: string;
-  hairdresser: {
+  hairdresser?: {
     id: string;
-    user: {
-      full_name: string;
-      email: string;
-      phone: string;
-    };
+    full_name: string;
+    email: string;
+    phone: string;
+    first_name?: string;
+    last_name?: string;
+    profile_photo?: string;
   };
   business_hours?: Record<string, string>;
 }
@@ -69,6 +70,7 @@ const DetailSalon: React.FC = () => {
         
         if (response.data.success) {
           console.log('Détails du salon:', response.data.data);
+          console.log('Données du coiffeur:', response.data.data.hairdresser);
           setSalon({
             ...response.data.data,
             // S'assurer que les photos sont toujours un tableau
@@ -370,18 +372,18 @@ const DetailSalon: React.FC = () => {
               <Grid item xs={12} sm={6} md={4}>
                 <Box display="flex" alignItems="center" mb={1}>
                   <Typography variant="subtitle2" sx={{ minWidth: 100 }}>Nom:</Typography>
-                  <Typography>{salon.hairdresser?.user?.full_name || 'Non spécifié'}</Typography>
+                  <Typography>{salon.hairdresser?.full_name || 'Non spécifié'}</Typography>
                 </Box>
                 <Box display="flex" alignItems="center" mb={1}>
                   <PhoneIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
                   <Typography variant="body2" color="textSecondary">
-                    {salon.hairdresser?.user?.phone || 'Non spécifié'}
+                    {salon.hairdresser?.phone || 'Non spécifié'}
                   </Typography>
                 </Box>
                 <Box display="flex" alignItems="center">
                   <EmailIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
                   <Typography variant="body2" color="textSecondary">
-                    {salon.hairdresser?.user?.email || 'Non spécifié'}
+                    {salon.hairdresser?.email || 'Non spécifié'}
                   </Typography>
                 </Box>
               </Grid>
