@@ -126,4 +126,74 @@ router.post('/images-to-cloudinary', async (req, res) => {
   }
 });
 
+/**
+ * @route   POST /api/v1/migration/clean-local-paths
+ * @desc    Remove local image paths from database (files don't exist)
+ * @access  Admin only
+ */
+router.post('/clean-local-paths', async (req, res) => {
+  try {
+    console.log('🧹 Nettoyage des chemins locaux de la base de données...');
+    
+    // Get all salons
+    const salons = await db.Salon.findAll();
+    let cleanedCount = 0;
+    
+    for (const salon of salons) {
+      console.log(`\nProcessing salon: ${salon.name}`);
+      
+      // Process photos
+      const photos = Array.isArray(salon.photos) ? salon.photos : [];
+      const newPhotos = [];
+      let hasChanges = false;
+      
+      for (const photo of photos) {
+        if (photo && photo.startsWith('/uploads/')) {
+          console.log(`  Removing local path: ${photo}`);
+          hasChanges = true;
+          // Ne pas ajouter à newPhotos (suppression)
+        } else {
+          // Garder les URLs externes
+          newPhotos.push(photo);
+        }
+      }
+      
+      // Process logo
+      let newLogo = salon.logo;
+      if (salon.logo && salon.logo.startsWith('/uploads/')) {
+        console.log(`  Removing local logo: ${salon.logo}`);
+        newLogo = null;
+        hasChanges = true;
+      }
+      
+      // Update salon if changes were made
+      if (hasChanges) {
+        await salon.update({
+          photos: newPhotos,
+          logo: newLogo
+        });
+        console.log(`  ✓ Updated salon in database`);
+        cleanedCount++;
+      } else {
+        console.log(`  No local paths found`);
+      }
+    }
+    
+    console.log(`\n✅ Nettoyage terminé! ${cleanedCount} salons nettoyés.`);
+    
+    res.json({
+      success: true,
+      message: `Nettoyage terminé. ${cleanedCount} salons modifiés.`,
+      cleanedCount
+    });
+  } catch (error) {
+    console.error('❌ Erreur lors du nettoyage:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors du nettoyage',
+      error: error.message
+    });
+  }
+});
+
 module.exports = router;
