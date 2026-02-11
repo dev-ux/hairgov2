@@ -130,11 +130,11 @@ const BarberListScreen: React.FC = () => {
 
     for (let i = 1; i <= 5; i++) {
       if (i <= fullStars) {
-        stars.push(<Ionicons key={i} name="star" size={16} color="#FFD700" />);
+        stars.push(<Ionicons key={i} name="star" size={20} color="#FFD700" />);
       } else if (i === fullStars + 1 && hasHalfStar) {
-        stars.push(<Ionicons key={i} name="star-half" size={16} color="#FFD700" />);
+        stars.push(<Ionicons key={i} name="star-half" size={20} color="#FFD700" />);
       } else {
-        stars.push(<Ionicons key={i} name="star-outline" size={16} color="#FFD700" />);
+        stars.push(<Ionicons key={i} name="star-outline" size={20} color="#FFD700" />);
       }
     }
 
@@ -309,6 +309,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
+    backgroundColor: '#fff9',
+    padding: 4,
+    borderRadius: 4,
   },
   ratingText: {
     marginLeft: 5,
