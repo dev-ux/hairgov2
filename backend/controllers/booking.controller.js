@@ -1249,3 +1249,52 @@ exports.trackHairdresser = async (req, res) => {
     });
   }
 };
+
+// Supprimer une réservation (admin uniquement)
+exports.deleteBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Vérifier si l'utilisateur est un admin
+    if (req.userType !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'INSUFFICIENT_PERMISSIONS',
+          message: 'Accès refusé. Admin uniquement.'
+        }
+      });
+    }
+
+    // Vérifier si la réservation existe
+    const booking = await Booking.findByPk(id);
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'BOOKING_NOT_FOUND',
+          message: 'Réservation introuvable'
+        }
+      });
+    }
+
+    // Supprimer la réservation
+    await booking.destroy();
+
+    res.status(200).json({
+      success: true,
+      message: 'Réservation supprimée avec succès'
+    });
+
+  } catch (error) {
+    console.error('Error deleting booking:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'DELETE_ERROR',
+        message: 'Erreur lors de la suppression de la réservation'
+      }
+    });
+  }
+};

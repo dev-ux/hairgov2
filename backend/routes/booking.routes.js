@@ -126,4 +126,11 @@ router.post('/:id/rate', authenticate, isClient, bookingController.rateHairdress
  */
 router.get('/:id/track', authenticate, bookingController.trackHairdresser);
 
+/**
+ * @route   DELETE /api/v1/bookings/:id
+ * @desc    Supprimer une réservation (admin uniquement)
+ * @access  Private (admin)
+ */
+router.delete('/:id', authenticate, bookingController.deleteBooking);
+
 module.exports = router;
