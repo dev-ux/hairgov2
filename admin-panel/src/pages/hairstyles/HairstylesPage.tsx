@@ -48,6 +48,24 @@ const HairstylesPage: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
   const [openAddForm, setOpenAddForm] = useState<boolean>(false);
   const [editingHairstyle, setEditingHairstyle] = useState<Hairstyle | null>(null);
+
+  // Fonction pour formater les URLs des photos
+  const formatPhotoUrl = (photo: string | undefined) => {
+    if (!photo) return '/default-hairstyle.jpg';
+    
+    // Si l'URL est déjà complète (Cloudinary, Unsplash, etc.), la retourner telle quelle
+    if (photo.startsWith('http')) {
+      return photo;
+    }
+    
+    // Si l'URL commence par /uploads/, construire l'URL complète
+    if (photo.startsWith('/uploads/')) {
+      return `https://hairgov2.onrender.com${photo}`;
+    }
+    
+    // Sinon, retourner l'image par défaut
+    return '/default-hairstyle.jpg';
+  };
   const [openEditForm, setOpenEditForm] = useState<boolean>(false);
   const { enqueueSnackbar } = useSnackbar();
 
@@ -243,7 +261,7 @@ const HairstylesPage: React.FC = () => {
                     <TableRow hover key={hairstyle.id}>
                       <TableCell>
                         <Avatar
-                          src={hairstyle.photo ? `https://hairgov2.onrender.com${hairstyle.photo}` : '/default-hairstyle.jpg'}
+                          src={formatPhotoUrl(hairstyle.photo)}
                           alt={hairstyle.name}
                           variant="rounded"
                           sx={{ width: 56, height: 56 }}

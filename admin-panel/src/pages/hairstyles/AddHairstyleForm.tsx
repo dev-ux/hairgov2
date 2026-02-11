@@ -23,8 +23,9 @@ import {
 } from '@mui/material';
 import { 
   Add as AddIcon, 
-  Delete as DeleteIcon, 
-  Close as CloseIcon 
+  Edit as EditIcon, 
+  Delete as DeleteIcon,
+  CloudUpload as CloudUploadIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 import { SelectChangeEvent } from '@mui/material';
@@ -111,6 +112,24 @@ const AddHairstyleForm: React.FC<AddHairstyleFormProps> = ({
   loading = false,
   editingHairstyle,
 }) => {
+  // Fonction pour formater les URLs des photos
+  const formatPhotoUrl = (photo: string | undefined) => {
+    if (!photo) return '';
+    
+    // Si l'URL est déjà complète (Cloudinary, Unsplash, etc.), la retourner telle quelle
+    if (photo.startsWith('http')) {
+      return photo;
+    }
+    
+    // Si l'URL commence par /uploads/, construire l'URL complète
+    if (photo.startsWith('/uploads/')) {
+      return `https://hairgov2.onrender.com${photo}`;
+    }
+    
+    // Sinon, retourner une chaîne vide
+    return '';
+  };
+
   const [formData, setFormData] = useState<HairstyleFormData>({
     name: '',
     description: '',
@@ -131,7 +150,7 @@ const AddHairstyleForm: React.FC<AddHairstyleFormProps> = ({
         category: editingHairstyle.category || '',
         is_active: editingHairstyle.is_active !== undefined ? editingHairstyle.is_active : true,
         photos: [],
-        photoPreviews: editingHairstyle.photo ? [editingHairstyle.photo] : [],
+        photoPreviews: editingHairstyle.photo ? [formatPhotoUrl(editingHairstyle.photo)] : [],
       });
     } else if (!editingHairstyle && open) {
       // Réinitialiser le formulaire pour l'ajout
@@ -222,14 +241,50 @@ const AddHairstyleForm: React.FC<AddHairstyleFormProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>
-        {editingHairstyle ? 'Modifier la coiffure' : 'Ajouter une nouvelle coiffure'}
+    <Dialog 
+      open={open} 
+      onClose={handleClose} 
+      maxWidth="md" 
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 3,
+          boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+        }
+      }}
+    >
+      <DialogTitle sx={{ 
+        pb: 2,
+        borderBottom: '1px solid #e0e0e0',
+        backgroundColor: '#fafafa',
+        '& .MuiDialogTitle-root': {
+          fontSize: '1.25rem',
+          fontWeight: 600,
+          color: '#333',
+        }
+      }}>
+        <Box display="flex" alignItems="center" gap={1}>
+          {editingHairstyle ? (
+            <EditIcon sx={{ color: '#1976d2', fontSize: '1.5rem' }} />
+          ) : (
+            <AddIcon sx={{ color: '#2e7d32', fontSize: '1.5rem' }} />
+          )}
+          <Typography variant="h6" component="span" sx={{ fontWeight: 600 }}>
+            {editingHairstyle ? 'Modifier la coiffure' : 'Ajouter une nouvelle coiffure'}
+          </Typography>
+        </Box>
       </DialogTitle>
+      
       <form onSubmit={handleSubmit}>
-        <DialogContent>
+        <DialogContent sx={{ 
+          p: 3,
+          minHeight: 500,
+          '&.MuiDialogContent-root': {
+            backgroundColor: '#ffffff',
+          }
+        }}>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Nom de la coiffure"
@@ -238,8 +293,18 @@ const AddHairstyleForm: React.FC<AddHairstyleFormProps> = ({
                 onChange={handleInputChange}
                 required
                 margin="normal"
+                variant="outlined"
+                InputProps={{
+                  sx: {
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    }
+                  }
+                }}
               />
-              
+            </Grid>
+            
+            <Grid item xs={12}>
               <TextField
                 fullWidth
                 label="Description"
@@ -249,80 +314,227 @@ const AddHairstyleForm: React.FC<AddHairstyleFormProps> = ({
                 multiline
                 rows={4}
                 margin="normal"
+                variant="outlined"
+                placeholder="Décrivez cette coiffure en détail..."
+                InputProps={{
+                  sx: {
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                    }
+                  }
+                }}
               />
-              
-              <Grid container spacing={2} sx={{ mt: 1 }}>
-                <Grid item xs={6}>
-                  <TextField
-                    fullWidth
-                    label="Durée estimée (minutes)"
-                    name="estimated_duration"
-                    type="number"
-                    value={formData.estimated_duration}
-                    onChange={handleInputChange}
-                    required
-                    margin="normal"
-                    inputProps={{ min: 5, step: 5 }}
-                  />
-                </Grid>
-                <Grid item xs={6}>
-                  <FormControl fullWidth margin="normal">
-                    <InputLabel id="category-label">Catégorie</InputLabel>
-                    <Select
-                      labelId="category-label"
-                      name="category"
-                      value={formData.category}
-                      onChange={handleInputChange}
-                      label="Catégorie"
-                      required
-                    >
-                      {categories.map((category) => (
-                        <MenuItem key={category} value={category}>
-                          {category}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
+            </Grid>
+            
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Durée estimée (minutes)"
+                  name="estimated_duration"
+                  type="number"
+                  value={formData.estimated_duration}
+                  onChange={handleInputChange}
+                  required
+                  margin="normal"
+                  variant="outlined"
+                  helperText="Temps moyen estimé pour réaliser cette coiffure"
+                  InputProps={{
+                    startAdornment: (
+                      <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
+                        <Typography variant="body2" sx={{ color: '#666' }}>
+                          ⏱️
+                        </Typography>
+                      </Box>
+                    ),
+                    sx: {
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }
+                  }}
+                />
               </Grid>
               
-              <Grid item xs={12}>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth margin="normal" variant="outlined">
+                  <InputLabel 
+                    id="category-label"
+                    sx={{ 
+                      backgroundColor: '#ffffff',
+                      '&.Mui-focused': {
+                        color: '#1976d2',
+                      }
+                    }}
+                  >
+                    Catégorie
+                  </InputLabel>
+                  <Select
+                    labelId="category-label"
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    label="Catégorie"
+                    required
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                      }
+                    }}
+                  >
+                    {categories.map((category) => (
+                      <MenuItem key={category} value={category}>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Typography variant="body2">{category}</Typography>
+                        </Box>
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+            
+            <Grid item xs={12}>
+              <Paper 
+                elevation={2}
+                sx={{ 
+                  p: 3, 
+                  border: '2px dashed #ccc',
+                  borderRadius: 2,
+                  backgroundColor: '#fafafa',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    borderColor: '#1976d2',
+                    backgroundColor: '#f5f5f5',
+                  }
+                }}
+              >
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleFileChange}
                   multiple
-                  style={{ marginTop: '16px' }}
+                  style={{ 
+                    display: 'none',
+                    cursor: 'pointer'
+                  }}
+                  id="hairstyle-photo-input"
                 />
-              </Grid>
-              
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={formData.is_active}
-                    onChange={handleSwitchChange}
-                    name="is_active"
-                    color="primary"
-                  />
-                }
-                label="Activée"
-                sx={{ mt: 2, display: 'block' }}
-              />
+                
+                <Box onClick={() => document.getElementById('hairstyle-photo-input')?.click()}>
+                  {formData.photoPreviews.length > 0 ? (
+                    <Grid container spacing={1} sx={{ mt: 2 }}>
+                      {formData.photoPreviews.map((preview, index) => (
+                        <Grid item xs={6} sm={4} md={3} key={index}>
+                          <Box sx={{ position: 'relative' }}>
+                            <Avatar
+                              src={preview}
+                              alt={`Aperçu ${index + 1}`}
+                              variant="rounded"
+                              sx={{ 
+                                width: '100%', 
+                                height: 120,
+                                border: '2px solid #e0e0e0',
+                              }}
+                            />
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removePhoto(index);
+                              }}
+                              sx={{ 
+                                position: 'absolute', 
+                                top: -8, 
+                                right: -8,
+                                backgroundColor: 'rgba(255,255,255,0.9)',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(244,67,54,1)',
+                                }
+                              }}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  ) : (
+                    <Box sx={{ py: 4 }}>
+                      <CloudUploadIcon sx={{ fontSize: '3rem', color: '#ccc', mb: 2 }} />
+                      <Typography variant="h6" color="textSecondary" sx={{ mb: 1 }}>
+                        Glissez-déposez vos images ici
+                      </Typography>
+                      <Typography variant="body2" color="textSecondary">
+                        ou cliquez pour parcourir vos fichiers
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        Formats acceptés : JPG, PNG, WebP (max 5MB par image)
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </Paper>
             </Grid>
             
-            
+            <Grid item xs={12}>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 2,
+                p: 2,
+                backgroundColor: '#f8f9fa',
+                borderRadius: 2,
+                border: '1px solid #e9ecef'
+              }}>
+                <Switch
+                  checked={formData.is_active}
+                  onChange={handleSwitchChange}
+                  name="is_active"
+                  color="primary"
+                  size="medium"
+                />
+                <Box>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    Coiffure {formData.is_active ? 'active' : 'inactive'}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {formData.is_active ? 'Visible pour les clients' : 'Masquée pour les clients'}
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions sx={{ p: 3, pt: 0 }}>
-          <Button onClick={handleClose} disabled={loading}>
+        
+        <DialogActions sx={{ 
+          p: 3, 
+          backgroundColor: '#fafafa',
+          borderTop: '1px solid #e0e0e0'
+        }}>
+          <Button 
+            onClick={handleClose} 
+            disabled={loading}
+            sx={{ 
+              mr: 2,
+              borderRadius: 2,
+              textTransform: 'none'
+            }}
+          >
             Annuler
           </Button>
           <Button
             type="submit"
             variant="contained"
-            color="primary"
             disabled={loading || !formData.name || !formData.category}
             startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+            sx={{ 
+              borderRadius: 2,
+              textTransform: 'none',
+              px: 3
+            }}
           >
             {loading ? 'Enregistrement...' : (editingHairstyle ? 'Mettre à jour' : 'Enregistrer')}
           </Button>
