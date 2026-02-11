@@ -17,6 +17,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 // Pages avec chargement paresseux
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage'));
 const HairdressersPage = React.lazy(() => import('./pages/hairdressers/HairdressersPage'));
+const DetailHairdresser = React.lazy(() => import('./pages/hairdressers/DetailHairdresser'));
 const BookingsPage = React.lazy(() => import('./pages/bookings/BookingsPage'));
 const UsersPage = React.lazy(() => import('./pages/users/UsersPage'));
 const SettingsPage = React.lazy(() => import('./pages/settings/SettingsPage'));
@@ -66,6 +67,7 @@ const ProtectedRoutes = () => (
           <Route path="/salons/:id" element={<DetailSalon />} />
           <Route path="/salons/edit/:id" element={<EditSalon />} />
           <Route path="/hairdressers" element={<HairdressersPage />} />
+          <Route path="/hairdressers/:id" element={<DetailHairdresser />} />
           <Route path="/bookings" element={<BookingsPage />} />
           <Route path="/users" element={<UsersPage />} />
           <Route path="/settings" element={<SettingsPage />} />

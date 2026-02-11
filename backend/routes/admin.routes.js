@@ -7,7 +7,8 @@ const { createSalon, updateSalon, validateSalon } = require('../controllers/admi
 const { 
   validateHairdresser, 
   getHairdressers: getHairdressersAdmin,
-  toggleHairdresserStatus 
+  toggleHairdresserStatus,
+  getHairdresserById 
 } = require('../controllers/admin/hairdresser.admin.controller');
 const { uploadFields, handleUploadErrors } = require('../middleware/upload.middleware');
 const db = require('../models');
@@ -34,6 +35,13 @@ router.get('/users', getUsersList);
  * @access  Private/Admin
  */
 router.get('/hairdressers', getHairdressersAdmin);
+
+/**
+ * @route   GET /admin/hairdressers/:id
+ * @desc    Récupérer un coiffeur spécifique (Admin uniquement)
+ * @access  Private/Admin
+ */
+router.get('/hairdressers/:id', getHairdresserById);
 
 /**
  * @route   PATCH /admin/hairdressers/:id/validate

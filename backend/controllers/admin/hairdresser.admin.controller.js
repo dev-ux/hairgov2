@@ -2,6 +2,77 @@ const db = require('../../models');
 const { Op } = require('sequelize');
 
 /**
+ * Obtenir un coiffeur par son ID
+ */
+exports.getHairdresserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const hairdresser = await db.Hairdresser.findByPk(id, {
+      include: [{
+        model: db.User,
+        as: 'user',
+        attributes: ['id', 'email', 'full_name', 'phone', 'profile_photo', 'is_active']
+      }]
+    });
+
+    if (!hairdresser) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'NOT_FOUND',
+          message: 'Coiffeur non trouvé'
+        }
+      });
+    }
+
+    // Calculer la note moyenne et le nombre de prestations
+    const ratingData = await db.Booking.findAll({
+      where: {
+        hairdresser_id: id,
+        status: 'completed'
+      },
+      attributes: [
+        [db.sequelize.fn('AVG', db.sequelize.col('rating')), 'average_rating'],
+        [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'total_jobs']
+      ],
+      raw: true
+    });
+
+    const average_rating = ratingData[0]?.average_rating ? parseFloat(ratingData[0].average_rating) : 0;
+    const total_jobs = ratingData[0]?.total_jobs || 0;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        id: hairdresser.id,
+        user: hairdresser.user,
+        profession: hairdresser.profession,
+        residential_address: hairdresser.residential_address,
+        average_rating,
+        total_jobs,
+        registration_status: hairdresser.registration_status,
+        created_at: hairdresser.created_at,
+        id_card_photo: hairdresser.id_card_photo,
+        description: hairdresser.description
+      }
+    });
+
+  } catch (error) {
+    console.error('Erreur lors de la récupération du coiffeur:', error);
+    
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Une erreur est survenue lors de la récupération du coiffeur',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      }
+    });
+  }
+};
+
+/**
  * Valider un coiffeur
  */
 exports.validateHairdresser = async (req, res) => {
