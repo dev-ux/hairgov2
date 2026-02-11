@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Box, Typography, Alert, CircularProgress } from '@mui/material';
 import { CloudUpload as CloudUploadIcon } from '@mui/icons-material';
-import api from '../config/api';
+import api from '../../config/api';
 
 const MigrationButton: React.FC = () => {
   const [loading, setLoading] = useState(false);
