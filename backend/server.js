@@ -175,6 +175,7 @@ app.use('/api/v1/salons', salonRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/debug', debugRoutes);
+app.use('/api/v1/migration', require('./routes/migration.routes'));
 
 // 404 handler - doit être à la fin après toutes les routes
 app.use((req, res) => {
