@@ -1,5 +1,5 @@
 const express = require('express');
-const { migrateLocalImagesToCloudinary } = require('../fix_local_image_paths');
+const { migrateLocalImagesToCloudinary } = require('./fix_local_image_paths');
 const router = express.Router();
 
 /**
