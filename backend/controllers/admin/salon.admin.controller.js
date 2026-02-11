@@ -65,8 +65,10 @@ exports.createSalon = async (req, res) => {
       latitude,
       longitude,
       hairdresser_id: hairdresser.id,
-      is_validated: true
-      // Note: Les champs description, phone et email ne sont pas inclus car ils n'existent pas dans la table
+      is_validated: true,
+      description,
+      phone,
+      email
     };
 
     // Ajouter les heures d'ouverture si fournies
@@ -176,7 +178,10 @@ exports.updateSalon = async (req, res) => {
       name,
       address,
       latitude,
-      longitude
+      longitude,
+      description,
+      phone,
+      email
     };
 
     // Ajouter les heures d'ouverture si fournies

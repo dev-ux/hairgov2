@@ -33,6 +33,12 @@ const formatImageUrl = (url: string) => {
 
     console.log('URL originale reçue:', url);
 
+    // Si c'est déjà une URL complète (Cloudinary ou autre), la retourner directement
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      console.log('URL complète détectée, retour direct:', url);
+      return url;
+    }
+
     // Nettoyer l'URL (supprimer les accolades, espaces, guillemets et autres caractères invalides)
     let cleanUrl = url.replace(/[{}"']/g, '').trim();
     
