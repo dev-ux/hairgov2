@@ -23,7 +23,6 @@ import {
   Badge
 } from '@mui/material';
 import AddSalonForm from '../../components/salons/AddSalonForm';
-import MigrationButton from '../../components/admin/MigrationButton';
 import {
   Add as AddIcon,
   Edit as EditIcon,
@@ -211,8 +210,6 @@ const SalonsPage: React.FC = () => {
           Ajouter un salon
         </Button>
       </Box>
-
-      <MigrationButton />
 
       <Paper sx={{ mb: 3, p: 2 }}>
         <TextField
