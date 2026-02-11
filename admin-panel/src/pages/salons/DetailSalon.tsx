@@ -34,6 +34,7 @@ interface Salon {
   latitude: number;
   longitude: number;
   photos: string[];
+  logo?: string;
   is_validated: boolean;
   created_at: string;
   updated_at: string;
@@ -115,10 +116,22 @@ const DetailSalon: React.FC = () => {
 
   // Fonction pour formater l'URL de l'image
   const formatImageUrl = (url: string) => {
-    console.log('URL originale:', url);
+    console.log('🔍 URL originale:', url);
     if (!url) {
-      console.log('URL vide');
+      console.log('❌ URL vide');
       return '';
+    }
+    
+    // Si c'est déjà une URL complète (Cloudinary, http, https), la retourner telle quelle
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      console.log('✅ URL complète détectée, retour direct:', url);
+      return url;
+    }
+    
+    // Si c'est une URL locale, ne pas essayer de la charger
+    if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
+      console.log('⚠️ URL locale détectée, ne pas charger:', url);
+      return ''; // Retourner vide pour éviter NS_BINDING_ABORTED
     }
     
     // Supprimer les accolades si présentes
@@ -130,7 +143,7 @@ const DetailSalon: React.FC = () => {
       cleanUrl = cleanUrl.substring(1);
     }
     
-    // Construire l'URL complète
+    // Construire l'URL complète pour les chemins locaux uniquement
     const baseUrl = api.defaults.baseURL || 'https://hairgov2.onrender.com/api/v1';
     console.log('URL de base de l\'API:', baseUrl);
     
@@ -180,6 +193,43 @@ const DetailSalon: React.FC = () => {
         <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
           <ArrowBackIcon />
         </IconButton>
+        <Box sx={{ mr: 3 }}>
+          {salon.logo ? (
+            <img
+              src={salon.logo.startsWith('http') ? salon.logo : formatImageUrl(salon.logo)}
+              alt={`Logo ${salon.name}`}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.onerror = null;
+                target.src = 'https://via.placeholder.com/80x80?text=Logo';
+              }}
+              style={{
+                width: 80,
+                height: 80,
+                objectFit: 'cover',
+                borderRadius: '50%',
+                border: '2px solid #e0e0e0'
+              }}
+            />
+          ) : (
+            <Box
+              sx={{
+                width: 80,
+                height: 80,
+                borderRadius: '50%',
+                backgroundColor: '#f5f5f5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px dashed #ccc'
+              }}
+            >
+              <Typography variant="caption" color="textSecondary">
+                Pas de logo
+              </Typography>
+            </Box>
+          )}
+        </Box>
         <Typography variant="h4" component="h1">
           {salon.name}
         </Typography>
