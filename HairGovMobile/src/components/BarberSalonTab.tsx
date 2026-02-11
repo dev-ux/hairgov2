@@ -19,6 +19,24 @@ import AddressSelector from './AddressSelector';
 
 const { width } = Dimensions.get('window');
 
+// Fonction pour formater les URLs d'images
+const formatImageUrl = (url: string) => {
+  if (!url) return null;
+  
+  // Si c'est déjà une URL complète (Cloudinary), la retourner directement
+  if (url.startsWith('http')) {
+    return url;
+  }
+  
+  // Si c'est un chemin local, ne pas l'afficher
+  if (url.startsWith('/uploads/')) {
+    console.log('⚠️ URL locale détectée, non affichée:', url);
+    return null;
+  }
+  
+  return url;
+};
+
 interface Salon {
   id: string;
   hairdresser_id: string;
@@ -414,9 +432,12 @@ export default function BarberSalonTab() {
           <View style={styles.photosSection}>
             <Text style={styles.sectionTitle}>Photos du salon</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {formData.photos && formData.photos.map((photo, index) => (
-                <Image key={index} source={{ uri: photo }} style={styles.photo} />
-              ))}
+              {formData.photos && formData.photos.map((photo, index) => {
+                const imageUrl = formatImageUrl(photo);
+                return imageUrl ? (
+                  <Image key={index} source={{ uri: imageUrl }} style={styles.photo} />
+                ) : null;
+              })}
               <TouchableOpacity style={styles.addPhotoButton} onPress={handleAddPhoto}>
                 <Ionicons name="add" size={24} color="#6C63FF" />
               </TouchableOpacity>
@@ -470,9 +491,12 @@ export default function BarberSalonTab() {
           <View style={styles.photosSection}>
             <Text style={styles.sectionTitle}>Photos du salon</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {salon.photos.map((photo, index) => (
-                <Image key={index} source={{ uri: photo }} style={styles.photo} />
-              ))}
+              {salon.photos.map((photo, index) => {
+                const imageUrl = formatImageUrl(photo);
+                return imageUrl ? (
+                  <Image key={index} source={{ uri: imageUrl }} style={styles.photo} />
+                ) : null;
+              })}
               <TouchableOpacity style={styles.addPhotoButton} onPress={handleAddPhoto}>
                 <Ionicons name="add" size={24} color="#6C63FF" />
               </TouchableOpacity>
