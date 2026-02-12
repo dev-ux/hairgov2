@@ -6,7 +6,7 @@ const router = express.Router();
  * @desc    Obtenir les offres spéciales
  * @access  Public
  */
-router.get('/special-offers', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     // Simuler des données d'offres spéciales
     const specialOffers = [

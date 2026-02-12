@@ -9,7 +9,7 @@ const { Hairstyle } = require('../models');
  * @desc    Obtenir les coiffures tendances
  * @access  Public
  */
-router.get('/trending-hairstyles', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     // Simuler des données de coiffures tendances
     // En production, vous pourriez avoir une logique pour déterminer les tendances

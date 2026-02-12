@@ -6,7 +6,7 @@ const router = express.Router();
  * @desc    Obtenir les spécialistes
  * @access  Public
  */
-router.get('/specialists', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     // Simuler des données de spécialistes
     const specialists = [
