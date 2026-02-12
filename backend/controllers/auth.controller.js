@@ -828,7 +828,10 @@ exports.updateProfile = async (req, res) => {
       }
 
       // Utiliser l'URL complète du fichier uploadé
-      const imageUrl = `${req.protocol}://${req.get('host')}/uploads/profiles/${profilePhoto.filename}`;
+      const baseUrl = process.env.NODE_ENV === 'production' 
+        ? 'https://hairgov2.onrender.com' 
+        : `${req.protocol}://${req.get('host')}`;
+      const imageUrl = `${baseUrl}/uploads/profiles/${profilePhoto.filename}`;
       console.log('🌐 Nouvelle URL de photo:', imageUrl);
       
       user.profile_photo = imageUrl;
