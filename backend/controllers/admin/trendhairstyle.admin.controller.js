@@ -1,4 +1,4 @@
-const { TrendHairstyle, Hairstyle, User } = require('../models');
+const { TrendHairstyle, Hairstyle, User } = require('../../models');
 
 /**
  * @desc    Ajouter une coiffure en tendance
