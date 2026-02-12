@@ -35,6 +35,10 @@ import ReservationDetailScreen from '../screens/ReservationDetailScreen';
 import LoginScreen from '@screens/auth/LoginScreen';
 import UserProfileScreen from '../screens/UserProfileScreen';
 import HairstylesGalleryScreen from '../screens/HairstylesGalleryScreen';
+// Import des nouvelles pages de filtres
+import SpecialOffersScreen from '../screens/SpecialOffersScreen';
+import TrendingHairstylesScreen from '../screens/TrendingHairstylesScreen';
+import SpecialistsScreen from '../screens/SpecialistsScreen';
 
 // Définition des types pour la navigation
 export type RootStackParamList = {
@@ -58,6 +62,10 @@ export type RootStackParamList = {
   UserProfile: undefined;
   // Autres écrans
   AllSalons: undefined;
+  // Nouvelles pages de filtres
+  SpecialOffers: undefined;
+  TrendingHairstyles: undefined;
+  Specialists: undefined;
   // Réservation
   Booking: {
     hairdresserId: string;
@@ -487,6 +495,65 @@ export const AppNavigator = () => {
             headerShown: false,
             animation: 'slide_from_right',
           }}
+        />
+        
+        {/* Nouvelles pages de filtres */}
+        <Stack.Screen 
+          name="SpecialOffers" 
+          component={SpecialOffersScreen}
+          options={({ navigation }) => ({
+            title: 'Offres Spéciales',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        <Stack.Screen 
+          name="TrendingHairstyles" 
+          component={TrendingHairstylesScreen}
+          options={({ navigation }) => ({
+            title: 'Coiffures Tendances',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        <Stack.Screen 
+          name="Specialists" 
+          component={SpecialistsScreen}
+          options={({ navigation }) => ({
+            title: 'Spécialistes',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
         />
       </Stack.Navigator>
     </NavigationContainer>

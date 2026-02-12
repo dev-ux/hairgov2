@@ -402,16 +402,28 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={homeScreenStyles.filterContainer}>
-            <TouchableOpacity style={[homeScreenStyles.filterButton, { backgroundColor: colors.primary }]}>
+            <TouchableOpacity 
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.primary }]}
+              onPress={() => navigation.navigate('SpecialOffers')}
+            >
               <Text style={homeScreenStyles.filterButtonTextActive}>Offre spéciales</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TouchableOpacity 
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => navigation.navigate('TrendingHairstyles')}
+            >
               <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Coiffure tendances</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TouchableOpacity 
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => navigation.navigate('Specialists')}
+            >
               <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Spécialiste</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <TouchableOpacity 
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
+              onPress={() => navigation.navigate('History')}
+            >
               <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Historique</Text>
             </TouchableOpacity>
           </ScrollView>
