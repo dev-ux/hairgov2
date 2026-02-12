@@ -1,7 +1,7 @@
 // controllers/favorite.controller.js
 const db = require('../models');
 
-const { Favorite, User, Hairdresser, Salon, Hairstyle } = db;
+const { FavoriteHairdresser, FavoriteSalon, FavoriteHairstyle, User, Hairdresser, Salon, Hairstyle } = db;
 
 /**
  * Ajouter un coiffeur aux favoris
@@ -38,7 +38,7 @@ exports.addToFavorites = async (req, res) => {
     }
 
     // Vérifier si déjà en favoris
-    const existingFavorite = await Favorite.findOne({
+    const existingFavorite = await FavoriteHairdresser.findOne({
       where: {
         client_id: clientId,
         hairdresser_id: hairdresserId
@@ -56,7 +56,7 @@ exports.addToFavorites = async (req, res) => {
     }
 
     // Ajouter aux favoris
-    const favorite = await Favorite.create({
+    const favorite = await FavoriteHairdresser.create({
       client_id: clientId,
       hairdresser_id: hairdresserId,
       is_favorite: true

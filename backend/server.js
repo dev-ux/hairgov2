@@ -149,6 +149,71 @@ app.get('/', (req, res) => {
   });
 });
 
+// Endpoint temporaire pour créer les tables de favoris séparées (à supprimer après utilisation)
+app.get('/api/v1/create-separate-favorites-tables', async (req, res) => {
+  try {
+    console.log('🚀 Création des tables de favoris séparées...');
+    
+    // Créer la table favorites_hairdresser
+    await require('./models').sequelize.query(`
+      CREATE TABLE IF NOT EXISTS favorites_hairdresser (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        client_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        hairdresser_id UUID NOT NULL REFERENCES hairdressers(id) ON DELETE CASCADE,
+        is_favorite BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(client_id, hairdresser_id)
+      )
+    `);
+    
+    console.log('✅ Table favorites_hairdresser créée');
+    
+    // Créer la table favorites_salon
+    await require('./models').sequelize.query(`
+      CREATE TABLE IF NOT EXISTS favorites_salon (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        client_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        salon_id UUID NOT NULL REFERENCES salons(id) ON DELETE CASCADE,
+        is_favorite BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(client_id, salon_id)
+      )
+    `);
+    
+    console.log('✅ Table favorites_salon créée');
+    
+    // Créer la table favorites_hairstyle
+    await require('./models').sequelize.query(`
+      CREATE TABLE IF NOT EXISTS favorites_hairstyle (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        client_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        hairstyle_id UUID NOT NULL REFERENCES hairstyles(id) ON DELETE CASCADE,
+        is_favorite BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(client_id, hairstyle_id)
+      )
+    `);
+    
+    console.log('✅ Table favorites_hairstyle créée');
+    
+    res.status(200).json({
+      success: true,
+      message: 'Tables de favoris séparées créées avec succès!'
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur lors de la création des tables:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erreur lors de la création des tables de favoris',
+      details: error.message
+    });
+  }
+});
+
 // Endpoint temporaire pour mettre à jour la table favorites (à supprimer après utilisation)
 app.get('/api/v1/update-favorites-table', async (req, res) => {
   try {
