@@ -778,17 +778,11 @@ exports.getAllHairdressers = async (req, res) => {
         'is_available',
         'has_salon',
         'created_at',
-        [
-          db.sequelize.literal('(SELECT COALESCE(AVG(rating), 0) FROM ratings WHERE hairdresser_id = "Hairdresser"."id")'),
-          'average_rating'
-        ],
-        [
-          db.sequelize.literal('(SELECT COUNT(*) FROM ratings WHERE hairdresser_id = "Hairdresser"."id")'),
-          'rating_count'
-        ]
+        'average_rating',
+        'residential_address'
       ],
       order: [
-        [db.sequelize.literal('average_rating'), 'DESC NULLS LAST'],
+        ['average_rating', 'DESC NULLS LAST'],
         ['total_jobs', 'DESC']
       ],
       limit: limit,
