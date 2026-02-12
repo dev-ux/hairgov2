@@ -775,6 +775,16 @@ exports.updateProfile = async (req, res) => {
   try {
     const { User } = require('../models');
     const userId = req.userId;
+    
+    console.log('🔍 Mise à jour du profil pour utilisateur:', userId);
+    console.log('📁 Fichier reçu:', req.file ? 'Oui' : 'Non');
+    if (req.file) {
+      console.log('📸 Détails du fichier:', {
+        filename: req.file.filename,
+        mimetype: req.file.mimetype,
+        size: req.file.size
+      });
+    }
 
     // Trouver l'utilisateur
     const user = await User.findByPk(userId);
@@ -787,6 +797,9 @@ exports.updateProfile = async (req, res) => {
         }
       });
     }
+
+    console.log('👤 Utilisateur trouvé:', user.full_name);
+    console.log('📷 Photo actuelle:', user.profile_photo);
 
     // Gérer l'upload de la photo de profil
     if (req.file) {
@@ -814,8 +827,9 @@ exports.updateProfile = async (req, res) => {
         });
       }
 
-      // Utiliser l'URL du fichier uploadé
-      const imageUrl = `/uploads/profiles/${profilePhoto.filename}`;
+      // Utiliser l'URL complète du fichier uploadé
+      const imageUrl = `${req.protocol}://${req.get('host')}/uploads/profiles/${profilePhoto.filename}`;
+      console.log('🌐 Nouvelle URL de photo:', imageUrl);
       
       user.profile_photo = imageUrl;
     }
@@ -829,6 +843,9 @@ exports.updateProfile = async (req, res) => {
 
     user.updated_at = new Date();
     await user.save();
+
+    console.log('✅ Profil mis à jour avec succès');
+    console.log('📷 Photo finale dans la réponse:', user.profile_photo);
 
     res.status(200).json({
       success: true,
