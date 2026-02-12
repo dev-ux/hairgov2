@@ -403,18 +403,13 @@ export default function HomeScreen() {
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={homeScreenStyles.filterContainer}>
             <TouchableOpacity 
-              style={[homeScreenStyles.filterButton, { backgroundColor: colors.primary, borderWidth: 2, borderStyle: 'solid', borderColor: 'red' }]}
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.primary, borderWidth: 2, borderStyle: 'solid' }]}
               onPress={() => {
-                alert('Bouton Offre spéciales cliqué !');
                 try {
-                  console.log('Clic sur Offre spéciales');
                   const parentNavigation = navigation.getParent();
-                  console.log('Parent navigation:', !!parentNavigation);
                   if (parentNavigation) {
-                    console.log('Navigation via parent');
                     parentNavigation.navigate('SpecialOffers');
                   } else {
-                    console.log('Navigation directe');
                     navigation.navigate('SpecialOffers' as never);
                   }
                 } catch (error) {
@@ -425,18 +420,13 @@ export default function HomeScreen() {
               <Text style={homeScreenStyles.filterButtonTextActive}>Offre spéciales</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderWidth: 2, borderStyle: 'solid', borderColor: 'red' }]}
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderWidth: 2, borderStyle: 'solid' }]}
               onPress={() => {
-                alert('Bouton Coiffure tendances cliqué !');
                 try {
-                  console.log('Clic sur Coiffure tendances');
                   const parentNavigation = navigation.getParent();
-                  console.log('Parent navigation:', !!parentNavigation);
                   if (parentNavigation) {
-                    console.log('Navigation via parent');
                     parentNavigation.navigate('TrendingHairstyles');
                   } else {
-                    console.log('Navigation directe');
                     navigation.navigate('TrendingHairstyles' as never);
                   }
                 } catch (error) {
@@ -447,18 +437,14 @@ export default function HomeScreen() {
               <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Coiffure tendances</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderWidth: 2, borderStyle: 'solid', borderColor: 'red' }]}
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderWidth: 2, borderStyle: 'solid'}]}
               onPress={() => {
-                alert('Bouton Spécialiste cliqué !');
                 try {
-                  console.log('Clic sur Spécialiste');
                   const parentNavigation = navigation.getParent();
-                  console.log('Parent navigation:', !!parentNavigation);
                   if (parentNavigation) {
-                    console.log('Navigation via parent');
                     parentNavigation.navigate('Specialists');
                   } else {
-                    console.log('Navigation directe');
+                    navigation.navigate('Specialists' as never);
                     navigation.navigate('Specialists' as never);
                   }
                 } catch (error) {
@@ -469,18 +455,14 @@ export default function HomeScreen() {
               <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Spécialiste</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderWidth: 2, borderStyle: 'solid', borderColor: 'red' }]}
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderWidth: 2, borderStyle: 'solid'}]}
               onPress={() => {
                 alert('Bouton Historique cliqué !');
                 try {
-                  console.log('Clic sur Historique');
                   const parentNavigation = navigation.getParent();
-                  console.log('Parent navigation:', !!parentNavigation);
                   if (parentNavigation) {
-                    console.log('Navigation via parent');
                     parentNavigation.navigate('History');
                   } else {
-                    console.log('Navigation directe');
                     navigation.navigate('History' as never);
                   }
                 } catch (error) {

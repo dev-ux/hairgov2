@@ -10,6 +10,12 @@ const {
   toggleHairdresserStatus,
   getHairdresserById 
 } = require('../controllers/admin/hairdresser.admin.controller');
+const {
+  addTrendingHairstyle,
+  removeTrendingHairstyle,
+  updateTrendingHairstyle,
+  getAllTrendingHairstyles
+} = require('../controllers/admin/trendhairstyle.admin.controller');
 const { uploadFields, handleUploadErrors } = require('../middleware/upload.middleware');
 const db = require('../models');
 const { Op } = require('sequelize');
@@ -268,5 +274,39 @@ router.delete('/salons/:id', async (req, res) => {
  * @access  Private/Admin
  */
 router.patch('/salons/:id/validate', validateSalon);
+
+// ==========================================
+// ROUTES POUR LA GESTION DES TENDANCES
+// ==========================================
+
+/**
+ * @route   GET /api/v1/admin/trending-hairstyles
+ * @desc    Lister toutes les tendances (Admin uniquement)
+ * @access  Private/Admin
+ */
+router.get('/trending-hairstyles', getAllTrendingHairstyles);
+
+/**
+ * @route   POST /api/v1/admin/trending-hairstyles
+ * @desc    Ajouter une coiffure en tendance (Admin uniquement)
+ * @body    {object} - Données de la tendance
+ * @access  Private/Admin
+ */
+router.post('/trending-hairstyles', addTrendingHairstyle);
+
+/**
+ * @route   PUT /api/v1/admin/trending-hairstyles/:id
+ * @desc    Mettre à jour une tendance (Admin uniquement)
+ * @body    {object} - Données mises à jour
+ * @access  Private/Admin
+ */
+router.put('/trending-hairstyles/:id', updateTrendingHairstyle);
+
+/**
+ * @route   DELETE /api/v1/admin/trending-hairstyles/:id
+ * @desc    Supprimer une coiffure des tendances (Admin uniquement)
+ * @access  Private/Admin
+ */
+router.delete('/trending-hairstyles/:id', removeTrendingHairstyle);
 
 module.exports = router;

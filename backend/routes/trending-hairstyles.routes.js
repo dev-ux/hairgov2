@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // Import des modèles
-const { Hairstyle } = require('../models');
+const { TrendHairstyle, Hairstyle } = require('../models');
 
 /**
  * @route   GET /api/v1/trending-hairstyles
@@ -11,69 +11,41 @@ const { Hairstyle } = require('../models');
  */
 router.get('/', async (req, res) => {
   try {
-    // Simuler des données de coiffures tendances
-    // En production, vous pourriez avoir une logique pour déterminer les tendances
-    const trendingHairstyles = [
-      {
-        id: '1',
-        name: 'Fade Dégradé',
-        description: 'Un fade moderne avec dégradé subtil pour un look élégant',
-        image: 'https://images.unsplash.com/photo-1560069492856-cc730e8775d5?w=500',
-        category: 'Homme',
-        difficulty: 'moyen',
-        duration: 45,
-        price_range: '30-50€',
-        trending_score: 4.8
+    // Récupérer les tendances actives avec les détails des hairstyles
+    const trendingHairstyles = await TrendHairstyle.findAll({
+      where: {
+        is_active: true
       },
-      {
-        id: '2',
-        name: 'Couleur Balayage',
-        description: 'Technique de coloration balayage pour un effet naturel',
-        image: 'https://images.unsplash.com/photo-1562350268-9d7a1b5c5b5?w=500',
-        category: 'Femme',
-        difficulty: 'difficile',
-        duration: 120,
-        price_range: '80-150€',
-        trending_score: 4.6
-      },
-      {
-        id: '3',
-        name: 'Coupe Texturée',
-        description: 'Coupe mettant en valeur la texture naturelle des cheveux',
-        image: 'https://images.unsplash.com/photo-1487415085402-b99fde6521f1?w=500',
-        category: 'Mixte',
-        difficulty: 'facile',
-        duration: 30,
-        price_range: '25-40€',
-        trending_score: 4.5
-      },
-      {
-        id: '4',
-        name: 'Braids Modernes',
-        description: 'Tresses modernes avec des accessoires tendance',
-        image: 'https://images.unsplash.com/photo-1570292675165-1a8c7b5b5b5?w=500',
-        category: 'Femme',
-        difficulty: 'difficile',
-        duration: 180,
-        price_range: '100-200€',
-        trending_score: 4.7
-      },
-      {
-        id: '5',
-        name: 'Undercut Court',
-        description: 'Coupe undercut courte et moderne pour un look audacieux',
-        image: 'https://images.unsplash.com/photo-1534566368-8f7f43d8b5b?w=500',
-        category: 'Homme',
-        difficulty: 'facile',
-        duration: 25,
-        price_range: '20-35€',
-        trending_score: 4.4
-      }
-    ];
+      include: [
+        {
+          model: Hairstyle,
+          as: 'hairstyle',
+          attributes: ['id', 'name', 'description', 'photo', 'category']
+        }
+      ],
+      order: [
+        ['trending_score', 'DESC'],
+        ['created_at', 'DESC']
+      ],
+      limit: 20
+    });
+
+    // Transformer les données pour correspondre au format attendu par le frontend
+    const formattedTrends = trendingHairstyles.map(trend => ({
+      id: trend.id,
+      name: trend.hairstyle?.name || 'Coiffure inconnue',
+      description: trend.hairstyle?.description || 'Description non disponible',
+      image: trend.hairstyle?.photo || 'https://images.unsplash.com/photo-1560069492856-cc730e8775d5?w=500',
+      category: trend.category,
+      difficulty: trend.difficulty,
+      duration: trend.duration_minutes,
+      price_range: trend.price_range,
+      trending_score: parseFloat(trend.trending_score)
+    }));
 
     res.status(200).json({
       success: true,
-      data: trendingHairstyles,
+      data: formattedTrends,
       message: 'Coiffures tendances récupérées avec succès'
     });
 

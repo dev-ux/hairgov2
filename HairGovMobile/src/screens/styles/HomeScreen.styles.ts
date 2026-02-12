@@ -291,7 +291,8 @@ export const homeScreenStyles = StyleSheet.create({
     borderWidth: 1,
   },
   filterButtonActive: {
-    borderColor: '#6C63FF',
+    borderColor: '#2844f8ff',
+    color: '#f7f7f7ff',
   },
   filterButtonText: {
     fontSize: 14,
