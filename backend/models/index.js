@@ -745,11 +745,31 @@ const Favorite = sequelize.define('Favorite', {
   },
   hairdresser_id: {
     type: DataTypes.UUID,
-    allowNull: false,
+    allowNull: true, // Rendre nullable pour pouvoir favoriser d'autres types
     references: {
       model: 'hairdressers',
       key: 'id'
     }
+  },
+  salon_id: {
+    type: DataTypes.UUID,
+    allowNull: true, // Pour les favoris de salons
+    references: {
+      model: 'salons',
+      key: 'id'
+    }
+  },
+  hairstyle_id: {
+    type: DataTypes.UUID,
+    allowNull: true, // Pour les favoris de coiffures
+    references: {
+      model: 'hairstyles',
+      key: 'id'
+    }
+  },
+  favorite_type: {
+    type: DataTypes.ENUM('hairdresser', 'salon', 'hairstyle'),
+    allowNull: false
   },
   is_favorite: {
     type: DataTypes.BOOLEAN,
@@ -764,7 +784,25 @@ const Favorite = sequelize.define('Favorite', {
   indexes: [
     {
       unique: true,
-      fields: ['client_id', 'hairdresser_id']
+      fields: ['client_id', 'favorite_type'],
+      // Utiliser une contrainte conditionnelle pour l'unicité
+      where: {
+        hairdresser_id: { [Sequelize.Op.ne]: null }
+      }
+    },
+    {
+      unique: true,
+      fields: ['client_id', 'favorite_type'],
+      where: {
+        salon_id: { [Sequelize.Op.ne]: null }
+      }
+    },
+    {
+      unique: true,
+      fields: ['client_id', 'favorite_type'],
+      where: {
+        hairstyle_id: { [Sequelize.Op.ne]: null }
+      }
     }
   ]
 });
@@ -772,8 +810,13 @@ const Favorite = sequelize.define('Favorite', {
 // Associations pour Favorite
 User.hasMany(Favorite, { foreignKey: 'client_id', as: 'favorites' });
 Hairdresser.hasMany(Favorite, { foreignKey: 'hairdresser_id', as: 'favoritedBy' });
+Salon.hasMany(Favorite, { foreignKey: 'salon_id', as: 'favoritedBy' });
+Hairstyle.hasMany(Favorite, { foreignKey: 'hairstyle_id', as: 'favoritedBy' });
+
 Favorite.belongsTo(User, { foreignKey: 'client_id', as: 'client' });
 Favorite.belongsTo(Hairdresser, { foreignKey: 'hairdresser_id', as: 'hairdresser' });
+Favorite.belongsTo(Salon, { foreignKey: 'salon_id', as: 'salon' });
+Favorite.belongsTo(Hairstyle, { foreignKey: 'hairstyle_id', as: 'hairstyle' });
 
 module.exports = {
   sequelize,      // ✅ L'UNIQUE instance

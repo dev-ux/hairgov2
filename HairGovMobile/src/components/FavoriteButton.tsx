@@ -1,8 +1,9 @@
 // components/FavoriteButton.tsx
 import React from 'react';
-import { TouchableOpacity, Animated, Dimensions } from 'react-native';
+import { TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../hooks/useFavorites';
+import { useSalonFavorites } from '../hooks/useSalonFavorites';
 
 interface FavoriteButtonProps {
   itemId: string;
@@ -12,8 +13,6 @@ interface FavoriteButtonProps {
   onPress?: () => void;
 }
 
-const { width: screenWidth } = Dimensions.get('window');
-
 export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   itemId,
   itemType = 'hairdresser',
@@ -21,7 +20,22 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   style,
   onPress
 }) => {
-  const { toggleFavorite, isFavorite, loading } = useFavorites();
+  // Utiliser le hook approprié selon le type
+  const hairdresserFavorites = useFavorites();
+  const salonFavorites = useSalonFavorites();
+  
+  let toggleFavorite, isFavorite, loading;
+  
+  switch (itemType) {
+    case 'salon':
+      ({ toggleFavorite, isFavorite, loading } = salonFavorites);
+      break;
+    case 'hairdresser':
+    default:
+      ({ toggleFavorite, isFavorite, loading } = hairdresserFavorites);
+      break;
+  }
+
   const [scaleValue] = React.useState(new Animated.Value(1));
 
   const favorited = isFavorite(itemId);

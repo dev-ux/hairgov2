@@ -149,6 +149,67 @@ app.get('/', (req, res) => {
   });
 });
 
+// Endpoint temporaire pour mettre à jour la table favorites (à supprimer après utilisation)
+app.get('/api/v1/update-favorites-table', async (req, res) => {
+  try {
+    console.log('🚀 Mise à jour de la table favorites pour supporter les salons...');
+    
+    // Ajouter les nouvelles colonnes
+    await sequelize.query(`
+      ALTER TABLE favorites 
+      ADD COLUMN IF NOT EXISTS salon_id UUID,
+      ADD COLUMN IF NOT EXISTS hairstyle_id UUID,
+      ADD COLUMN IF NOT EXISTS favorite_type VARCHAR(20) NOT NULL DEFAULT 'hairdresser'
+    `);
+    
+    console.log('✅ Colonnes ajoutées avec succès');
+    
+    // Mettre à jour les enregistrements existants
+    await sequelize.query(`
+      UPDATE favorites 
+      SET favorite_type = 'hairdresser' 
+      WHERE favorite_type IS NULL OR favorite_type = ''
+    `);
+    
+    console.log('✅ Enregistrements existants mis à jour');
+    
+    // Rendre hairdresser_id nullable
+    await sequelize.query(`
+      ALTER TABLE favorites 
+      ALTER COLUMN hairdresser_id DROP NOT NULL
+    `);
+    
+    console.log('✅ hairdresser_id rendu nullable');
+    
+    // Ajouter les contraintes de clé étrangère
+    await sequelize.query(`
+      ALTER TABLE favorites 
+      ADD CONSTRAINT IF NOT EXISTS favorites_salon_id_fkey 
+      FOREIGN KEY (salon_id) REFERENCES salons(id) ON DELETE CASCADE
+    `);
+    
+    await sequelize.query(`
+      ALTER TABLE favorites 
+      ADD CONSTRAINT IF NOT EXISTS favorites_hairstyle_id_fkey 
+      FOREIGN KEY (hairstyle_id) REFERENCES hairstyles(id) ON DELETE CASCADE
+    `);
+    
+    console.log('✅ Contraintes de clé étrangère ajoutées');
+    
+    res.status(200).json({
+      success: true,
+      message: 'Table favorites mise à jour avec succès pour supporter les salons!'
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur lors de la mise à jour:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erreur lors de la mise à jour de la table favorites'
+    });
+  }
+});
+
 // Health check (AVANT rate limit)
 app.get('/health', (req, res) => {
   res.status(200).json({ 

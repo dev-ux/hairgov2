@@ -187,21 +187,147 @@ export const favoriteService = {
   }
 };
 
-// Gérer les favoris de salons (à implémenter plus tard)
+// Gérer les favoris de salons
 export const salonFavoriteService = {
+  // Ajouter un salon aux favoris
   addToFavorites: async (salonId: string): Promise<FavoriteResponse> => {
-    // TODO: Implémenter quand l'API sera prête
-    return { success: false, error: { code: 'NOT_IMPLEMENTED', message: 'Non implémenté' } };
+    try {
+      const token = await AsyncStorage.getItem('token');
+      
+      if (!token) {
+        return {
+          success: false,
+          error: {
+            code: 'NO_TOKEN',
+            message: 'Veuillez vous connecter pour ajouter des favoris'
+          }
+        };
+      }
+
+      console.log('Adding salon to favorites - Token:', token ? 'Present' : 'Missing');
+      console.log('Adding salon to favorites - Salon ID:', salonId);
+
+      const response = await fetch(`${API_URL}/favorites/salons/${salonId}/favorite`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      console.log('Add salon to favorites response status:', response.status);
+
+      if (response.status === 401) {
+        // Token invalide ou expiré
+        await AsyncStorage.removeItem('token');
+        return {
+          success: false,
+          error: {
+            code: 'INVALID_TOKEN',
+            message: 'Session expirée, veuillez vous reconnecter'
+          }
+        };
+      }
+
+      const data = await response.json();
+      console.log('Add salon to favorites response:', data);
+      return data;
+    } catch (error) {
+      console.error('Error adding salon to favorites:', error);
+      return {
+        success: false,
+        error: {
+          code: 'NETWORK_ERROR',
+          message: 'Erreur réseau lors de l\'ajout du salon aux favoris'
+        }
+      };
+    }
   },
 
+  // Retirer un salon des favoris
   removeFromFavorites: async (salonId: string): Promise<FavoriteResponse> => {
-    // TODO: Implémenter quand l'API sera prête
-    return { success: false, error: { code: 'NOT_IMPLEMENTED', message: 'Non implémenté' } };
+    try {
+      const token = await AsyncStorage.getItem('token');
+      
+      if (!token) {
+        return {
+          success: false,
+          error: {
+            code: 'NO_TOKEN',
+            message: 'Veuillez vous connecter pour gérer vos favoris'
+          }
+        };
+      }
+
+      console.log('Removing salon from favorites - Token:', token ? 'Present' : 'Missing');
+      console.log('Removing salon from favorites - Salon ID:', salonId);
+
+      const response = await fetch(`${API_URL}/favorites/salons/${salonId}/favorite`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      console.log('Remove salon from favorites response status:', response.status);
+
+      if (response.status === 401) {
+        // Token invalide ou expiré
+        await AsyncStorage.removeItem('token');
+        return {
+          success: false,
+          error: {
+            code: 'INVALID_TOKEN',
+            message: 'Session expirée, veuillez vous reconnecter'
+          }
+        };
+      }
+
+      const data = await response.json();
+      console.log('Remove salon from favorites response:', data);
+      return data;
+    } catch (error) {
+      console.error('Error removing salon from favorites:', error);
+      return {
+        success: false,
+        error: {
+          code: 'NETWORK_ERROR',
+          message: 'Erreur réseau lors du retrait du salon des favoris'
+        }
+      };
+    }
   },
 
+  // Vérifier si un salon est en favoris
   checkFavorite: async (salonId: string): Promise<boolean> => {
-    // TODO: Implémenter quand l'API sera prête
-    return false;
+    try {
+      const token = await AsyncStorage.getItem('token');
+      
+      if (!token) {
+        return false;
+      }
+
+      const response = await fetch(`${API_URL}/favorites/salons/${salonId}/favorite`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.status === 401) {
+        // Token invalide ou expiré
+        await AsyncStorage.removeItem('token');
+        return false;
+      }
+
+      const data = await response.json();
+      return data.success ? data.data.isFavorite : false;
+    } catch (error) {
+      console.error('Error checking salon favorite:', error);
+      return false;
+    }
   }
 };
 

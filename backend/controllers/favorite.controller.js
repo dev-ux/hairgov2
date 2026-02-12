@@ -1,7 +1,7 @@
 // controllers/favorite.controller.js
 const db = require('../models');
 
-const { Favorite, User, Hairdresser } = db;
+const { Favorite, User, Hairdresser, Salon, Hairstyle } = db;
 
 /**
  * Ajouter un coiffeur aux favoris
@@ -213,6 +213,194 @@ exports.checkFavorite = async (req, res) => {
       error: {
         code: 'SERVER_ERROR',
         message: 'Erreur lors de la vérification des favoris'
+      }
+    });
+  }
+};
+
+// ==========================================
+// Gestion des favoris de salons
+// ==========================================
+
+/**
+ * Ajouter un salon aux favoris
+ */
+exports.addSalonToFavorites = async (req, res) => {
+  try {
+    const { salonId } = req.params;
+    const clientId = req.userId;
+
+    console.log('🔍 Add salon to favorites - Request params:', req.params);
+    console.log('🔍 Add salon to favorites - Client ID from token:', clientId);
+    console.log('🔍 Add salon to favorites - Headers:', req.headers.authorization ? 'Present' : 'Missing');
+
+    if (!clientId) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'NO_USER_ID',
+          message: 'Utilisateur non authentifié'
+        }
+      });
+    }
+
+    // Vérifier si le salon existe
+    const salon = await Salon.findByPk(salonId);
+    if (!salon) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'SALON_NOT_FOUND',
+          message: 'Salon introuvable'
+        }
+      });
+    }
+
+    // Vérifier si déjà en favoris
+    const existingFavorite = await Favorite.findOne({
+      where: {
+        client_id: clientId,
+        salon_id: salonId,
+        favorite_type: 'salon'
+      }
+    });
+
+    if (existingFavorite) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'ALREADY_FAVORITE',
+          message: 'Ce salon est déjà dans vos favoris'
+        }
+      });
+    }
+
+    // Ajouter aux favoris
+    const favorite = await Favorite.create({
+      client_id: clientId,
+      salon_id: salonId,
+      favorite_type: 'salon',
+      is_favorite: true
+    });
+
+    res.status(201).json({
+      success: true,
+      data: { favorite },
+      message: 'Salon ajouté aux favoris'
+    });
+
+  } catch (error) {
+    console.error('Add salon to favorites error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Erreur lors de l\'ajout du salon aux favoris'
+      }
+    });
+  }
+};
+
+/**
+ * Retirer un salon des favoris
+ */
+exports.removeSalonFromFavorites = async (req, res) => {
+  try {
+    const { salonId } = req.params;
+    const clientId = req.userId;
+
+    console.log('🔍 Remove salon from favorites - Request params:', req.params);
+    console.log('🔍 Remove salon from favorites - Client ID from token:', clientId);
+    console.log('🔍 Remove salon from favorites - Headers:', req.headers.authorization ? 'Present' : 'Missing');
+
+    if (!clientId) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'NO_USER_ID',
+          message: 'Utilisateur non authentifié'
+        }
+      });
+    }
+
+    const favorite = await Favorite.findOne({
+      where: {
+        client_id: clientId,
+        salon_id: salonId,
+        favorite_type: 'salon'
+      }
+    });
+
+    if (!favorite) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'FAVORITE_NOT_FOUND',
+          message: 'Ce salon n\'est pas dans vos favoris'
+        }
+      });
+    }
+
+    await favorite.destroy();
+
+    res.status(200).json({
+      success: true,
+      message: 'Salon retiré des favoris'
+    });
+
+  } catch (error) {
+    console.error('Remove salon from favorites error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Erreur lors du retrait du salon des favoris'
+      }
+    });
+  }
+};
+
+/**
+ * Vérifier si un salon est dans les favoris
+ */
+exports.checkSalonFavorite = async (req, res) => {
+  try {
+    const { salonId } = req.params;
+    const clientId = req.userId;
+
+    if (!clientId) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'NO_USER_ID',
+          message: 'Utilisateur non authentifié'
+        }
+      });
+    }
+
+    const favorite = await Favorite.findOne({
+      where: {
+        client_id: clientId,
+        salon_id: salonId,
+        favorite_type: 'salon',
+        is_favorite: true
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        isFavorite: !!favorite
+      }
+    });
+
+  } catch (error) {
+    console.error('Check salon favorite error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Erreur lors de la vérification des favoris du salon'
       }
     });
   }

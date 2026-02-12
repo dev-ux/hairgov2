@@ -16,6 +16,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import MapView, { Marker } from 'react-native-maps';
 import { API_URL } from '../config/constants';
+import { FavoriteButton } from '../components/FavoriteButton';
 
 // Fonction utilitaire pour formater les URLs d'images
 const formatImageUrl = (url: string) => {
@@ -289,12 +290,17 @@ const SalonDetailScreen = () => {
                     <Text style={styles.salonName} numberOfLines={2}>
                         {salon.name}
                     </Text>
-                    {salon.is_validated && (
-                        <View style={styles.verifiedBadge}>
-                            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                            <Text style={styles.verifiedText}>Vérifié</Text>
+                    <View style={styles.headerActions}>
+                        {salon.is_validated && (
+                            <View style={styles.verifiedBadge}>
+                                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
+                                <Text style={styles.verifiedText}>Vérifié</Text>
+                            </View>
+                        )}
+                        <View style={styles.favoriteButtonContainer}>
+                            <FavoriteButton itemId={salon.id} itemType="salon" size={24} />
                         </View>
-                    )}
+                    </View>
                 </View>
 
                 {/* Adresse */}
@@ -497,28 +503,6 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         color: '#333',
-        flex: 1,
-    },
-    verifiedBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#E8F5E9',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-        marginLeft: 8,
-    },
-    verifiedText: {
-        color: '#4CAF50',
-        fontSize: 12,
-        marginLeft: 4,
-        fontWeight: '500',
-    },
-    // Informations de base
-    infoRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
     },
     address: {
         marginLeft: 8,
@@ -666,6 +650,42 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         backgroundColor: '#f5f5f5',
+    },
+    // Styles pour les favoris
+    headerActions: {
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        gap: 8,
+    },
+    verifiedBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#E8F5E8',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        marginLeft: 8,
+    },
+    verifiedText: {
+        color: '#4CAF50',
+        fontSize: 12,
+        fontWeight: '600',
+        marginLeft: 4,
+    },
+    favoriteButtonContainer: {
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderRadius: 20,
+        padding: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
     },
 });
 
