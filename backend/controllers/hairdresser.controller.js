@@ -1069,7 +1069,7 @@ exports.getHairdresserDetails = async (req, res) => {
     // Obtenir quelques évaluations récentes
     const recentRatings = await Rating.findAll({
       where: { 
-        hairdresser_id: user.hairdresserProfile.id
+        hairdresser_id: hairdresserBasic.id
       },
       include: [{
         model: User,
@@ -1106,12 +1106,21 @@ exports.getHairdresserDetails = async (req, res) => {
 
   } catch (error) {
     console.error('Get hairdresser details error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      message: error.message,
+      name: error.name,
+      code: error.code
+    });
     return res.status(500).json({
       success: false,
       error: {
         code: 'FETCH_ERROR',
         message: 'Erreur lors de la récupération des détails du coiffeur',
-        ...(process.env.NODE_ENV === 'development' && { details: error.message })
+        ...(process.env.NODE_ENV === 'development' && { 
+          details: error.message,
+          stack: error.stack 
+        })
       }
     });
   }
