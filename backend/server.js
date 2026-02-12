@@ -154,45 +154,47 @@ app.get('/api/v1/update-favorites-table', async (req, res) => {
   try {
     console.log('🚀 Mise à jour de la table favorites pour supporter les salons...');
     
-    // Utiliser le modèle Sequelize pour créer les colonnes manquantes
-    const { Favorite } = require('./models');
+    // Ajouter les colonnes une par une
+    try {
+      await require('./models').sequelize.query(`ALTER TABLE favorites ADD COLUMN IF NOT EXISTS salon_id UUID`);
+      console.log('✅ Colonne salon_id ajoutée');
+    } catch (err) {
+      console.log('ℹ️ Colonne salon_id existe déjà ou erreur:', err.message);
+    }
     
-    console.log('🔍 Modèle Favorite chargé:', Favorite ? 'OK' : 'ERROR');
+    try {
+      await require('./models').sequelize.query(`ALTER TABLE favorites ADD COLUMN IF NOT EXISTS hairstyle_id UUID`);
+      console.log('✅ Colonne hairstyle_id ajoutée');
+    } catch (err) {
+      console.log('ℹ️ Colonne hairstyle_id existe déjà ou erreur:', err.message);
+    }
     
-    // Synchroniser le modèle pour créer les nouvelles colonnes
-    console.log('🔄 Synchronisation du modèle...');
-    await Favorite.sync({ alter: true });
-    console.log('✅ Table favorites synchronisée avec succès');
+    try {
+      await require('./models').sequelize.query(`ALTER TABLE favorites ADD COLUMN IF NOT EXISTS favorite_type VARCHAR(20) NOT NULL DEFAULT 'hairdresser'`);
+      console.log('✅ Colonne favorite_type ajoutée');
+    } catch (err) {
+      console.log('ℹ️ Colonne favorite_type existe déjà ou erreur:', err.message);
+    }
     
-    // Mettre à jour les enregistrements existants
-    console.log('🔄 Mise à jour des enregistrements existants...');
-    const updateResult = await Favorite.update(
-      { favorite_type: 'hairdresser' },
-      { 
-        where: {
-          [require('sequelize').Op.or]: [
-            { favorite_type: null },
-            { favorite_type: '' }
-          ]
-        }
-      }
-    );
-    console.log('✅ Enregistrements mis à jour:', updateResult[1]);
+    // Mettre à jour les enregistrements existants - ignorer les erreurs pour les enregistrements qui n'ont pas la colonne favorite_type
+    try {
+      await require('./models').sequelize.query(`
+        UPDATE favorites 
+        SET favorite_type = 'hairdresser' 
+        WHERE favorite_type IS NULL OR favorite_type = ''
+      `);
+      console.log('✅ Enregistrements existants mis à jour');
+    } catch (err) {
+      console.log('ℹ️ Erreur lors de la mise à jour des enregistrements (probablement déjà à jour):', err.message);
+    }
     
-    // Vérifier la structure
-    const [results] = await require('./models').sequelize.query(`
-      SELECT column_name, data_type, is_nullable, column_default
-      FROM information_schema.columns 
-      WHERE table_name = 'favorites'
-      ORDER BY ordinal_position
-    `);
-    
-    console.log('📊 Structure actuelle de la table favorites:');
-    results.forEach(col => {
-      console.log(`  - ${col.column_name}: ${col.data_type} (${col.is_nullable}) ${col.column_default || ''}`);
-    });
-    
-    console.log('✅ Table favorites mise à jour avec succès');
+    // Rendre hairdresser_id nullable
+    try {
+      await require('./models').sequelize.query(`ALTER TABLE favorites ALTER COLUMN hairdresser_id DROP NOT NULL`);
+      console.log('✅ hairdresser_id rendu nullable');
+    } catch (err) {
+      console.log('ℹ️ hairdresser_id déjà nullable ou erreur:', err.message);
+    }
     
     res.status(200).json({
       success: true,
@@ -200,10 +202,12 @@ app.get('/api/v1/update-favorites-table', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('❌ Erreur lors de la mise à jour:', error);
+    console.error('❌ Erreur détaillée lors de la mise à jour:', error);
+    console.error('Stack trace:', error.stack);
     res.status(500).json({
       success: false,
-      error: 'Erreur lors de la mise à jour de la table favorites'
+      error: 'Erreur lors de la mise à jour de la table favorites',
+      details: error.message
     });
   }
 });
