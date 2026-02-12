@@ -191,11 +191,8 @@ app.get('/api/v1/update-favorites-table', async (req, res) => {
     results.forEach(col => {
       console.log(`  - ${col.column_name}: ${col.data_type} (${col.is_nullable}) ${col.column_default || ''}`);
     });
-      ADD CONSTRAINT IF NOT EXISTS favorites_hairstyle_id_fkey 
-      FOREIGN KEY (hairstyle_id) REFERENCES hairstyles(id) ON DELETE CASCADE
-    `);
     
-    console.log('✅ Contraintes de clé étrangère ajoutées');
+    console.log('✅ Table favorites mise à jour avec succès');
     
     res.status(200).json({
       success: true,
