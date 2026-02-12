@@ -115,14 +115,7 @@ const SpecialistsScreen = () => {
             <Ionicons name="star" size={14} color="#FFD700" />
             <Text style={styles.statText}>{item.average_rating.toFixed(1)}</Text>
           </View>
-          <View style={styles.statItem}>
-            <Ionicons name="people-outline" size={14} color="#666" />
-            <Text style={styles.statText}>{item.total_jobs} clients</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Ionicons name="time-outline" size={14} color="#666" />
-            <Text style={styles.statText}>{item.experience_years} ans</Text>
-          </View>
+          
         </View>
         
         {item.salon_name && (

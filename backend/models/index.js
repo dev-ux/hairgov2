@@ -726,6 +726,55 @@ console.log('🔍 Models exportés:', Object.keys({
   TrendHairstyle
 }));
 
+// ==========================================
+// Modèle Favorite (Favoris)
+// ==========================================
+const Favorite = sequelize.define('Favorite', {
+  id: {
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true
+  },
+  client_id: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
+  },
+  hairdresser_id: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'hairdressers',
+      key: 'id'
+    }
+  },
+  is_favorite: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
+  }
+}, {
+  tableName: 'favorites',
+  timestamps: true,
+  underscored: true,
+  createdAt: 'created_at',
+  updatedAt: 'updated_at',
+  indexes: [
+    {
+      unique: true,
+      fields: ['client_id', 'hairdresser_id']
+    }
+  ]
+});
+
+// Associations pour Favorite
+User.hasMany(Favorite, { foreignKey: 'client_id', as: 'favorites' });
+Hairdresser.hasMany(Favorite, { foreignKey: 'hairdresser_id', as: 'favoritedBy' });
+Favorite.belongsTo(User, { foreignKey: 'client_id', as: 'client' });
+Favorite.belongsTo(Hairdresser, { foreignKey: 'hairdresser_id', as: 'hairdresser' });
+
 module.exports = {
   sequelize,      // ✅ L'UNIQUE instance
   Sequelize,
@@ -739,5 +788,6 @@ module.exports = {
   Complaint,
   Salon,
   SalonPhoto,
-  TrendHairstyle
+  TrendHairstyle,
+  Favorite
 };

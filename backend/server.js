@@ -21,6 +21,7 @@ const debugRoutes = require('./routes/debug.routes');
 const trendingHairstylesRoutes = require('./routes/trending-hairstyles.routes');
 const specialOffersRoutes = require('./routes/special-offers.routes');
 const specialistsRoutes = require('./routes/specialists.routes');
+const favoriteRoutes = require('./routes/favorite.routes');
 
 // Import middleware d'erreur
 const errorHandler = require('./middleware/errorHandler');
@@ -148,6 +149,49 @@ app.get('/', (req, res) => {
   });
 });
 
+// Endpoint temporaire pour créer la table favorites (à supprimer après utilisation)
+app.get('/api/v1/create-favorites-table', async (req, res) => {
+  try {
+    console.log('🚀 Création de la table favorites...');
+    
+    // Créer la table favorites directement
+    await sequelize.query(`
+      CREATE TABLE IF NOT EXISTS favorites (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        client_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        hairdresser_id UUID NOT NULL REFERENCES hairdressers(id) ON DELETE CASCADE,
+        is_favorite BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(client_id, hairdresser_id)
+      );
+    `);
+    
+    // Créer les index
+    await sequelize.query(`
+      CREATE INDEX IF NOT EXISTS idx_favorites_client_id ON favorites(client_id);
+    `);
+    
+    await sequelize.query(`
+      CREATE INDEX IF NOT EXISTS idx_favorites_hairdresser_id ON favorites(hairdresser_id);
+    `);
+    
+    console.log('✅ Table favorites créée avec succès!');
+    
+    res.status(200).json({
+      success: true,
+      message: 'Table favorites créée avec succès en production!'
+    });
+    
+  } catch (error) {
+    console.error('❌ Erreur lors de la création:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Erreur lors de la création de la table favorites'
+    });
+  }
+});
+
 // Health check (AVANT rate limit)
 app.get('/health', (req, res) => {
   res.status(200).json({ 
@@ -181,6 +225,7 @@ app.use('/api/v1/debug', debugRoutes);
 app.use('/api/v1/trending-hairstyles', trendingHairstylesRoutes);
 app.use('/api/v1/special-offers', specialOffersRoutes);
 app.use('/api/v1/specialists', specialistsRoutes);
+app.use('/api/v1/favorites', favoriteRoutes);
 
 // 404 handler - doit être à la fin après toutes les routes
 app.use((req, res) => {

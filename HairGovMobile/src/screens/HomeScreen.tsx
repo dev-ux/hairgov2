@@ -388,8 +388,8 @@ export default function HomeScreen() {
               offset: (width - 40) * index + 20, // Ajout du padding initial
               index,
             })}
-            snapToInterval={width - 40} // Assure le snap parfait
-            decelerationRate="fast" // Défilement plus rapide et précis
+            snapToInterval={width - 40} 
+            decelerationRate="fast" 
           />
         </View>
 
@@ -454,24 +454,7 @@ export default function HomeScreen() {
             >
               <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Spécialiste</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface }]}
-              onPress={() => {
-                alert('Bouton Historique cliqué !');
-                try {
-                  const parentNavigation = navigation.getParent();
-                  if (parentNavigation) {
-                    parentNavigation.navigate('History');
-                  } else {
-                    navigation.navigate('History' as never);
-                  }
-                } catch (error) {
-                  console.error('Erreur de navigation History:', error);
-                }
-              }}
-            >
-              <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Historique</Text>
-            </TouchableOpacity>
+           
           </ScrollView>
         </View>
 
