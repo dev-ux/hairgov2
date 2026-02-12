@@ -26,53 +26,29 @@ exports.getHairdresserById = async (req, res) => {
       });
     }
 
-    // Calculer la note moyenne et le nombre de prestations
+    // Récupérer la note moyenne et le nombre de prestations depuis le coiffeur
     let average_rating = 0;
     let total_jobs = 0;
     
     try {
-      // Calculer la note moyenne depuis la table Rating
-      console.log('🔍 Recherche des notes pour le coiffeur:', id);
-      
-      const ratingData = await db.Rating.findAll({
-        where: {
-          hairdresser_id: id
-        },
-        attributes: [
-          [db.sequelize.fn('AVG', db.sequelize.col('rating')), 'average_rating'],
-          [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'total_ratings']
-        ],
-        raw: true
+      console.log('🔍 Données du coiffeur:', {
+        average_rating: hairdresser.average_rating,
+        total_jobs: hairdresser.total_jobs
       });
 
-      console.log('📊 Données de rating brutes:', ratingData);
-
-      if (ratingData && ratingData.length > 0 && ratingData[0].average_rating) {
-        average_rating = parseFloat(ratingData[0].average_rating);
-        console.log('⭐ Note moyenne calculée:', average_rating);
+      // Utiliser les valeurs directement depuis le modèle Hairdresser
+      if (hairdresser.average_rating !== null && hairdresser.average_rating !== undefined) {
+        average_rating = parseFloat(hairdresser.average_rating);
+        console.log('⭐ Note moyenne depuis Hairdresser:', average_rating);
       } else {
-        console.log('⚠️ Aucune note trouvée ou note nulle');
+        console.log('⚠️ Aucune note trouvée dans Hairdresser');
       }
 
-      // Calculer le nombre de prestations depuis la table Booking
-      const bookingData = await db.Booking.findAll({
-        where: {
-          hairdresser_id: id,
-          status: 'completed'
-        },
-        attributes: [
-          [db.sequelize.fn('COUNT', db.sequelize.col('id')), 'total_jobs']
-        ],
-        raw: true
-      });
-
-      console.log('📋 Données de booking brutes:', bookingData);
-
-      if (bookingData && bookingData.length > 0 && bookingData[0].total_jobs) {
-        total_jobs = parseInt(bookingData[0].total_jobs);
-        console.log('💈 Nombre de prestations:', total_jobs);
+      if (hairdresser.total_jobs !== null && hairdresser.total_jobs !== undefined) {
+        total_jobs = parseInt(hairdresser.total_jobs);
+        console.log('💈 Nombre de prestations depuis Hairdresser:', total_jobs);
       } else {
-        console.log('⚠️ Aucune prestation trouvée');
+        console.log('⚠️ Aucune prestation trouvée dans Hairdresser');
       }
     } catch (ratingError) {
       console.error('❌ Erreur lors du calcul des statistiques:', ratingError);
