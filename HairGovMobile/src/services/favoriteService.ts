@@ -18,6 +18,20 @@ export const favoriteService = {
   addToFavorites: async (hairdresserId: string): Promise<FavoriteResponse> => {
     try {
       const token = await AsyncStorage.getItem('token');
+      
+      if (!token) {
+        return {
+          success: false,
+          error: {
+            code: 'NO_TOKEN',
+            message: 'Veuillez vous connecter pour ajouter des favoris'
+          }
+        };
+      }
+
+      console.log('Adding to favorites - Token:', token ? 'Present' : 'Missing');
+      console.log('Adding to favorites - Hairdresser ID:', hairdresserId);
+
       const response = await fetch(`${API_URL}/favorites/hairdressers/${hairdresserId}/favorite`, {
         method: 'POST',
         headers: {
@@ -26,7 +40,22 @@ export const favoriteService = {
         }
       });
 
+      console.log('Add to favorites response status:', response.status);
+
+      if (response.status === 401) {
+        // Token invalide ou expiré
+        await AsyncStorage.removeItem('token');
+        return {
+          success: false,
+          error: {
+            code: 'INVALID_TOKEN',
+            message: 'Session expirée, veuillez vous reconnecter'
+          }
+        };
+      }
+
       const data = await response.json();
+      console.log('Add to favorites response:', data);
       return data;
     } catch (error) {
       console.error('Error adding to favorites:', error);
@@ -34,7 +63,7 @@ export const favoriteService = {
         success: false,
         error: {
           code: 'NETWORK_ERROR',
-          message: 'Erreur réseau'
+          message: 'Erreur réseau lors de l\'ajout aux favoris'
         }
       };
     }
@@ -44,6 +73,20 @@ export const favoriteService = {
   removeFromFavorites: async (hairdresserId: string): Promise<FavoriteResponse> => {
     try {
       const token = await AsyncStorage.getItem('token');
+      
+      if (!token) {
+        return {
+          success: false,
+          error: {
+            code: 'NO_TOKEN',
+            message: 'Veuillez vous connecter pour gérer vos favoris'
+          }
+        };
+      }
+
+      console.log('Removing from favorites - Token:', token ? 'Present' : 'Missing');
+      console.log('Removing from favorites - Hairdresser ID:', hairdresserId);
+
       const response = await fetch(`${API_URL}/favorites/hairdressers/${hairdresserId}/favorite`, {
         method: 'DELETE',
         headers: {
@@ -52,7 +95,22 @@ export const favoriteService = {
         }
       });
 
+      console.log('Remove from favorites response status:', response.status);
+
+      if (response.status === 401) {
+        // Token invalide ou expiré
+        await AsyncStorage.removeItem('token');
+        return {
+          success: false,
+          error: {
+            code: 'INVALID_TOKEN',
+            message: 'Session expirée, veuillez vous reconnecter'
+          }
+        };
+      }
+
       const data = await response.json();
+      console.log('Remove from favorites response:', data);
       return data;
     } catch (error) {
       console.error('Error removing from favorites:', error);
@@ -60,7 +118,7 @@ export const favoriteService = {
         success: false,
         error: {
           code: 'NETWORK_ERROR',
-          message: 'Erreur réseau'
+          message: 'Erreur réseau lors du retrait des favoris'
         }
       };
     }
@@ -70,6 +128,11 @@ export const favoriteService = {
   checkFavorite: async (hairdresserId: string): Promise<boolean> => {
     try {
       const token = await AsyncStorage.getItem('token');
+      
+      if (!token) {
+        return false;
+      }
+
       const response = await fetch(`${API_URL}/favorites/hairdressers/${hairdresserId}/favorite`, {
         method: 'GET',
         headers: {
@@ -77,6 +140,12 @@ export const favoriteService = {
           'Authorization': `Bearer ${token}`
         }
       });
+
+      if (response.status === 401) {
+        // Token invalide ou expiré
+        await AsyncStorage.removeItem('token');
+        return false;
+      }
 
       const data = await response.json();
       return data.success ? data.data.isFavorite : false;
@@ -90,6 +159,11 @@ export const favoriteService = {
   getFavorites: async (): Promise<any[]> => {
     try {
       const token = await AsyncStorage.getItem('token');
+      
+      if (!token) {
+        return [];
+      }
+
       const response = await fetch(`${API_URL}/favorites/favorites`, {
         method: 'GET',
         headers: {
@@ -97,6 +171,12 @@ export const favoriteService = {
           'Authorization': `Bearer ${token}`
         }
       });
+
+      if (response.status === 401) {
+        // Token invalide ou expiré
+        await AsyncStorage.removeItem('token');
+        return [];
+      }
 
       const data = await response.json();
       return data.success ? data.data.favorites : [];

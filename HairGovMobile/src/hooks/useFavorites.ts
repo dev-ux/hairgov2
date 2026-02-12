@@ -1,5 +1,6 @@
 // hooks/useFavorites.ts
 import { useState, useEffect } from 'react';
+import { Alert } from 'react-native';
 import { favoriteService } from '../services/favoriteService';
 
 export const useFavorites = () => {
@@ -34,6 +35,13 @@ export const useFavorites = () => {
         if (result.success) {
           setFavorites(prev => prev.filter(id => id !== hairdresserId));
           return false;
+        } else {
+          // Gérer les erreurs
+          if (result.error?.code === 'NO_TOKEN' || result.error?.code === 'INVALID_TOKEN') {
+            Alert.alert('Connexion requise', result.error?.message || 'Veuillez vous connecter pour gérer vos favoris');
+          } else {
+            Alert.alert('Erreur', result.error?.message || 'Impossible de retirer des favoris');
+          }
         }
       } else {
         // Ajouter aux favoris
@@ -41,10 +49,18 @@ export const useFavorites = () => {
         if (result.success) {
           setFavorites(prev => [...prev, hairdresserId]);
           return true;
+        } else {
+          // Gérer les erreurs
+          if (result.error?.code === 'NO_TOKEN' || result.error?.code === 'INVALID_TOKEN') {
+            Alert.alert('Connexion requise', result.error?.message || 'Veuillez vous connecter pour ajouter des favoris');
+          } else {
+            Alert.alert('Erreur', result.error?.message || 'Impossible d\'ajouter aux favoris');
+          }
         }
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
+      Alert.alert('Erreur', 'Une erreur est survenue lors de la gestion des favoris');
     } finally {
       setLoading(false);
     }

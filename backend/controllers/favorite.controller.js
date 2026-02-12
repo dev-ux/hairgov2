@@ -11,6 +11,20 @@ exports.addToFavorites = async (req, res) => {
     const { hairdresserId } = req.params;
     const clientId = req.userId; // ID du client connecté
 
+    console.log('🔍 Add to favorites - Request params:', req.params);
+    console.log('🔍 Add to favorites - Client ID from token:', clientId);
+    console.log('🔍 Add to favorites - Headers:', req.headers.authorization ? 'Present' : 'Missing');
+
+    if (!clientId) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'NO_USER_ID',
+          message: 'Utilisateur non authentifié'
+        }
+      });
+    }
+
     // Vérifier si le coiffeur existe
     const hairdresser = await Hairdresser.findByPk(hairdresserId);
     if (!hairdresser) {
@@ -73,6 +87,20 @@ exports.removeFromFavorites = async (req, res) => {
   try {
     const { hairdresserId } = req.params;
     const clientId = req.userId;
+
+    console.log('🔍 Remove from favorites - Request params:', req.params);
+    console.log('🔍 Remove from favorites - Client ID from token:', clientId);
+    console.log('🔍 Remove from favorites - Headers:', req.headers.authorization ? 'Present' : 'Missing');
+
+    if (!clientId) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'NO_USER_ID',
+          message: 'Utilisateur non authentifié'
+        }
+      });
+    }
 
     const favorite = await Favorite.findOne({
       where: {
