@@ -1075,14 +1075,10 @@ exports.getHairdresserDetails = async (req, res) => {
       attributes: ['id', 'name', 'description', 'estimated_duration', 'category', 'photo', 'is_active']
     });
     
-    // Calculons la note moyenne et le nombre d'évaluations
-    const ratingData = await Rating.findOne({
-      where: { hairdresser_id: user.hairdresserProfile.id },
-      attributes: [
-        [sequelize.fn('AVG', sequelize.col('rating')), 'average_rating'],
-        [sequelize.fn('COUNT', sequelize.col('id')), 'rating_count']
-      ],
-      raw: true
+    // Utiliser les notes directement depuis la table Hairdresser
+    console.log('🔍 Données du coiffeur pour détail:', {
+      average_rating: hairdresserBasic.average_rating,
+      total_jobs: hairdresserBasic.total_jobs
     });
     
     // Construisons la réponse manuellement
@@ -1090,9 +1086,9 @@ exports.getHairdresserDetails = async (req, res) => {
       ...hairdresserBasic.get({ plain: true }),
       user: userDetails,
       hairstyles: hairstyles,
-      average_rating: parseFloat(ratingData?.average_rating) || 0,
-      rating_count: parseInt(ratingData?.rating_count) || 0,
-      total_jobs: hairdresserBasic.total_jobs || 0,
+      average_rating: parseFloat(hairdresserBasic.average_rating) || 0,
+      rating_count: 0, // Pas de comptage disponible depuis Rating table
+      total_jobs: parseInt(hairdresserBasic.total_jobs) || 0,
       is_available: hairdresserBasic.is_available || false
     };
 
