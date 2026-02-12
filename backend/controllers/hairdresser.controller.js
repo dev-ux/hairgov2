@@ -997,59 +997,32 @@ exports.getHairdresserDetails = async (req, res) => {
       });
     }
 
-    // Rechercher d'abord l'utilisateur pour obtenir son ID
-    const user = await User.findOne({
-      where: { id },
-      include: [{
-        model: Hairdresser,
-        as: 'hairdresserProfile',
-        where: {
-          registration_status: 'approved',
-          is_available: true
-        },
-        required: true
-      }]
-    });
-
-    if (!user || !user.hairdresserProfile) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          code: 'HAIRDRESSER_NOT_FOUND',
-          message: 'Coiffeur introuvable ou non approuvé',
-          details: 'Aucun coiffeur trouvé avec cet ID utilisateur ou le profil n\'est pas approuvé'
-        }
-      });
-    }
-
-    console.log('Profil coiffeur trouvé:', {
-      id: user.hairdresserProfile.id,
-      user_id: user.id,
-      registration_status: user.hairdresserProfile.registration_status,
-      is_available: user.hairdresserProfile.is_available
-    });
-
-    // D'abord, récupérons les détails de base du coiffeur
-    console.log('Tentative de récupération des détails du coiffeur avec l\'ID:', user.hairdresserProfile.id);
-    
-    // 1. Récupération du coiffeur sans relations
-    const hairdresserBasic = await Hairdresser.findByPk(user.hairdresserProfile.id);
+    // Récupérer directement le coiffeur par son ID
+    const hairdresserBasic = await Hairdresser.findByPk(id);
     console.log('Coiffeur de base trouvé:', hairdresserBasic ? 'Oui' : 'Non');
     
     if (!hairdresserBasic) {
+      // Lister tous les coiffeurs disponibles pour débogage
+      const allHairdressers = await Hairdresser.findAll({
+        attributes: ['id', 'user_id'],
+        limit: 10
+      });
+      console.log('🔍 Liste des coiffeurs disponibles (IDs):', allHairdressers.map(h => ({ id: h.id, user_id: h.user_id })));
+      
       return res.status(404).json({
         success: false,
         error: {
           code: 'HAIRDRESSER_NOT_FOUND',
           message: 'Coiffeur introuvable',
-          details: 'Aucun coiffeur trouvé avec cet ID dans la table hairdressers'
+          details: `Aucun coiffeur trouvé avec l'ID ${id} dans la table hairdressers. IDs disponibles: ${allHairdressers.map(h => h.id).join(', ')}`
         }
       });
     }
+
+    console.log('Tentative de récupération des détails du coiffeur avec l\'ID:', hairdresserBasic.id);
     
-    // 2. Récupération des détails avec les relations une par une
-    // D'abord, récupérons l'utilisateur associé
-    const userDetails = await User.findByPk(user.id, {
+    // Récupérer l'utilisateur associé
+    const userDetails = await User.findByPk(hairdresserBasic.user_id, {
       attributes: ['id', 'full_name', 'email', 'phone', 'profile_photo']
     });
     
@@ -1063,12 +1036,12 @@ exports.getHairdresserDetails = async (req, res) => {
       });
     }
     
-    // Ensuite, récupérons les coiffures associées
+    // Récupérer les coiffures associées
     const hairstyles = await Hairstyle.findAll({
       include: [{
         model: Hairdresser,
-        as: 'hairdressers', // Utilisation de l'alias défini dans l'association
-        where: { id: user.hairdresserProfile.id },
+        as: 'hairdressers',
+        where: { id: hairdresserBasic.id },
         through: { attributes: [] },
         required: true
       }],

@@ -6,16 +6,21 @@ import { API_URL } from '../config/constants';
 
 interface Specialist {
   id: string;
-  name: string;
-  specialty: string;
+  full_name: string;
+  profession: string;
   experience_years: number;
-  rating: number;
-  total_clients: number;
+  average_rating: number;
+  total_jobs: number;
   profile_photo: string;
-  salon_name: string;
-  salon_address: string;
-  availability: boolean;
-  price_range: string;
+  salon_name?: string;
+  salon_address?: string;
+  is_available: boolean;
+  price_range?: string;
+  user?: {
+    id: string;
+    full_name: string;
+    profile_photo?: string;
+  };
 }
 
 const SpecialistsScreen = () => {
@@ -26,21 +31,52 @@ const SpecialistsScreen = () => {
 
   useEffect(() => {
     loadSpecialists();
-  }, []);
+  }, []); // Tableau vide pour n'exécuter qu'une seule fois
 
   const loadSpecialists = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`${API_URL}/specialists`);
+      console.log('🔍 Debug: Chargement des spécialistes...');
+      const response = await fetch(`${API_URL}/hairdressers?registration_status=approved`);
       const data = await response.json();
       
-      if (data.success) {
-        setSpecialists(data.data);
+      
+      // Accéder aux données dans data.data.hairdressers
+      let hairdressers = [];
+      if (data && data.success && data.data && Array.isArray(data.data.hairdressers)) {
+        hairdressers = data.data.hairdressers.map((h: any) => {
+          console.log('Données brutes du coiffeur:', h);
+          
+          return {
+            id: h.id, // Utiliser directement l'ID du coiffeur
+            full_name: h.user?.full_name || h.full_name || 'Nom inconnu',
+            profession: h.profession || 'Coiffeur',
+            average_rating: h.average_rating || 0,
+            total_jobs: h.total_jobs || 0,
+            profile_photo: h.user?.profile_photo || h.profile_photo || null,
+            salon_name: h.salon_name || null,
+            salon_address: h.salon_address || null,
+            is_available: h.is_available !== undefined ? h.is_available : false,
+            price_range: h.price_range !== undefined ? h.price_range : null,
+            user: h.user
+          };
+        });
       } else {
-        setError('Impossible de charger les spécialistes');
+        console.error('🔍 Debug - Structure de réponse inattendue:', data);
+        setError('Format de réponse invalide');
+        return;
       }
+      
+      // Filtrer les coiffeurs avec une note >= 3.5
+      const filteredSpecialists = hairdressers.filter((specialist: any) => 
+        specialist.average_rating >= 3.5
+      );
+      console.log(`🔍 Debug: ${hairdressers.length} coiffeurs trouvés, ${filteredSpecialists.length} avec note >= 3.5`);
+      console.log('🔍 IDs des coiffeurs filtrés:', filteredSpecialists.map((s: any) => ({ id: s.id, name: s.full_name })));
+      setSpecialists(filteredSpecialists);
+      
     } catch (err) {
       setError('Erreur de connexion');
       console.error('Erreur lors du chargement des spécialistes:', err);
@@ -50,7 +86,13 @@ const SpecialistsScreen = () => {
   };
 
   const renderSpecialist = ({ item }: { item: Specialist }) => (
-    <TouchableOpacity style={styles.specialistCard}>
+    <TouchableOpacity 
+      style={styles.specialistCard}
+      onPress={() => {
+        console.log('Navigation vers BarberDetail avec ID:', item.id);
+        navigation.navigate('BarberDetail' as any, { barberId: item.id });
+      }}
+    >
       <View style={styles.headerSection}>
         <Image 
           source={item.profile_photo ? { uri: item.profile_photo } : require('../assets/url_de_l_image_1.jpg')}
@@ -59,23 +101,23 @@ const SpecialistsScreen = () => {
         />
         <View style={styles.availabilityBadge}>
           <Text style={styles.availabilityText}>
-            {item.availability ? 'Disponible' : 'Occupé'}
+            {item.is_available ? 'Disponible' : 'Occupé'}
           </Text>
         </View>
       </View>
       
       <View style={styles.contentSection}>
-        <Text style={styles.specialistName}>{item.name}</Text>
-        <Text style={styles.specialty}>{item.specialty}</Text>
+        <Text style={styles.specialistName}>{item.full_name}</Text>
+        <Text style={styles.specialty}>{item.profession}</Text>
         
         <View style={styles.statsContainer}>
           <View style={styles.statItem}>
             <Ionicons name="star" size={14} color="#FFD700" />
-            <Text style={styles.statText}>{item.rating.toFixed(1)}</Text>
+            <Text style={styles.statText}>{item.average_rating.toFixed(1)}</Text>
           </View>
           <View style={styles.statItem}>
             <Ionicons name="people-outline" size={14} color="#666" />
-            <Text style={styles.statText}>{item.total_clients} clients</Text>
+            <Text style={styles.statText}>{item.total_jobs} clients</Text>
           </View>
           <View style={styles.statItem}>
             <Ionicons name="time-outline" size={14} color="#666" />
@@ -83,18 +125,24 @@ const SpecialistsScreen = () => {
           </View>
         </View>
         
-        <View style={styles.infoContainer}>
-          <View style={styles.infoItem}>
-            <Ionicons name="location-outline" size={14} color="#666" />
-            <Text style={styles.infoText}>{item.salon_name}</Text>
+        {item.salon_name && (
+          <View style={styles.infoContainer}>
+            <View style={styles.infoItem}>
+              <Ionicons name="location-outline" size={14} color="#666" />
+              <Text style={styles.infoText}>{item.salon_name}</Text>
+            </View>
+            {item.salon_address && (
+              <Text style={styles.addressText}>{item.salon_address}</Text>
+            )}
           </View>
-          <Text style={styles.addressText}>{item.salon_address}</Text>
-        </View>
+        )}
         
-        <View style={styles.priceContainer}>
-          <Ionicons name="pricetag-outline" size={14} color="#FF6B6B" />
-          <Text style={styles.priceText}>{item.price_range}</Text>
-        </View>
+        {item.price_range && (
+          <View style={styles.priceContainer}>
+            <Ionicons name="pricetag-outline" size={14} color="#FF6B6B" />
+            <Text style={styles.priceText}>{item.price_range}</Text>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );

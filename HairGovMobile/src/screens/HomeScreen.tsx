@@ -403,7 +403,7 @@ export default function HomeScreen() {
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={homeScreenStyles.filterContainer}>
             <TouchableOpacity 
-              style={[homeScreenStyles.filterButton, { backgroundColor: colors.primary, borderWidth: 2, borderStyle: 'solid' }]}
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.primary}]}
               onPress={() => {
                 try {
                   const parentNavigation = navigation.getParent();
@@ -420,7 +420,7 @@ export default function HomeScreen() {
               <Text style={homeScreenStyles.filterButtonTextActive}>Offre spéciales</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderWidth: 2, borderStyle: 'solid' }]}
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface }]}
               onPress={() => {
                 try {
                   const parentNavigation = navigation.getParent();
@@ -437,7 +437,7 @@ export default function HomeScreen() {
               <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Coiffure tendances</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderWidth: 2, borderStyle: 'solid'}]}
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface }]}
               onPress={() => {
                 try {
                   const parentNavigation = navigation.getParent();
@@ -455,7 +455,7 @@ export default function HomeScreen() {
               <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Spécialiste</Text>
             </TouchableOpacity>
             <TouchableOpacity 
-              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderWidth: 2, borderStyle: 'solid'}]}
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface }]}
               onPress={() => {
                 alert('Bouton Historique cliqué !');
                 try {

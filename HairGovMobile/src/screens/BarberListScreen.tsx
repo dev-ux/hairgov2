@@ -37,7 +37,7 @@ const BarberListScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const navigation = useNavigation<BarberListScreenNavigationProp>();
 
-  // Fonction pour récupérer les coiffeurs actifs (sans nécessiter de droits admin)
+  // Fonction pour récupérer tous les coiffeurs
   const fetchActiveHairdressers = async (): Promise<Hairdresser[]> => {
     try {
       const url = `${API_URL}/hairdressers`;
@@ -62,11 +62,14 @@ const BarberListScreen: React.FC = () => {
       // Vérifier si la réponse contient un tableau de coiffeurs dans data.hairdressers
       if (responseData.success && responseData.data && Array.isArray(responseData.data.hairdressers)) {
         console.log('Premier coiffeur de la liste:', JSON.stringify(responseData.data.hairdressers[0], null, 2));
+        console.log(`🔍 Debug: ${responseData.data.hairdressers.length} coiffeurs trouvés au total`);
+        
         // Transformer les données pour correspondre à l'interface Hairdresser
         return responseData.data.hairdressers.map((h: any) => {
           // L'ID du coiffeur est dans h.user.id, pas dans h.id directement
           const hairdresserId = h.user?.id || h.id;
           console.log('ID du coiffeur dans la liste:', hairdresserId, 'Type:', typeof hairdresserId);
+          
           return {
             id: hairdresserId,
             full_name: h.user?.full_name || 'Nom inconnu',
@@ -211,6 +214,8 @@ const BarberListScreen: React.FC = () => {
     hairdresser.profession?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     hairdresser.address?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  console.log(`🔍 Debug BarberList: ${hairdressers.length} coiffeurs totaux, ${filteredHairdressers.length} après recherche`);
 
   return (
     <View style={styles.container}>

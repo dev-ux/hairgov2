@@ -128,7 +128,7 @@ export const homeScreenStyles = StyleSheet.create({
   },
   // Sections
   section: {
-    marginTop: 20,
+    marginTop: 30,
     paddingHorizontal: 20,
   },
   sectionHeader: {
@@ -282,13 +282,19 @@ export const homeScreenStyles = StyleSheet.create({
   filterContainer: {
     paddingLeft: 0,
     paddingRight: 20,
+    marginTop: 10,
+    marginBottom:20
   },
   filterButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     marginRight: 12,
-    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   filterButtonActive: {
     borderColor: '#2844f8ff',
@@ -301,6 +307,7 @@ export const homeScreenStyles = StyleSheet.create({
   filterButtonTextActive: {
     fontSize: 14,
     fontWeight: '500',
+    color: '#ffffffff',
   },
   categoriesList: {
     paddingLeft: 20,
