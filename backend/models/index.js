@@ -710,6 +710,22 @@ User.hasMany(TrendHairstyle, { foreignKey: 'added_by', as: 'addedTrends' });
 // ==========================================
 // EXPORTS
 // ==========================================
+console.log('🔍 Models exportés:', Object.keys({
+  sequelize,
+  Sequelize,
+  User,
+  Hairdresser,
+  Hairstyle,
+  Booking,
+  Rating,
+  BalanceTransaction,
+  Notification,
+  Complaint,
+  Salon,
+  SalonPhoto,
+  TrendHairstyle
+}));
+
 module.exports = {
   sequelize,      // ✅ L'UNIQUE instance
   Sequelize,

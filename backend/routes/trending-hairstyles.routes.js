@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 // Import des modèles
-const { TrendHairstyle, Hairstyle } = require('../../models');
+const { TrendHairstyle, Hairstyle } = require('../models');
 
 /**
  * @route   GET /api/v1/trending-hairstyles
