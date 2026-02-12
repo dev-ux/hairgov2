@@ -154,42 +154,43 @@ app.get('/api/v1/update-favorites-table', async (req, res) => {
   try {
     console.log('🚀 Mise à jour de la table favorites pour supporter les salons...');
     
-    // Ajouter les nouvelles colonnes
-    await sequelize.query(`
-      ALTER TABLE favorites 
-      ADD COLUMN IF NOT EXISTS salon_id UUID,
-      ADD COLUMN IF NOT EXISTS hairstyle_id UUID,
-      ADD COLUMN IF NOT EXISTS favorite_type VARCHAR(20) NOT NULL DEFAULT 'hairdresser'
-    `);
+    // Utiliser le modèle Sequelize pour créer les colonnes manquantes
+    const { Favorite } = require('./models');
     
-    console.log('✅ Colonnes ajoutées avec succès');
+    console.log('🔍 Modèle Favorite chargé:', Favorite ? 'OK' : 'ERROR');
+    
+    // Synchroniser le modèle pour créer les nouvelles colonnes
+    console.log('🔄 Synchronisation du modèle...');
+    await Favorite.sync({ alter: true });
+    console.log('✅ Table favorites synchronisée avec succès');
     
     // Mettre à jour les enregistrements existants
-    await sequelize.query(`
-      UPDATE favorites 
-      SET favorite_type = 'hairdresser' 
-      WHERE favorite_type IS NULL OR favorite_type = ''
+    console.log('🔄 Mise à jour des enregistrements existants...');
+    const updateResult = await Favorite.update(
+      { favorite_type: 'hairdresser' },
+      { 
+        where: {
+          [require('sequelize').Op.or]: [
+            { favorite_type: null },
+            { favorite_type: '' }
+          ]
+        }
+      }
+    );
+    console.log('✅ Enregistrements mis à jour:', updateResult[1]);
+    
+    // Vérifier la structure
+    const [results] = await require('./models').sequelize.query(`
+      SELECT column_name, data_type, is_nullable, column_default
+      FROM information_schema.columns 
+      WHERE table_name = 'favorites'
+      ORDER BY ordinal_position
     `);
     
-    console.log('✅ Enregistrements existants mis à jour');
-    
-    // Rendre hairdresser_id nullable
-    await sequelize.query(`
-      ALTER TABLE favorites 
-      ALTER COLUMN hairdresser_id DROP NOT NULL
-    `);
-    
-    console.log('✅ hairdresser_id rendu nullable');
-    
-    // Ajouter les contraintes de clé étrangère
-    await sequelize.query(`
-      ALTER TABLE favorites 
-      ADD CONSTRAINT IF NOT EXISTS favorites_salon_id_fkey 
-      FOREIGN KEY (salon_id) REFERENCES salons(id) ON DELETE CASCADE
-    `);
-    
-    await sequelize.query(`
-      ALTER TABLE favorites 
+    console.log('📊 Structure actuelle de la table favorites:');
+    results.forEach(col => {
+      console.log(`  - ${col.column_name}: ${col.data_type} (${col.is_nullable}) ${col.column_default || ''}`);
+    });
       ADD CONSTRAINT IF NOT EXISTS favorites_hairstyle_id_fkey 
       FOREIGN KEY (hairstyle_id) REFERENCES hairstyles(id) ON DELETE CASCADE
     `);
