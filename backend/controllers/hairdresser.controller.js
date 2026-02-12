@@ -986,8 +986,8 @@ exports.getHairdresserDetails = async (req, res) => {
     const { id } = req.params;
     console.log('Recherche du coiffeur avec ID:', id);
 
-    // Vérifier si l'ID est valide
-    if (!id || isNaN(parseInt(id))) {
+    // Vérifier si l'ID est valide (UUID)
+    if (!id || typeof id !== 'string' || id.length !== 36) {
       return res.status(400).json({
         success: false,
         error: {
