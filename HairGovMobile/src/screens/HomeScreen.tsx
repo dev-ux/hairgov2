@@ -404,25 +404,57 @@ export default function HomeScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={homeScreenStyles.filterContainer}>
             <TouchableOpacity 
               style={[homeScreenStyles.filterButton, { backgroundColor: colors.primary }]}
-              onPress={() => navigation.navigate('SpecialOffers')}
+              onPress={() => {
+                console.log('Navigation vers SpecialOffers');
+                const parentNavigation = navigation.getParent();
+                if (parentNavigation) {
+                  parentNavigation.navigate('SpecialOffers');
+                } else {
+                  navigation.navigate('SpecialOffers' as never);
+                }
+              }}
             >
               <Text style={homeScreenStyles.filterButtonTextActive}>Offre spéciales</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => navigation.navigate('TrendingHairstyles')}
+              onPress={() => {
+                console.log('Navigation vers TrendingHairstyles');
+                const parentNavigation = navigation.getParent();
+                if (parentNavigation) {
+                  parentNavigation.navigate('TrendingHairstyles');
+                } else {
+                  navigation.navigate('TrendingHairstyles' as never);
+                }
+              }}
             >
               <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Coiffure tendances</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => navigation.navigate('Specialists')}
+              onPress={() => {
+                console.log('Navigation vers Specialists');
+                const parentNavigation = navigation.getParent();
+                if (parentNavigation) {
+                  parentNavigation.navigate('Specialists');
+                } else {
+                  navigation.navigate('Specialists' as never);
+                }
+              }}
             >
               <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Spécialiste</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderColor: colors.border }]}
-              onPress={() => navigation.navigate('History')}
+              onPress={() => {
+                console.log('Navigation vers History');
+                const parentNavigation = navigation.getParent();
+                if (parentNavigation) {
+                  parentNavigation.navigate('History');
+                } else {
+                  navigation.navigate('History' as never);
+                }
+              }}
             >
               <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Historique</Text>
             </TouchableOpacity>
