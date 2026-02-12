@@ -405,6 +405,7 @@ export default function HomeScreen() {
             <TouchableOpacity 
               style={[homeScreenStyles.filterButton, { backgroundColor: colors.primary, borderWidth: 2, borderStyle: 'solid', borderColor: 'red' }]}
               onPress={() => {
+                alert('Bouton Offre spéciales cliqué !');
                 try {
                   console.log('Clic sur Offre spéciales');
                   const parentNavigation = navigation.getParent();
@@ -426,6 +427,7 @@ export default function HomeScreen() {
             <TouchableOpacity 
               style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderWidth: 2, borderStyle: 'solid', borderColor: 'red' }]}
               onPress={() => {
+                alert('Bouton Coiffure tendances cliqué !');
                 try {
                   console.log('Clic sur Coiffure tendances');
                   const parentNavigation = navigation.getParent();
@@ -447,6 +449,7 @@ export default function HomeScreen() {
             <TouchableOpacity 
               style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderWidth: 2, borderStyle: 'solid', borderColor: 'red' }]}
               onPress={() => {
+                alert('Bouton Spécialiste cliqué !');
                 try {
                   console.log('Clic sur Spécialiste');
                   const parentNavigation = navigation.getParent();
@@ -468,6 +471,7 @@ export default function HomeScreen() {
             <TouchableOpacity 
               style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface, borderWidth: 2, borderStyle: 'solid', borderColor: 'red' }]}
               onPress={() => {
+                alert('Bouton Historique cliqué !');
                 try {
                   console.log('Clic sur Historique');
                   const parentNavigation = navigation.getParent();

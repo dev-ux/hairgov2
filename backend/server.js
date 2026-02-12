@@ -18,6 +18,9 @@ const salonRoutes = require('./routes/salon.routes');
 const notificationRoutes = require('./routes/notification.routes');
 const uploadRoutes = require('./routes/upload.routes');
 const debugRoutes = require('./routes/debug.routes');
+const trendingHairstylesRoutes = require('./routes/trending-hairstyles.routes');
+const specialOffersRoutes = require('./routes/special-offers.routes');
+const specialistsRoutes = require('./routes/specialists.routes');
 
 // Import middleware d'erreur
 const errorHandler = require('./middleware/errorHandler');
@@ -175,6 +178,9 @@ app.use('/api/v1/salons', salonRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/debug', debugRoutes);
+app.use('/api/v1/trending-hairstyles', trendingHairstylesRoutes);
+app.use('/api/v1/special-offers', specialOffersRoutes);
+app.use('/api/v1/specialists', specialistsRoutes);
 
 // 404 handler - doit être à la fin après toutes les routes
 app.use((req, res) => {

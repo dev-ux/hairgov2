@@ -60,6 +60,7 @@ const TrendingHairstylesScreen = () => {
     <TouchableOpacity style={styles.trendCard}>
       <Image 
         source={{ uri: item.image }}
+        defaultSource={require('../assets/url_de_l_image_1.jpg')}
         style={styles.trendImage}
         resizeMode="cover"
       />

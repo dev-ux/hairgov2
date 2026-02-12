@@ -53,7 +53,7 @@ const SpecialistsScreen = () => {
     <TouchableOpacity style={styles.specialistCard}>
       <View style={styles.headerSection}>
         <Image 
-          source={{ uri: item.profile_photo }}
+          source={item.profile_photo ? { uri: item.profile_photo } : require('../assets/url_de_l_image_1.jpg')}
           style={styles.specialistImage}
           resizeMode="cover"
         />

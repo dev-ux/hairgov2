@@ -51,7 +51,7 @@ const SpecialOffersScreen = () => {
   const renderOffer = ({ item }: { item: Offer }) => (
     <TouchableOpacity style={styles.offerCard}>
       <Image 
-        source={item.image ? { uri: item.image } : require('../assets/default-salon.jpg')}
+        source={item.image ? { uri: item.image } : require('../assets/url_de_l_image_1.jpg')}
         style={styles.offerImage}
         resizeMode="cover"
       />
