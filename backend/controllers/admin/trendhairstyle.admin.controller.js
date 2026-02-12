@@ -7,7 +7,34 @@ const { TrendHairstyle, Hairstyle, User } = require('../../models');
  */
 exports.addTrendingHairstyle = async (req, res) => {
   try {
+    console.log('🔍 Debug - req.body:', req.body);
+    console.log('🔍 Debug - req.user:', req.user);
+    
     const { hairstyle_id, trending_score, category, difficulty, duration_minutes, price_range, start_date, end_date } = req.body;
+
+    // Validation des catégories
+    const validCategories = ['Homme', 'Femme', 'Mixte', 'Enfant'];
+    const validDifficulties = ['facile', 'moyen', 'difficile'];
+    
+    if (category && !validCategories.includes(category)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_CATEGORY',
+          message: `Catégorie invalide. Valeurs acceptées: ${validCategories.join(', ')}`
+        }
+      });
+    }
+
+    if (difficulty && !validDifficulties.includes(difficulty)) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'INVALID_DIFFICULTY',
+          message: `Difficulté invalide. Valeurs acceptées: ${validDifficulties.join(', ')}`
+        }
+      });
+    }
 
     // Vérifier si le hairstyle existe
     const hairstyle = await Hairstyle.findByPk(hairstyle_id);
@@ -37,6 +64,18 @@ exports.addTrendingHairstyle = async (req, res) => {
     }
 
     // Créer la nouvelle tendance
+    console.log('🔍 Debug - Création de la tendance avec:', {
+      hairstyle_id,
+      trending_score: trending_score || 0.0,
+      category: category || 'Mixte',
+      difficulty: difficulty || 'moyen',
+      duration_minutes,
+      price_range,
+      start_date: start_date ? new Date(start_date) : new Date(),
+      end_date: end_date ? new Date(end_date) : null,
+      added_by: req.user?.id
+    });
+
     const newTrend = await TrendHairstyle.create({
       hairstyle_id,
       trending_score: trending_score || 0.0,
@@ -46,7 +85,7 @@ exports.addTrendingHairstyle = async (req, res) => {
       price_range,
       start_date: start_date ? new Date(start_date) : new Date(),
       end_date: end_date ? new Date(end_date) : null,
-      added_by: req.user.id
+      added_by: req.user?.id
     });
 
     // Récupérer la tendance avec les associations

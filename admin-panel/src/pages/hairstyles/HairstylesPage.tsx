@@ -131,7 +131,20 @@ const HairstylesPage: React.FC = () => {
     try {
       // Demander à l'admin les informations pour la tendance
       const trendingScore = window.prompt('Score de tendance (0.00 - 5.00):', '4.0');
-      const category = window.prompt('Catégorie (Homme, Femme, Mixte, Enfant):', hairstyle.category || 'Mixte');
+      
+      // Extraire la catégorie valide depuis la catégorie de la coiffure
+      let validCategory = 'Mixte'; // valeur par défaut
+      if (hairstyle.category) {
+        if (hairstyle.category.toLowerCase().includes('femme')) {
+          validCategory = 'Femme';
+        } else if (hairstyle.category.toLowerCase().includes('homme')) {
+          validCategory = 'Homme';
+        } else if (hairstyle.category.toLowerCase().includes('enfant')) {
+          validCategory = 'Enfant';
+        }
+      }
+      
+      const category = window.prompt(`Catégorie (Homme, Femme, Mixte, Enfant):`, validCategory);
       const difficulty = window.prompt('Difficulté (facile, moyen, difficile):', 'moyen');
       const duration = window.prompt('Durée en minutes:', '45');
       const priceRange = window.prompt('Gamme de prix (ex: 30-50€):', '30-50€');
@@ -150,6 +163,9 @@ const HairstylesPage: React.FC = () => {
         price_range: priceRange,
         is_active: true
       };
+
+      console.log('🔍 Debug Frontend - Données envoyées:', trendData);
+      console.log('🔍 Debug Frontend - hairstyle.id:', hairstyle.id, 'type:', typeof hairstyle.id);
 
       await api.post('/admin/trending-hairstyles', trendData);
       enqueueSnackbar('Coiffure ajoutée aux tendances avec succès!', { variant: 'success' });
