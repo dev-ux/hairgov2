@@ -102,7 +102,7 @@ exports.removeFromFavorites = async (req, res) => {
       });
     }
 
-    const favorite = await FavoriteHairdresser.findOne({
+    const favorite = await Favorite.findOne({
       where: {
         client_id: clientId,
         hairdresser_id: hairdresserId
@@ -139,6 +139,51 @@ exports.removeFromFavorites = async (req, res) => {
 };
 
 /**
+ * Obtenir tous les favoris d'un client
+ */
+exports.getFavorites = async (req, res) => {
+  try {
+    const clientId = req.userId;
+
+    const favorites = await Favorite.findAll({
+      where: {
+        client_id: clientId,
+        is_favorite: true
+      },
+      include: [
+        {
+          model: Hairdresser,
+          as: 'hairdresser',
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'full_name', 'profile_photo']
+            }
+          ]
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { favorites }
+    });
+
+  } catch (error) {
+    console.error('Get favorites error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Erreur lors de la récupération des favoris'
+      }
+    });
+  }
+};
+
+/**
  * Vérifier si un coiffeur est dans les favoris
  */
 exports.checkFavorite = async (req, res) => {
@@ -146,7 +191,7 @@ exports.checkFavorite = async (req, res) => {
     const { hairdresserId } = req.params;
     const clientId = req.userId;
 
-    const favorite = await FavoriteHairdresser.findOne({
+    const favorite = await Favorite.findOne({
       where: {
         client_id: clientId,
         hairdresser_id: hairdresserId,
@@ -168,84 +213,6 @@ exports.checkFavorite = async (req, res) => {
       error: {
         code: 'SERVER_ERROR',
         message: 'Erreur lors de la vérification des favoris'
-      }
-    });
-  }
-};
-
-/**
- * Obtenir tous les favoris de l'utilisateur
- */
-exports.getFavorites = async (req, res) => {
-  try {
-    const clientId = req.userId;
-
-    // Récupérer tous les types de favoris
-    const hairdresserFavorites = await FavoriteHairdresser.findAll({
-      where: { client_id: clientId, is_favorite: true },
-      include: [
-        {
-          model: Hairdresser,
-          as: 'hairdresser',
-          include: [
-            {
-              model: User,
-              as: 'user',
-              attributes: ['full_name', 'profile_photo']
-            }
-          ]
-        }
-      ]
-    });
-
-    const salonFavorites = await FavoriteSalon.findAll({
-      where: { client_id: clientId, is_favorite: true },
-      include: [
-        {
-          model: Salon,
-          as: 'salon'
-        }
-      ]
-    });
-
-    const hairstyleFavorites = await FavoriteHairstyle.findAll({
-      where: { client_id: clientId, is_favorite: true },
-      include: [
-        {
-          model: Hairstyle,
-          as: 'hairstyle'
-        }
-      ]
-    });
-
-    // Combiner tous les favoris
-    const allFavorites = [
-      ...hairdresserFavorites.map(fav => ({
-        ...fav.toJSON(),
-        favorite_type: 'hairdresser'
-      })),
-      ...salonFavorites.map(fav => ({
-        ...fav.toJSON(),
-        favorite_type: 'salon'
-      })),
-      ...hairstyleFavorites.map(fav => ({
-        ...fav.toJSON(),
-        favorite_type: 'hairstyle'
-      }))
-    ];
-
-    res.status(200).json({
-      success: true,
-      data: { favorites: allFavorites }
-    });
-
-  } catch (error) {
-    console.error('Get favorites error:', error);
-    res.status(500).json({
-      success: false,
-      error: {
-        code: 'SERVER_ERROR',
-        message: 'Erreur lors de la récupération des favoris'
       }
     });
   }
@@ -290,10 +257,11 @@ exports.addSalonToFavorites = async (req, res) => {
     }
 
     // Vérifier si déjà en favoris
-    const existingFavorite = await FavoriteSalon.findOne({
+    const existingFavorite = await Favorite.findOne({
       where: {
         client_id: clientId,
-        salon_id: salonId
+        salon_id: salonId,
+        favorite_type: 'salon'
       }
     });
 
@@ -308,9 +276,10 @@ exports.addSalonToFavorites = async (req, res) => {
     }
 
     // Ajouter aux favoris
-    const favorite = await FavoriteSalon.create({
+    const favorite = await Favorite.create({
       client_id: clientId,
       salon_id: salonId,
+      favorite_type: 'salon',
       is_favorite: true
     });
 
@@ -354,10 +323,11 @@ exports.removeSalonFromFavorites = async (req, res) => {
       });
     }
 
-    const favorite = await FavoriteSalon.findOne({
+    const favorite = await Favorite.findOne({
       where: {
         client_id: clientId,
-        salon_id: salonId
+        salon_id: salonId,
+        favorite_type: 'salon'
       }
     });
 
@@ -398,10 +368,21 @@ exports.checkSalonFavorite = async (req, res) => {
     const { salonId } = req.params;
     const clientId = req.userId;
 
-    const favorite = await FavoriteSalon.findOne({
+    if (!clientId) {
+      return res.status(401).json({
+        success: false,
+        error: {
+          code: 'NO_USER_ID',
+          message: 'Utilisateur non authentifié'
+        }
+      });
+    }
+
+    const favorite = await Favorite.findOne({
       where: {
         client_id: clientId,
         salon_id: salonId,
+        favorite_type: 'salon',
         is_favorite: true
       }
     });
