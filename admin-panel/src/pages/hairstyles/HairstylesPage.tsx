@@ -127,6 +127,38 @@ const HairstylesPage: React.FC = () => {
     }
   };
 
+  const handleAddToTrends = async (hairstyle: Hairstyle) => {
+    try {
+      // Demander à l'admin les informations pour la tendance
+      const trendingScore = window.prompt('Score de tendance (0.00 - 5.00):', '4.0');
+      const category = window.prompt('Catégorie (Homme, Femme, Mixte, Enfant):', hairstyle.category || 'Mixte');
+      const difficulty = window.prompt('Difficulté (facile, moyen, difficile):', 'moyen');
+      const duration = window.prompt('Durée en minutes:', '45');
+      const priceRange = window.prompt('Gamme de prix (ex: 30-50€):', '30-50€');
+
+      if (trendingScore === null || category === null || difficulty === null || duration === null || priceRange === null) {
+        enqueueSnackbar('Tous les champs sont obligatoires', { variant: 'error' });
+        return;
+      }
+
+      const trendData = {
+        hairstyle_id: hairstyle.id,
+        trending_score: parseFloat(trendingScore),
+        category,
+        difficulty,
+        duration_minutes: parseInt(duration),
+        price_range: priceRange,
+        is_active: true
+      };
+
+      await api.post('/admin/trending-hairstyles', trendData);
+      enqueueSnackbar('Coiffure ajoutée aux tendances avec succès!', { variant: 'success' });
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout aux tendances:', error);
+      enqueueSnackbar('Erreur lors de l\'ajout aux tendances', { variant: 'error' });
+    }
+  };
+
   const handleCloseAddForm = (added = false) => {
     setOpenAddForm(false);
     if (added) {
@@ -233,13 +265,13 @@ const HairstylesPage: React.FC = () => {
                 <TableCell>Durée (min)</TableCell>
                 <TableCell>Catégorie</TableCell>
                 <TableCell>Statut</TableCell>
-                <TableCell align="right">Actions</TableCell>
+                <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {hairstyles.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                     <Typography variant="body1" color="textSecondary">
                       Aucune coiffure trouvée
                     </Typography>
@@ -302,30 +334,41 @@ const HairstylesPage: React.FC = () => {
                         />
                       </TableCell>
                       <TableCell align="right">
-                        <Tooltip title="Modifier">
-                          <IconButton 
-                            size="small"
-                            onClick={() => handleEditHairstyle(hairstyle)}
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Supprimer">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleDeleteHairstyle(hairstyle.id)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Tooltip title="Modifier">
+                            <IconButton 
+                              size="small"
+                              onClick={() => handleEditHairstyle(hairstyle)}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Ajouter aux tendances">
+                            <IconButton 
+                              size="small"
+                              color="secondary"
+                              onClick={() => handleAddToTrends(hairstyle)}
+                            >
+                              📈
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Supprimer">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleDeleteHairstyle(hairstyle.id)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))
               )}
               {emptyRows > 0 && (
                 <TableRow style={{ height: 53 * emptyRows }}>
-                  <TableCell colSpan={7} />
+                  <TableCell colSpan={8} />
                 </TableRow>
               )}
             </TableBody>
