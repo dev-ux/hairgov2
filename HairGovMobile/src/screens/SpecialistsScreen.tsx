@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Image,
+  ActivityIndicator
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { API_URL } from '../config/constants';
+import { FavoriteButton } from '../components/FavoriteButton';
 
 interface Specialist {
   id: string;
@@ -103,6 +112,9 @@ const SpecialistsScreen = () => {
           <Text style={styles.availabilityText}>
             {item.is_available ? 'Disponible' : 'Occupé'}
           </Text>
+        </View>
+        <View style={styles.favoriteButtonContainer}>
+          <FavoriteButton itemId={item.id} itemType="hairdresser" size={20} />
         </View>
       </View>
       
@@ -331,6 +343,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FF6B6B',
     marginLeft: 4,
+  },
+  favoriteButtonContainer: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 20,
+    padding: 4,
   },
 });
 

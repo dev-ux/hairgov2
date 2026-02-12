@@ -434,7 +434,24 @@ export default function HomeScreen() {
                 }
               }}
             >
-              <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Coiffure tendances</Text>
+              <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Tendances</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface }]}
+              onPress={() => {
+                try {
+                  const parentNavigation = navigation.getParent();
+                  if (parentNavigation) {
+                    parentNavigation.navigate('Favorites');
+                  } else {
+                    navigation.navigate('Favorites' as never);
+                  }
+                } catch (error) {
+                  console.error('Erreur de navigation Favorites:', error);
+                }
+              }}
+            >
+              <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Favoris</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface }]}

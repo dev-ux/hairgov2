@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { API_URL } from '../config/constants';
+import { FavoriteButton } from '../components/FavoriteButton';
 
 // Import du type de navigation global
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -197,6 +198,9 @@ const BarberDetailScreen = () => {
           style={styles.profileImage}
           defaultSource={require('../assets/default-avatar.png')}
         />
+        <View style={styles.favoriteButtonContainer}>
+          <FavoriteButton itemId={barber.id} itemType="hairdresser" size={24} />
+        </View>
         <Text style={styles.name}>{barber.user.full_name}</Text>
         <Text style={styles.profession}>{barber.profession}</Text>
         
@@ -433,6 +437,19 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     color: '#333',
+  },
+  favoriteButtonContainer: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 24,
+    padding: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
 });
 

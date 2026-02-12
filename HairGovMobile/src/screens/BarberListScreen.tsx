@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, ActivityIndicator, TextInput, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { API_URL } from '../config/constants';
+import { FavoriteButton } from '../components/FavoriteButton';
 
 // Type pour la navigation
 type BarberListScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Barber'>;
@@ -180,6 +181,9 @@ const BarberListScreen: React.FC = () => {
             }}
             defaultSource={require('../assets/default-avatar.png')}
           />
+          <View style={styles.favoriteButtonContainer}>
+            <FavoriteButton itemId={item.id} itemType="hairdresser" size={16} />
+          </View>
         </View>
         <View style={styles.infoContainer}>
           <Text style={styles.name}>{item.full_name}</Text>
@@ -367,6 +371,14 @@ const styles = StyleSheet.create({
     height: '100%',
     color: '#333',
     fontSize: 16,
+  },
+  favoriteButtonContainer: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 16,
+    padding: 2,
   },
 });
 
