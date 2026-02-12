@@ -32,6 +32,8 @@ exports.getHairdresserById = async (req, res) => {
     
     try {
       // Calculer la note moyenne depuis la table Rating
+      console.log('🔍 Recherche des notes pour le coiffeur:', id);
+      
       const ratingData = await db.Rating.findAll({
         where: {
           hairdresser_id: id
@@ -43,8 +45,13 @@ exports.getHairdresserById = async (req, res) => {
         raw: true
       });
 
+      console.log('📊 Données de rating brutes:', ratingData);
+
       if (ratingData && ratingData.length > 0 && ratingData[0].average_rating) {
         average_rating = parseFloat(ratingData[0].average_rating);
+        console.log('⭐ Note moyenne calculée:', average_rating);
+      } else {
+        console.log('⚠️ Aucune note trouvée ou note nulle');
       }
 
       // Calculer le nombre de prestations depuis la table Booking
@@ -59,11 +66,16 @@ exports.getHairdresserById = async (req, res) => {
         raw: true
       });
 
+      console.log('📋 Données de booking brutes:', bookingData);
+
       if (bookingData && bookingData.length > 0 && bookingData[0].total_jobs) {
         total_jobs = parseInt(bookingData[0].total_jobs);
+        console.log('💈 Nombre de prestations:', total_jobs);
+      } else {
+        console.log('⚠️ Aucune prestation trouvée');
       }
     } catch (ratingError) {
-      console.error('Erreur lors du calcul des statistiques:', ratingError);
+      console.error('❌ Erreur lors du calcul des statistiques:', ratingError);
       // Continuer sans les stats en cas d'erreur
     }
 
@@ -82,6 +94,8 @@ exports.getHairdresserById = async (req, res) => {
         description: hairdresser.description
       }
     });
+
+    console.log('✅ Réponse envoyée - Rating:', average_rating, 'Jobs:', total_jobs);
 
   } catch (error) {
     console.error('Erreur lors de la récupération du coiffeur:', error);
