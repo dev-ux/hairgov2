@@ -25,7 +25,7 @@ export const FavoritesScreen = () => {
             setError(null);
             const favoritesData = await favoriteService.getFavorites();
             // Filtrer uniquement les favoris de coiffeurs
-            const hairdresserFavorites = favoritesData.filter((fav: any) => 
+            const hairdresserFavorites = favoritesData.filter((fav: any) =>
                 fav.favorite_type === 'hairdresser' && fav.hairdresser
             );
             setFavorites(hairdresserFavorites);
@@ -40,13 +40,13 @@ export const FavoritesScreen = () => {
     const renderFavoriteItem = ({ item }: { item: any }) => {
         const hairdresser = item.hairdresser;
         return (
-            <TouchableOpacity 
+            <TouchableOpacity
                 style={styles.favoriteCard}
                 onPress={() => {
                     navigation.navigate('BarberDetail' as any, { barberId: hairdresser.id });
                 }}
             >
-                <Image 
+                <Image
                     source={hairdresser.user?.profile_photo ? { uri: hairdresser.user.profile_photo } : require('../assets/default-avatar.png')}
                     style={styles.favoriteImage}
                     resizeMode="cover"
@@ -57,8 +57,8 @@ export const FavoritesScreen = () => {
                     <View style={styles.ratingContainer}>
                         <Ionicons name="star" size={14} color="#FFD700" />
                         <Text style={styles.ratingText}>
-                            {typeof hairdresser.average_rating === 'number' 
-                                ? hairdresser.average_rating.toFixed(1) 
+                            {typeof hairdresser.average_rating === 'number'
+                                ? hairdresser.average_rating.toFixed(1)
                                 : parseFloat(hairdresser.average_rating || '0').toFixed(1)
                             }
                         </Text>
@@ -75,7 +75,7 @@ export const FavoritesScreen = () => {
         return (
             <View style={styles.container}>
                 <View style={styles.headerContainer}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => navigation.goBack()}
                         style={styles.backButton}
                     >
@@ -95,7 +95,7 @@ export const FavoritesScreen = () => {
         return (
             <View style={styles.container}>
                 <View style={styles.headerContainer}>
-                    <TouchableOpacity 
+                    <TouchableOpacity
                         onPress={() => navigation.goBack()}
                         style={styles.backButton}
                     >
@@ -116,7 +116,7 @@ export const FavoritesScreen = () => {
         <View style={styles.container}>
             {/* En-tête personnalisé avec bouton de retour */}
             <View style={styles.headerContainer}>
-                <TouchableOpacity 
+                <TouchableOpacity
                     onPress={() => navigation.goBack()}
                     style={styles.backButton}
                 >
@@ -146,102 +146,102 @@ export const FavoritesScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    paddingTop: 50,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#fff',
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    flex: 1,
-    textAlign: 'center',
-  },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    color: '#FF6B6B',
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  emptyText: {
-    color: '#999',
-    fontSize: 18,
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    color: '#666',
-    fontSize: 14,
-    marginTop: 5,
-    textAlign: 'center',
-  },
-  listContainer: {
-    padding: 16,
-  },
-  favoriteCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  favoriteImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 16,
-  },
-  favoriteInfo: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  favoriteName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 4,
-  },
-  favoriteProfession: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-  },
-  ratingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  ratingText: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 4,
-  },
-  favoriteButtonContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    headerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+        paddingTop: 50,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0e0e0',
+        backgroundColor: '#fff',
+    },
+    backButton: {
+        padding: 8,
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+        flex: 1,
+        textAlign: 'center',
+    },
+    centered: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    errorText: {
+        color: '#FF6B6B',
+        marginTop: 10,
+        textAlign: 'center',
+    },
+    emptyText: {
+        color: '#999',
+        fontSize: 18,
+        marginTop: 10,
+        textAlign: 'center',
+    },
+    emptySubtext: {
+        color: '#666',
+        fontSize: 14,
+        marginTop: 5,
+        textAlign: 'center',
+    },
+    listContainer: {
+        padding: 16,
+    },
+    favoriteCard: {
+        flexDirection: 'row',
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    favoriteImage: {
+        width: 60,
+        height: 60,
+        borderRadius: 30,
+        marginRight: 16,
+    },
+    favoriteInfo: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    favoriteName: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 4,
+    },
+    favoriteProfession: {
+        fontSize: 14,
+        color: '#666',
+        marginBottom: 8,
+    },
+    ratingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    ratingText: {
+        fontSize: 12,
+        color: '#666',
+        marginLeft: 4,
+    },
+    favoriteButtonContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
 });
 
 export default FavoritesScreen;

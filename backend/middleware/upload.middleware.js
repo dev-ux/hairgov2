@@ -29,25 +29,8 @@ const storage = multer.diskStorage({
   }
 });
 
-// Configuration du stockage pour les photos de profil
-const profileStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const type = 'profiles';
-    const dir = path.join(uploadDir, type);
-    
-    // Créer le dossier s'il n'existe pas
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    
-    cb(null, dir);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = `${Date.now()}-${uuidv4()}`;
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `profile-${uniqueSuffix}${ext}`);
-  }
-});
+// Configuration du stockage pour les photos de profil (utilise memoryStorage pour S3)
+const profileStorage = multer.memoryStorage();
 
 // Configuration du stockage pour les photos de salons
 const salonPhotosStorage = multer.diskStorage({
