@@ -164,7 +164,15 @@ const HowItWorks = ({ id }) => {
           </div>
           <div className="download-visual">
             <div className="phone-mockup-small">
-              <img src="/images/app-mockup.png" alt="Application HairGov" />
+              <div className="phone-frame-small">
+                <div className="phone-screen-small">
+                  <img 
+                    src="/images/cp1.png" 
+                    alt="Application HairGov" 
+                    className="screenshot-small"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>

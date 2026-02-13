@@ -997,8 +997,19 @@ exports.getHairdresserDetails = async (req, res) => {
       });
     }
 
-    // Récupérer directement le coiffeur par son ID
-    const hairdresserBasic = await Hairdresser.findByPk(id);
+    let hairdresserBasic = null;
+
+    // Essayer d'abord de trouver par hairdresser_id
+    hairdresserBasic = await Hairdresser.findByPk(id);
+    
+    // Si non trouvé, essayer de trouver par user_id
+    if (!hairdresserBasic) {
+      console.log('Recherche par hairdresser_id échouée, tentative par user_id...');
+      hairdresserBasic = await Hairdresser.findOne({
+        where: { user_id: id }
+      });
+    }
+    
     console.log('Coiffeur de base trouvé:', hairdresserBasic ? 'Oui' : 'Non');
     
     if (!hairdresserBasic) {
@@ -1014,7 +1025,7 @@ exports.getHairdresserDetails = async (req, res) => {
         error: {
           code: 'HAIRDRESSER_NOT_FOUND',
           message: 'Coiffeur introuvable',
-          details: `Aucun coiffeur trouvé avec l'ID ${id} dans la table hairdressers. IDs disponibles: ${allHairdressers.map(h => h.id).join(', ')}`
+          details: `Aucun coiffeur trouvé avec l'ID ${id} (hairdresser_id ou user_id). IDs disponibles: ${allHairdressers.map(h => h.id).join(', ')}`
         }
       });
     }

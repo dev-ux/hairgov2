@@ -43,6 +43,13 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   const handlePress = async () => {
     if (loading) return;
 
+    console.log('🔍 FavoriteButton - handlePress:', {
+      itemType,
+      itemId,
+      itemIdLength: itemId.length,
+      itemIdStart: itemId.substring(0, 8) + '...'
+    });
+
     // Animation du cœur
     Animated.sequence([
       Animated.timing(scaleValue, {

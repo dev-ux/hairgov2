@@ -56,7 +56,11 @@ const SpecialistsScreen = () => {
       let hairdressers = [];
       if (data && data.success && data.data && Array.isArray(data.data.hairdressers)) {
         hairdressers = data.data.hairdressers.map((h: any) => {
-          console.log('Données brutes du coiffeur:', h);
+          console.log('🔍 Mapping coiffeur:', {
+            hairdresser_id: h.id,
+            user_id: h.user?.id,
+            full_name: h.user?.full_name || h.full_name || 'Nom inconnu'
+          });
           
           return {
             id: h.id, // Utiliser directement l'ID du coiffeur

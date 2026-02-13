@@ -17,9 +17,16 @@ export const favoriteService = {
   // Ajouter un coiffeur aux favoris
   addToFavorites: async (hairdresserId: string): Promise<FavoriteResponse> => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const userToken = await AsyncStorage.getItem('userToken');
       
-      if (!token) {
+      console.log('=== DEBUG FAVORITE SERVICE ===');
+      console.log('Token from AsyncStorage:', userToken ? 'EXISTS' : 'NULL/EMPTY');
+      console.log('Token length:', userToken?.length || 0);
+      console.log('Token preview:', userToken ? `${userToken.substring(0, 20)}...` : 'NONE');
+      console.log('Hairdresser ID:', hairdresserId);
+      
+      if (!userToken) {
+        console.log('❌ No userToken found - showing login required');
         return {
           success: false,
           error: {
@@ -29,14 +36,14 @@ export const favoriteService = {
         };
       }
 
-      console.log('Adding to favorites - Token:', token ? 'Present' : 'Missing');
+      console.log('Adding to favorites - Token:', userToken ? 'Present' : 'Missing');
       console.log('Adding to favorites - Hairdresser ID:', hairdresserId);
 
       const response = await fetch(`${API_URL}/favorites/hairdressers/${hairdresserId}/favorite`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${userToken}`
         }
       });
 
@@ -44,7 +51,7 @@ export const favoriteService = {
 
       if (response.status === 401) {
         // Token invalide ou expiré
-        await AsyncStorage.removeItem('token');
+        await AsyncStorage.removeItem('userToken');
         return {
           success: false,
           error: {
@@ -72,9 +79,9 @@ export const favoriteService = {
   // Retirer un coiffeur des favoris
   removeFromFavorites: async (hairdresserId: string): Promise<FavoriteResponse> => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const userToken = await AsyncStorage.getItem('userToken');
       
-      if (!token) {
+      if (!userToken) {
         return {
           success: false,
           error: {
@@ -84,14 +91,14 @@ export const favoriteService = {
         };
       }
 
-      console.log('Removing from favorites - Token:', token ? 'Present' : 'Missing');
+      console.log('Removing from favorites - Token:', userToken ? 'Present' : 'Missing');
       console.log('Removing from favorites - Hairdresser ID:', hairdresserId);
 
       const response = await fetch(`${API_URL}/favorites/hairdressers/${hairdresserId}/favorite`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${userToken}`
         }
       });
 
@@ -99,7 +106,7 @@ export const favoriteService = {
 
       if (response.status === 401) {
         // Token invalide ou expiré
-        await AsyncStorage.removeItem('token');
+        await AsyncStorage.removeItem('userToken');
         return {
           success: false,
           error: {
@@ -127,9 +134,9 @@ export const favoriteService = {
   // Vérifier si un coiffeur est en favoris
   checkFavorite: async (hairdresserId: string): Promise<boolean> => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const userToken = await AsyncStorage.getItem('userToken');
       
-      if (!token) {
+      if (!userToken) {
         return false;
       }
 
@@ -137,13 +144,13 @@ export const favoriteService = {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${userToken}`
         }
       });
 
       if (response.status === 401) {
         // Token invalide ou expiré
-        await AsyncStorage.removeItem('token');
+        await AsyncStorage.removeItem('userToken');
         return false;
       }
 
@@ -158,9 +165,9 @@ export const favoriteService = {
   // Obtenir tous les favoris de l'utilisateur
   getFavorites: async (): Promise<any[]> => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const userToken = await AsyncStorage.getItem('userToken');
       
-      if (!token) {
+      if (!userToken) {
         return [];
       }
 
@@ -168,13 +175,13 @@ export const favoriteService = {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${userToken}`
         }
       });
 
       if (response.status === 401) {
         // Token invalide ou expiré
-        await AsyncStorage.removeItem('token');
+        await AsyncStorage.removeItem('userToken');
         return [];
       }
 
@@ -192,9 +199,16 @@ export const salonFavoriteService = {
   // Ajouter un salon aux favoris
   addToFavorites: async (salonId: string): Promise<FavoriteResponse> => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const userToken = await AsyncStorage.getItem('userToken');
       
-      if (!token) {
+      console.log('=== DEBUG SALON FAVORITE SERVICE ===');
+      console.log('Token from AsyncStorage:', userToken ? 'EXISTS' : 'NULL/EMPTY');
+      console.log('Token length:', userToken?.length || 0);
+      console.log('Token preview:', userToken ? `${userToken.substring(0, 20)}...` : 'NONE');
+      console.log('Salon ID:', salonId);
+      
+      if (!userToken) {
+        console.log('❌ No userToken found - showing login required');
         return {
           success: false,
           error: {
@@ -204,14 +218,14 @@ export const salonFavoriteService = {
         };
       }
 
-      console.log('Adding salon to favorites - Token:', token ? 'Present' : 'Missing');
+      console.log('Adding salon to favorites - Token:', userToken ? 'Present' : 'Missing');
       console.log('Adding salon to favorites - Salon ID:', salonId);
 
       const response = await fetch(`${API_URL}/favorites/salons/${salonId}/favorite`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${userToken}`
         }
       });
 
@@ -219,7 +233,7 @@ export const salonFavoriteService = {
 
       if (response.status === 401) {
         // Token invalide ou expiré
-        await AsyncStorage.removeItem('token');
+        await AsyncStorage.removeItem('userToken');
         return {
           success: false,
           error: {
@@ -247,9 +261,9 @@ export const salonFavoriteService = {
   // Retirer un salon des favoris
   removeFromFavorites: async (salonId: string): Promise<FavoriteResponse> => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const userToken = await AsyncStorage.getItem('userToken');
       
-      if (!token) {
+      if (!userToken) {
         return {
           success: false,
           error: {
@@ -259,14 +273,14 @@ export const salonFavoriteService = {
         };
       }
 
-      console.log('Removing salon from favorites - Token:', token ? 'Present' : 'Missing');
+      console.log('Removing salon from favorites - Token:', userToken ? 'Present' : 'Missing');
       console.log('Removing salon from favorites - Salon ID:', salonId);
 
       const response = await fetch(`${API_URL}/favorites/salons/${salonId}/favorite`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${userToken}`
         }
       });
 
@@ -274,7 +288,7 @@ export const salonFavoriteService = {
 
       if (response.status === 401) {
         // Token invalide ou expiré
-        await AsyncStorage.removeItem('token');
+        await AsyncStorage.removeItem('userToken');
         return {
           success: false,
           error: {
@@ -302,9 +316,9 @@ export const salonFavoriteService = {
   // Vérifier si un salon est en favoris
   checkFavorite: async (salonId: string): Promise<boolean> => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const userToken = await AsyncStorage.getItem('userToken');
       
-      if (!token) {
+      if (!userToken) {
         return false;
       }
 
@@ -312,13 +326,13 @@ export const salonFavoriteService = {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${userToken}`
         }
       });
 
       if (response.status === 401) {
         // Token invalide ou expiré
-        await AsyncStorage.removeItem('token');
+        await AsyncStorage.removeItem('userToken');
         return false;
       }
 

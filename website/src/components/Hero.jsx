@@ -1,9 +1,26 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import './Hero.scss';
 
 const Hero = () => {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const screenshots = [
+    '/images/cp1.png',
+    '/images/cp2.png',
+    '/images/cp3.png'
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prevIndex) => 
+        prevIndex === screenshots.length - 1 ? 0 : prevIndex + 1
+      );
+    }, 3000); // Change d'image toutes les 3 secondes
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <section className="hero">
       <div className="container">
@@ -61,11 +78,24 @@ const Hero = () => {
             <div className="phone-mockup">
               <div className="phone-frame">
                 <div className="phone-screen">
-                  <img 
-                    src="/images/app-screenshot-1.jpg" 
+                  <motion.img 
+                    src={screenshots[currentImageIndex]} 
                     alt="Application Scizz" 
                     className="screenshot"
+                    key={currentImageIndex}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.5 }}
                   />
+                  <div className="carousel-dots">
+                    {screenshots.map((_, index) => (
+                      <button
+                        key={index}
+                        className={`dot ${index === currentImageIndex ? 'active' : ''}`}
+                        onClick={() => setCurrentImageIndex(index)}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>

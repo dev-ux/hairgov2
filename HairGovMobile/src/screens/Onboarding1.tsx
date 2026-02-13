@@ -13,7 +13,7 @@ export const Onboarding1 = () => {
         source={require('../assets/images/onboarding1.png')}
         style={styles.image}
       />
-      <Text style={styles.title}>Bienvenue sur HairGov</Text>
+      <Text style={styles.title}>Bienvenue sur Scizz</Text>
       <Text style={styles.subtitle}>Trouvez les meilleurs professionnels de coiffure près de chez vous</Text>
       
       <View style={styles.footer}>
