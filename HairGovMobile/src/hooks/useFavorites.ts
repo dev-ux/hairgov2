@@ -16,7 +16,14 @@ export const useFavorites = () => {
     try {
       setLoading(true);
       const favoritesData = await favoriteService.getFavorites();
-      const favoriteIds = favoritesData.map((fav: any) => fav.hairdresser.id);
+      // Extraire à la fois les hairdresser_id et les user_id
+      const favoriteIds = favoritesData.map((fav: any) => {
+        // Ajouter le hairdresser_id
+        const hairdresserId = fav.hairdresser?.id;
+        // Ajouter aussi le user_id pour compatibilité
+        const userId = fav.hairdresser?.user?.id;
+        return [hairdresserId, userId].filter(Boolean); // Retourner les deux IDs valides
+      }).flat(); // Aplatir le tableau
       setFavorites(favoriteIds);
     } catch (error) {
       console.error('Error loading favorites:', error);
