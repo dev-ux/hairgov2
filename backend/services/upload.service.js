@@ -20,10 +20,22 @@ const uploadFile = async (file, folder = 'uploads') => {
     const fileExtension = path.extname(file.originalname);
     const fileName = `${folder}/${uuidv4()}${fileExtension}`;
     
+    // Gérer les différents formats de fichiers
+    let fileBuffer;
+    if (file.buffer) {
+      // Fichier venant de multer avec buffer
+      fileBuffer = file.buffer;
+    } else if (file.data) {
+      // Fichier venant d'Express file upload
+      fileBuffer = file.data;
+    } else {
+      throw new Error('Format de fichier non supporté');
+    }
+    
     const params = {
       Bucket: BUCKET_NAME,
       Key: fileName,
-      Body: file.buffer,
+      Body: fileBuffer,
       ContentType: file.mimetype,
       ACL: 'public-read'
     };
@@ -34,7 +46,7 @@ const uploadFile = async (file, folder = 'uploads') => {
       url: uploadResult.Location,
       key: uploadResult.Key,
       name: file.originalname,
-      size: file.size,
+      size: file.size || fileBuffer.length,
       type: file.mimetype
     };
   } catch (error) {
