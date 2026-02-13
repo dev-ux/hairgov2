@@ -22,6 +22,7 @@ const trendingHairstylesRoutes = require('./routes/trending-hairstyles.routes');
 const specialOffersRoutes = require('./routes/special-offers.routes');
 const specialistsRoutes = require('./routes/specialists.routes');
 const favoriteRoutes = require('./routes/favorite.routes');
+const historyRoutes = require('./routes/history.routes');
 
 // Import middleware d'erreur
 const errorHandler = require('./middleware/errorHandler');
@@ -311,6 +312,7 @@ app.use('/api/v1/trending-hairstyles', trendingHairstylesRoutes);
 app.use('/api/v1/special-offers', specialOffersRoutes);
 app.use('/api/v1/specialists', specialistsRoutes);
 app.use('/api/v1/favorites', favoriteRoutes);
+app.use('/api/v1/history', historyRoutes);
 
 // 404 handler - doit être à la fin après toutes les routes
 app.use((req, res) => {
