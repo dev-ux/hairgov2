@@ -819,29 +819,6 @@ Hairstyle.hasMany(History, { foreignKey: 'hairstyle_id', as: 'histories' });
 Booking.hasOne(History, { foreignKey: 'booking_id', as: 'history' });
 
 // ==========================================
-// EXPORTS
-// ==========================================
-console.log('🔍 Models exportés:', Object.keys({
-  sequelize,
-  Sequelize,
-  User,
-  Hairdresser,
-  Hairstyle,
-  Booking,
-  Rating,
-  BalanceTransaction,
-  Notification,
-  Complaint,
-  Salon,
-  SalonPhoto,
-  TrendHairstyle,
-  History,
-  FavoriteHairdresser,
-  FavoriteSalon,
-  FavoriteHairstyle
-}));
-
-// ==========================================
 // Modèles de favoris séparés
 // ==========================================
 
@@ -985,6 +962,29 @@ User.hasMany(FavoriteHairstyle, { foreignKey: 'client_id', as: 'hairstyleFavorit
 Hairstyle.hasMany(FavoriteHairstyle, { foreignKey: 'hairstyle_id', as: 'favoritedByClients' });
 FavoriteHairstyle.belongsTo(User, { foreignKey: 'client_id', as: 'client' });
 FavoriteHairstyle.belongsTo(Hairstyle, { foreignKey: 'hairstyle_id', as: 'hairstyle' });
+
+// ==========================================
+// EXPORTS
+// ==========================================
+console.log('🔍 Models exportés:', Object.keys({
+  sequelize,
+  Sequelize,
+  User,
+  Hairdresser,
+  Hairstyle,
+  Booking,
+  Rating,
+  BalanceTransaction,
+  Notification,
+  Complaint,
+  Salon,
+  SalonPhoto,
+  TrendHairstyle,
+  History,
+  FavoriteHairdresser,
+  FavoriteSalon,
+  FavoriteHairstyle
+}));
 
 module.exports = {
   sequelize,      // ✅ L'UNIQUE instance
