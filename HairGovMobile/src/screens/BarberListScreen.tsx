@@ -219,7 +219,6 @@ const BarberListScreen: React.FC = () => {
     hairdresser.address?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  console.log(`🔍 Debug BarberList: ${hairdressers.length} coiffeurs totaux, ${filteredHairdressers.length} après recherche`);
 
   return (
     <View style={styles.container}>
@@ -375,7 +374,7 @@ const styles = StyleSheet.create({
   favoriteButtonContainer: {
     position: 'absolute',
     top: 4,
-    right: 4,
+    left: 80,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 16,
     padding: 2,

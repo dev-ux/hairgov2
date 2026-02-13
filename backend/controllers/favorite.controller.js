@@ -25,8 +25,19 @@ exports.addToFavorites = async (req, res) => {
       });
     }
 
-    // Vérifier si le coiffeur existe
-    const hairdresser = await Hairdresser.findByPk(hairdresserId);
+    let hairdresser = null;
+
+    // Essayer d'abord de trouver par hairdresser_id
+    hairdresser = await Hairdresser.findByPk(hairdresserId);
+    
+    // Si non trouvé, essayer de trouver par user_id
+    if (!hairdresser) {
+      console.log('Recherche par hairdresser_id échouée, tentative par user_id...');
+      hairdresser = await Hairdresser.findOne({
+        where: { user_id: hairdresserId }
+      });
+    }
+
     if (!hairdresser) {
       return res.status(404).json({
         success: false,
@@ -37,11 +48,14 @@ exports.addToFavorites = async (req, res) => {
       });
     }
 
+    // Utiliser le vrai hairdresser_id pour les favoris
+    const actualHairdresserId = hairdresser.id;
+
     // Vérifier si déjà en favoris
     const existingFavorite = await FavoriteHairdresser.findOne({
       where: {
         client_id: clientId,
-        hairdresser_id: hairdresserId
+        hairdresser_id: actualHairdresserId
       }
     });
 
@@ -58,7 +72,7 @@ exports.addToFavorites = async (req, res) => {
     // Ajouter aux favoris
     const favorite = await FavoriteHairdresser.create({
       client_id: clientId,
-      hairdresser_id: hairdresserId,
+      hairdresser_id: actualHairdresserId,
       is_favorite: true
     });
 
@@ -102,10 +116,36 @@ exports.removeFromFavorites = async (req, res) => {
       });
     }
 
+    let hairdresser = null;
+
+    // Essayer d'abord de trouver par hairdresser_id
+    hairdresser = await Hairdresser.findByPk(hairdresserId);
+    
+    // Si non trouvé, essayer de trouver par user_id
+    if (!hairdresser) {
+      console.log('Recherche par hairdresser_id échouée, tentative par user_id...');
+      hairdresser = await Hairdresser.findOne({
+        where: { user_id: hairdresserId }
+      });
+    }
+
+    if (!hairdresser) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'HAIRDRESSER_NOT_FOUND',
+          message: 'Coiffeur introuvable'
+        }
+      });
+    }
+
+    // Utiliser le vrai hairdresser_id pour les favoris
+    const actualHairdresserId = hairdresser.id;
+
     const favorite = await FavoriteHairdresser.findOne({
       where: {
         client_id: clientId,
-        hairdresser_id: hairdresserId
+        hairdresser_id: actualHairdresserId
       }
     });
 
@@ -146,10 +186,35 @@ exports.checkFavorite = async (req, res) => {
     const { hairdresserId } = req.params;
     const clientId = req.userId;
 
+    let hairdresser = null;
+
+    // Essayer d'abord de trouver par hairdresser_id
+    hairdresser = await Hairdresser.findByPk(hairdresserId);
+    
+    // Si non trouvé, essayer de trouver par user_id
+    if (!hairdresser) {
+      hairdresser = await Hairdresser.findOne({
+        where: { user_id: hairdresserId }
+      });
+    }
+
+    if (!hairdresser) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'HAIRDRESSER_NOT_FOUND',
+          message: 'Coiffeur introuvable'
+        }
+      });
+    }
+
+    // Utiliser le vrai hairdresser_id pour les favoris
+    const actualHairdresserId = hairdresser.id;
+
     const favorite = await FavoriteHairdresser.findOne({
       where: {
         client_id: clientId,
-        hairdresser_id: hairdresserId,
+        hairdresser_id: actualHairdresserId,
         is_favorite: true
       }
     });
