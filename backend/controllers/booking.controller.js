@@ -1214,33 +1214,12 @@ exports.getClientBookings = async (req, res) => {
     const clientId = req.userId;
     console.log('🔍 getClientBookings - Client ID:', clientId);
 
+    // D'abord, tester une requête simple sans jointures
     const bookings = await Booking.findAll({
-      where: { client_id: clientId },
-      include: [
-        {
-          model: Hairdresser,
-          as: 'hairdresser',
-          required: false,
-          include: [
-            {
-              model: User,
-              as: 'user',
-              required: false,
-              attributes: ['id', 'full_name', 'profile_photo']
-            }
-          ]
-        },
-        {
-          model: Hairstyle,
-          as: 'hairstyle',
-          required: false,
-          attributes: ['id', 'name', 'description', 'estimated_duration', 'category', 'photo']
-        }
-      ],
-      order: [['created_at', 'DESC']]
+      where: { client_id: clientId }
     });
 
-    console.log('📊 getClientBookings - Réservations trouvées:', bookings.length);
+    console.log('📊 getClientBookings - Réservations trouvées (simple):', bookings.length);
 
     res.status(200).json({
       success: true,
@@ -1255,10 +1234,7 @@ exports.getClientBookings = async (req, res) => {
       error: {
         code: 'FETCH_ERROR',
         message: 'Erreur lors de la récupération des réservations',
-        ...(process.env.NODE_ENV === 'development' && { 
-          details: error.message,
-          stack: error.stack 
-        })
+        details: error.message
       }
     });
   }
