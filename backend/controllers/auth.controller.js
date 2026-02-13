@@ -803,10 +803,10 @@ exports.updateProfile = async (req, res) => {
 
     // Gérer l'upload de la photo de profil
     if (req.file) {
-      const profilePhoto = req.file;
+      console.log('📤 Fichier reçu:', req.file.originalname);
       
       // Validation du fichier
-      if (!profilePhoto.mimetype.startsWith('image/')) {
+      if (!req.file.mimetype.startsWith('image/')) {
         return res.status(400).json({
           success: false,
           error: {
@@ -815,26 +815,12 @@ exports.updateProfile = async (req, res) => {
           }
         });
       }
-
-      // Taille maximale 5MB (déjà gérée par multer, mais vérification supplémentaire)
-      if (profilePhoto.size > 5 * 1024 * 1024) {
-        return res.status(400).json({
-          success: false,
-          error: {
-            code: 'FILE_TOO_LARGE',
-            message: 'L\'image ne doit pas dépasser 5MB'
-          }
-        });
-      }
-
-      // Utiliser l'URL complète du fichier uploadé
-      const baseUrl = process.env.NODE_ENV === 'production' 
-        ? 'https://hairgov2.onrender.com' 
-        : `${req.protocol}://${req.get('host')}`;
-      const imageUrl = `${baseUrl}/uploads/profiles/${profilePhoto.filename}`;
-      console.log('🌐 Nouvelle URL de photo:', imageUrl);
       
-      user.profile_photo = imageUrl;
+      // Utiliser le service d'upload S3
+      const uploadedFile = await uploadService.uploadFile(req.file, 'profiles');
+      console.log('☁️ Upload S3 réussi:', uploadedFile.url);
+      
+      user.profile_photo = uploadedFile.url;
     }
 
     // Mettre à jour les autres champs si fournis
