@@ -24,7 +24,11 @@ export const FavoritesScreen = () => {
             setLoading(true);
             setError(null);
             const favoritesData = await favoriteService.getFavorites();
-            setFavorites(favoritesData);
+            // Filtrer uniquement les favoris de coiffeurs
+            const hairdresserFavorites = favoritesData.filter((fav: any) => 
+                fav.favorite_type === 'hairdresser' && fav.hairdresser
+            );
+            setFavorites(hairdresserFavorites);
         } catch (err) {
             setError('Erreur de chargement des favoris');
             console.error('Error loading favorites:', err);
@@ -52,7 +56,12 @@ export const FavoritesScreen = () => {
                     <Text style={styles.favoriteProfession}>{hairdresser.profession || 'Coiffeur'}</Text>
                     <View style={styles.ratingContainer}>
                         <Ionicons name="star" size={14} color="#FFD700" />
-                        <Text style={styles.ratingText}>{hairdresser.average_rating?.toFixed(1) || '0.0'}</Text>
+                        <Text style={styles.ratingText}>
+                            {typeof hairdresser.average_rating === 'number' 
+                                ? hairdresser.average_rating.toFixed(1) 
+                                : parseFloat(hairdresser.average_rating || '0').toFixed(1)
+                            }
+                        </Text>
                     </View>
                 </View>
                 <View style={styles.favoriteButtonContainer}>
@@ -114,7 +123,7 @@ export const FavoritesScreen = () => {
                     <Ionicons name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Mes Favoris</Text>
-                <View style={{ width: 24 }} /> {/* Pour équilibrer le flexbox */}
+                <View style={{ width: 24 }} /> // Pour équilibrer le flexbox
             </View>
 
             {favorites.length === 0 ? (
@@ -127,7 +136,7 @@ export const FavoritesScreen = () => {
                 <FlatList
                     data={favorites}
                     renderItem={renderFavoriteItem}
-                    keyExtractor={(item) => item.id}
+                    keyExtractor={(item) => item.id || item.hairdresser?.id || Math.random().toString()}
                     contentContainerStyle={styles.listContainer}
                     showsVerticalScrollIndicator={false}
                 />
