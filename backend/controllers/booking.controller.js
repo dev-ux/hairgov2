@@ -1332,24 +1332,3 @@ exports.deleteBooking = async (req, res) => {
     });
   }
 };
-
-// Exporter toutes les fonctions
-module.exports = {
-  findAllPublic,
-  createBooking,
-  createBookingPublic,
-  getBookingDetails,
-  getClientBookings,
-  getClientHistory,
-  getHairdresserHistory,
-  getPendingBookings,
-  acceptBooking,
-  rejectBooking,
-  cancelBooking,
-  completeBooking,
-  updateBookingStatus,
-  getNearbyHairdressers,
-  estimatePrice,
-  trackHairdresser,
-  deleteBooking
-};
