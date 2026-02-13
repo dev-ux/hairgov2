@@ -22,7 +22,6 @@ const trendingHairstylesRoutes = require('./routes/trending-hairstyles.routes');
 const specialOffersRoutes = require('./routes/special-offers.routes');
 const specialistsRoutes = require('./routes/specialists.routes');
 const favoriteRoutes = require('./routes/favorite.routes');
-const historyRoutes = require('./routes/history.routes');
 
 // Import middleware d'erreur
 const errorHandler = require('./middleware/errorHandler');
@@ -312,7 +311,6 @@ app.use('/api/v1/trending-hairstyles', trendingHairstylesRoutes);
 app.use('/api/v1/special-offers', specialOffersRoutes);
 app.use('/api/v1/specialists', specialistsRoutes);
 app.use('/api/v1/favorites', favoriteRoutes);
-app.use('/api/v1/history', historyRoutes);
 
 // 404 handler - doit être à la fin après toutes les routes
 app.use((req, res) => {
@@ -330,17 +328,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 HAIRGO API démarrée sur le port ${PORT}`);
   console.log(`📍 Environnement: ${process.env.NODE_ENV || 'development'}`);
-  
-  // Démarrer les jobs d'archivage automatique
-  if (process.env.NODE_ENV === 'production') {
-    const ArchiveJob = require('./jobs/archive.job');
-    ArchiveJob.startProduction();
-    ArchiveJob.startCleanupJob();
-  } else {
-    // En développement, archiver toutes les heures pour les tests
-    const ArchiveJob = require('./jobs/archive.job');
-    ArchiveJob.start();
-  }
 });
 
 module.exports = app;// Force deployment - Tue Feb 10 03:46:36 CET 2026
