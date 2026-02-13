@@ -50,6 +50,13 @@ router.get('/estimate-price', bookingController.estimatePrice);
 router.get('/:id', authenticate, bookingController.getBookingDetails);
 
 /**
+ * @route   GET /api/v1/bookings/client
+ * @desc    Réservations du client (actives et passées)
+ * @access  Private (client)
+ */
+router.get('/client', authenticate, isClient, bookingController.getClientBookings);
+
+/**
  * @route   GET /api/v1/bookings/client/history
  * @desc    Historique des réservations du client
  * @access  Private (client)

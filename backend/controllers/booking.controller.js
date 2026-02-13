@@ -1206,6 +1206,53 @@ exports.cancelBooking = async (req, res) => {
   }
 };
 
+/**
+ * Obtenir les réservations du client (actives et passées)
+ */
+exports.getClientBookings = async (req, res) => {
+  try {
+    const clientId = req.userId;
+
+    const bookings = await Booking.findAll({
+      where: { client_id: clientId },
+      include: [
+        {
+          model: Hairdresser,
+          as: 'hairdresser',
+          include: [
+            {
+              model: User,
+              as: 'user',
+              attributes: ['id', 'full_name', 'profile_photo']
+            }
+          ]
+        },
+        {
+          model: Hairstyle,
+          as: 'hairstyle',
+          attributes: ['id', 'name', 'description', 'estimated_duration', 'category', 'photo']
+        }
+      ],
+      order: [['created_at', 'DESC']]
+    });
+
+    res.status(200).json({
+      success: true,
+      data: { bookings }
+    });
+
+  } catch (error) {
+    console.error('Get client bookings error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'FETCH_ERROR',
+        message: 'Erreur lors de la récupération des réservations'
+      }
+    });
+  }
+};
+
 exports.trackHairdresser = async (req, res) => {
   try {
     const { id } = req.params;
