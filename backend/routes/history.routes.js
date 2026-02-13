@@ -21,6 +21,13 @@ router.use(function(req, res, next) {
 router.get('/client', authenticate, isClient, historyController.getClientHistory);
 
 /**
+ * @route   GET /api/v1/history/user
+ * @desc    Alias pour l'historique du client (compatibilité)
+ * @access  Private (client)
+ */
+router.get('/user', authenticate, isClient, historyController.getClientHistory);
+
+/**
  * @route   GET /api/v1/history/hairdresser
  * @desc    Obtenir l'historique du coiffeur connecté
  * @access  Private (hairdresser)
