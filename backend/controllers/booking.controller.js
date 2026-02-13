@@ -1212,6 +1212,7 @@ exports.cancelBooking = async (req, res) => {
 exports.getClientBookings = async (req, res) => {
   try {
     const clientId = req.userId;
+    console.log('🔍 getClientBookings - Client ID:', clientId);
 
     const bookings = await Booking.findAll({
       where: { client_id: clientId },
@@ -1219,10 +1220,12 @@ exports.getClientBookings = async (req, res) => {
         {
           model: Hairdresser,
           as: 'hairdresser',
+          required: false,
           include: [
             {
               model: User,
               as: 'user',
+              required: false,
               attributes: ['id', 'full_name', 'profile_photo']
             }
           ]
@@ -1230,11 +1233,14 @@ exports.getClientBookings = async (req, res) => {
         {
           model: Hairstyle,
           as: 'hairstyle',
+          required: false,
           attributes: ['id', 'name', 'description', 'estimated_duration', 'category', 'photo']
         }
       ],
       order: [['created_at', 'DESC']]
     });
+
+    console.log('📊 getClientBookings - Réservations trouvées:', bookings.length);
 
     res.status(200).json({
       success: true,
@@ -1242,12 +1248,17 @@ exports.getClientBookings = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Get client bookings error:', error);
+    console.error('❌ Get client bookings error:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({
       success: false,
       error: {
         code: 'FETCH_ERROR',
-        message: 'Erreur lors de la récupération des réservations'
+        message: 'Erreur lors de la récupération des réservations',
+        ...(process.env.NODE_ENV === 'development' && { 
+          details: error.message,
+          stack: error.stack 
+        })
       }
     });
   }
