@@ -23,7 +23,6 @@ const menuItems: MenuItem[] = [
   { id: '1', title: 'Favoris', icon: 'heart-outline', screen: 'Favorites' },
   { id: '2', title: 'Historique', icon: 'time-outline', screen: 'History' },
   { id: '3', title: 'Statistiques', icon: 'stats-chart-outline', screen: 'Statistics' },
-  { id: '4', title: 'Réservations', icon: 'calendar-outline', screen: 'Bookings' },
   { id: '5', title: 'Paiements', icon: 'card-outline', screen: 'Payments' },
   { id: '6', title: 'Paramètres', icon: 'settings-outline', screen: 'Settings' },
   { id: '7', title: 'Deconnexion', icon: 'log-out-outline', screen: 'Logout' },
