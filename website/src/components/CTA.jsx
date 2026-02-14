@@ -18,7 +18,7 @@ const CTA = () => {
             <h2 className="cta-title">
               Prêt à rejoindre la <span className="text-primary">révolution</span> de la coiffure ?
             </h2>
-            <p className="cta-description">
+            <p className="cta-description" style={{ color: 'white' }}>
               Que vous soyez coiffeur professionnel ou client à la recherche de services de qualité, 
               Scizz est la solution qu'il vous faut en Côte d'Ivoire. Rejoignez des milliers d'utilisateurs 
               qui ont déjà adopté la coiffure à domicile 2.0.
