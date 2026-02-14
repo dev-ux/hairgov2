@@ -8,11 +8,16 @@ export const useSalonFavorites = () => {
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  // Charger les favoris au montage (une seule fois)
+  // Charger les favoris au montage (une seule fois avec délai)
   useEffect(() => {
     if (!loaded) {
-      loadFavorites();
-      setLoaded(true);
+      // Ajouter un petit délai pour éviter les appels simultanés
+      const timer = setTimeout(() => {
+        loadFavorites();
+        setLoaded(true);
+      }, 100);
+      
+      return () => clearTimeout(timer);
     }
   }, [loaded]);
 
