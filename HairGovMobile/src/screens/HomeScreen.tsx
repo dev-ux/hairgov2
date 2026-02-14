@@ -66,6 +66,14 @@ const formatImageUrl = (url: string) => {
       return fullUrl;
     }
 
+    // Si l'URL commence par profiles-, construire l'URL complète
+    if (cleanUrl.startsWith('profiles-')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      const fullUrl = `${baseUrl}/uploads/${cleanUrl}`;
+      console.log('URL profiles détectée, URL finale:', fullUrl);
+      return fullUrl;
+    }
+
     // Si l'URL commence par photos-, construire l'URL complète
     if (cleanUrl.startsWith('photos-')) {
       const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');

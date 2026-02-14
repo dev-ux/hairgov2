@@ -4,6 +4,9 @@ const router = express.Router();
 const { authenticate } = require('../middleware/auth.middleware');
 const favoriteController = require('../controllers/favorite.controller');
 
+// Route pour obtenir tous les favoris (avec authentification)
+router.get('/favorites', authenticate, favoriteController.getFavorites);
+
 // Toutes les routes nécessitent une authentification
 router.use(authenticate);
 
@@ -16,8 +19,5 @@ router.get('/hairdressers/:hairdresserId/favorite', favoriteController.checkFavo
 router.post('/salons/:salonId/favorite', favoriteController.addSalonToFavorites);
 router.delete('/salons/:salonId/favorite', favoriteController.removeSalonFromFavorites);
 router.get('/salons/:salonId/favorite', favoriteController.checkSalonFavorite);
-
-// Route pour obtenir tous les favoris
-router.get('/favorites', favoriteController.getFavorites);
 
 module.exports = router;

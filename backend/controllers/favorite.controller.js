@@ -27,12 +27,12 @@ exports.addToFavorites = async (req, res) => {
 
     let hairdresser = null;
 
-    // Essayer d'abord de trouver par hairdresser_id
+    // Essayer d'abord de trouver par id (hairdresser.id)
     hairdresser = await Hairdresser.findByPk(hairdresserId);
     
     // Si non trouvé, essayer de trouver par user_id
     if (!hairdresser) {
-      console.log('Recherche par hairdresser_id échouée, tentative par user_id...');
+      console.log('Recherche par hairdresser.id échouée, tentative par user_id...');
       hairdresser = await Hairdresser.findOne({
         where: { user_id: hairdresserId }
       });
@@ -118,12 +118,12 @@ exports.removeFromFavorites = async (req, res) => {
 
     let hairdresser = null;
 
-    // Essayer d'abord de trouver par hairdresser_id
+    // Essayer d'abord de trouver par id (hairdresser.id)
     hairdresser = await Hairdresser.findByPk(hairdresserId);
     
     // Si non trouvé, essayer de trouver par user_id
     if (!hairdresser) {
-      console.log('Recherche par hairdresser_id échouée, tentative par user_id...');
+      console.log('Recherche par hairdresser.id échouée, tentative par user_id...');
       hairdresser = await Hairdresser.findOne({
         where: { user_id: hairdresserId }
       });
@@ -188,7 +188,7 @@ exports.checkFavorite = async (req, res) => {
 
     let hairdresser = null;
 
-    // Essayer d'abord de trouver par hairdresser_id
+    // Essayer d'abord de trouver par id (hairdresser.id)
     hairdresser = await Hairdresser.findByPk(hairdresserId);
     
     // Si non trouvé, essayer de trouver par user_id
