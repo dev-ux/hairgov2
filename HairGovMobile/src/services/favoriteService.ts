@@ -171,7 +171,7 @@ export const favoriteService = {
         return [];
       }
 
-      const response = await fetch(`${API_URL}/favorites/favorites`, {
+      const response = await fetch(`${API_URL}/favorites`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
