@@ -81,7 +81,7 @@ const HairstylesGalleryScreen = () => {
       onPress={() => navigation.navigate('HairstyleDetail', { hairstyleId: item.id })}
     >
       <Image 
-        source={item.photo ? { uri: item.photo } : require('../assets/default-hairstyle.jpg')}
+        source={item.photo ? { uri: item.photo } : require('../assets/logo.png')}
         style={styles.hairstyleImage}
         resizeMode="cover"
       />
