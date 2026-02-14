@@ -6,11 +6,15 @@ import { favoriteService, salonFavoriteService } from '../services/favoriteServi
 export const useSalonFavorites = () => {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
-  // Charger les favoris au montage
+  // Charger les favoris au montage (une seule fois)
   useEffect(() => {
-    loadFavorites();
-  }, []);
+    if (!loaded) {
+      loadFavorites();
+      setLoaded(true);
+    }
+  }, [loaded]);
 
   const loadFavorites = async () => {
     try {
@@ -20,7 +24,6 @@ export const useSalonFavorites = () => {
       // Utiliser l'endpoint général et filtrer les salons
       const favoritesData = await favoriteService.getFavorites();
       console.log('🔍 useSalonFavorites - favoritesData type:', typeof favoritesData);
-      console.log('🔍 useSalonFavorites - favoritesData:', favoritesData);
       
       // Protection robuste contre les données invalides
       if (!favoritesData) {
@@ -30,31 +33,22 @@ export const useSalonFavorites = () => {
       }
       
       if (!Array.isArray(favoritesData)) {
-        console.error('Favorites data is not an array:', typeof favoritesData, favoritesData);
+        console.error('Favorites data is not an array:', typeof favoritesData);
         setFavorites([]);
         return;
       }
       
       const favoriteIds = favoritesData
         .filter((fav: any) => {
-          if (!fav) {
-            console.warn('Favorite item is null/undefined, skipping');
-            return false;
-          }
-          if (typeof fav !== 'object') {
-            console.warn('Favorite item is not an object:', typeof fav, fav);
-            return false;
-          }
+          if (!fav) return false;
+          if (typeof fav !== 'object') return false;
           return fav.favorite_type === 'salon';
         })
         .map((fav: any) => {
-          if (!fav.salon_id) {
-            console.warn('Favorite item missing salon_id:', fav);
-            return null;
-          }
+          if (!fav.salon_id) return null;
           return fav.salon_id;
         })
-        .filter((id: any) => id != null); // Filtre les null/undefined
+        .filter((id: any) => id != null);
         
       console.log('🔍 useSalonFavorites - favoriteIds:', favoriteIds);
       setFavorites(favoriteIds);
