@@ -376,11 +376,28 @@ exports.deleteHairstyle = async (req, res) => {
 // Récupérer toutes les coiffures
 exports.getHairstyles = async (req, res) => {
   try {
-    const result = await query('SELECT * FROM hairstyles ORDER BY created_at DESC');
+    const { Hairstyle } = require('../models');
+    
+    const result = await Hairstyle.findAll({
+      order: [['created_at', 'DESC']]
+    });
+    
+    const hairstyles = result.map(h => ({
+      id: h.id,
+      name: h.name,
+      description: h.description,
+      photo: h.photo,
+      estimated_duration: h.estimated_duration,
+      category: h.category,
+      is_active: h.is_active,
+      created_at: h.created_at,
+      updated_at: h.updated_at
+    }));
+    
     res.status(200).json({
       success: true,
-      count: result.rowCount,
-      data: result.rows
+      count: hairstyles.length,
+      data: { hairstyles }
     });
   } catch (error) {
     console.error('Erreur lors de la récupération des coiffures:', error);
