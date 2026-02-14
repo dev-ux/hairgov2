@@ -1,6 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
@@ -71,6 +72,17 @@ module.exports = (env, argv) => {
         favicon: './public/favicon.ico',
         title: 'HairGov - Coiffure à domicile',
         description: 'Application de coiffure à domicile pour professionnels et clients',
+      }),
+      new CopyWebpackPlugin({
+        patterns: [
+          {
+            from: 'public',
+            to: '.',
+            globOptions: {
+              ignore: ['**/index.html'],
+            },
+          },
+        ],
       }),
       ...(isProduction
         ? [

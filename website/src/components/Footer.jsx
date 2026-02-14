@@ -10,9 +10,8 @@ const Footer = () => {
       <div className="container">
         <div className="footer-content">
           <div className="footer-section">
-            <div className="footer-logo">
+            <div className="footer-logo" style={{ transform: 'scale(1.5)', filter: 'brightness(0) invert(1)', marginLeft: '70px' }}>
               <img src="/assets/logo.png" alt="Scizz" className="logo-img" />
-              <span className="logo-text">Scizz</span>
             </div>
             <p className="footer-description">
               La plateforme de coiffure à domicile qui connecte les coiffeurs 
