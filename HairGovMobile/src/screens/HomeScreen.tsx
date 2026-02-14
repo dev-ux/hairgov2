@@ -534,7 +534,7 @@ export default function HomeScreen() {
         <View style={homeScreenStyles.section}>
           <View style={homeScreenStyles.sectionHeader}>
             <Text style={homeScreenStyles.sectionTitle}>Nos Coiffures</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('HairstylesGallery')}>
+            <TouchableOpacity onPress={() => navigation.navigate('Hairstyles')}>
               <Text style={homeScreenStyles.seeAll}>Voir tout</Text>
             </TouchableOpacity>
           </View>
