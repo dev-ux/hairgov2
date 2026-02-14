@@ -5,7 +5,7 @@ const { authenticate } = require('../middleware/auth.middleware');
 const favoriteController = require('../controllers/favorite.controller');
 
 // Route pour obtenir tous les favoris (avec authentification)
-router.get('/favorites', authenticate, favoriteController.getFavorites);
+router.get('/', authenticate, favoriteController.getFavorites);
 
 // Toutes les routes nécessitent une authentification
 router.use(authenticate);
