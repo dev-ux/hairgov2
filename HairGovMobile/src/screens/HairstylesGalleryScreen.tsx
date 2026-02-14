@@ -7,7 +7,9 @@ import {
   Image,
   TouchableOpacity,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  Modal,
+  Dimensions
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -18,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Constants
 const API_BASE_URL = 'https://hairgov2.onrender.com';
+const { width, height } = Dimensions.get('window');
 
 type HairstylesGalleryScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'HairstylesGallery'>;
 
@@ -39,6 +42,8 @@ const HairstylesGalleryScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageModalVisible, setImageModalVisible] = useState(false);
 
   useEffect(() => {
     loadHairstyles();
@@ -75,22 +80,41 @@ const HairstylesGalleryScreen = () => {
     loadHairstyles();
   };
 
+  const openImageModal = (imageUrl: string) => {
+    setSelectedImage(imageUrl);
+    setImageModalVisible(true);
+  };
+
+  const closeImageModal = () => {
+    setImageModalVisible(false);
+    setSelectedImage(null);
+  };
+
   const renderHairstyleItem = ({ item }: { item: Hairstyle }) => (
     <TouchableOpacity 
       style={[styles.hairstyleCard, { backgroundColor: colors.card }]}
       onPress={() => navigation.navigate('HairstyleDetail', { hairstyleId: item.id })}
     >
-      {item.photo ? (
-        <Image 
-          source={{ uri: item.photo }}
-          style={styles.hairstyleImage}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={[styles.hairstyleImage, { backgroundColor: colors.input, justifyContent: 'center', alignItems: 'center' }]}>
-          <Ionicons name="cut-outline" size={40} color={colors.textSecondary} />
+      <TouchableOpacity 
+        style={styles.imageContainer}
+        onPress={() => item.photo && openImageModal(item.photo)}
+        activeOpacity={0.9}
+      >
+        {item.photo ? (
+          <Image 
+            source={{ uri: item.photo }}
+            style={styles.hairstyleImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles.hairstyleImage, { backgroundColor: colors.input, justifyContent: 'center', alignItems: 'center' }]}>
+            <Ionicons name="cut-outline" size={40} color={colors.textSecondary} />
+          </View>
+        )}
+        <View style={styles.imageOverlay}>
+          <Ionicons name="search" size={20} color="white" />
         </View>
-      )}
+      </TouchableOpacity>
       <View style={styles.hairstyleInfo}>
         <Text style={[styles.hairstyleName, { color: colors.text }]} numberOfLines={2}>
           {item.name}
@@ -180,6 +204,36 @@ const HairstylesGalleryScreen = () => {
           }
         />
       )}
+
+      {/* Modal pour le zoom d'image */}
+      <Modal
+        visible={imageModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeImageModal}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={styles.modalBackground} 
+            onPress={closeImageModal}
+            activeOpacity={0.9}
+          >
+            {selectedImage && (
+              <Image 
+                source={{ uri: selectedImage }}
+                style={styles.modalImage}
+                resizeMode="contain"
+              />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.closeButton} 
+            onPress={closeImageModal}
+          >
+            <Ionicons name="close" size={30} color="white" />
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -246,11 +300,25 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     overflow: 'hidden',
   },
+  imageContainer: {
+    position: 'relative',
+  },
   hairstyleImage: {
     width: '100%',
     height: 150,
     borderTopLeftRadius: 12,
     borderTopRightRadius: 12,
+  },
+  imageOverlay: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   hairstyleInfo: {
     padding: 12,
@@ -291,6 +359,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 5,
     textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalImage: {
+    width: width * 0.9,
+    height: height * 0.7,
+    borderRadius: 10,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 50,
+    right: 20,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
