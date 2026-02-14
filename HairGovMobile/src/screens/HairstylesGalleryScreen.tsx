@@ -111,26 +111,9 @@ const HairstylesGalleryScreen = () => {
             <Ionicons name="cut-outline" size={40} color={colors.textSecondary} />
           </View>
         )}
-        <View style={styles.imageOverlay}>
-          <Ionicons name="search" size={20} color="white" />
-        </View>
+       
       </TouchableOpacity>
-      <View style={styles.hairstyleInfo}>
-        <Text style={[styles.hairstyleName, { color: colors.text }]} numberOfLines={2}>
-          {item.name}
-        </Text>
-        <Text style={[styles.hairstyleCategory, { color: colors.textSecondary }]} numberOfLines={1}>
-          {item.category}
-        </Text>
-        <View style={styles.hairstyleMeta}>
-          <Text style={[styles.hairstylePrice, { color: colors.primary }]}>
-            {item.price} €
-          </Text>
-          <Text style={[styles.hairstyleDuration, { color: colors.textSecondary }]}>
-            {item.duration} min
-          </Text>
-        </View>
-      </View>
+     
     </TouchableOpacity>
   );
 

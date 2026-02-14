@@ -265,7 +265,7 @@ export default function HomeScreen() {
         const responseData = await response.json();
         console.log('Réponse de l\'API pour les coiffures:', { status: response.status, data: responseData });
         if (response.ok && responseData.success) {
-          const hairstylesData = responseData.data || [];
+          const hairstylesData = responseData.data.hairstyles || [];
           console.log('Coiffures chargées avec succès:', hairstylesData);
           setHairstyles(Array.isArray(hairstylesData) ? hairstylesData : []);
         } else {
@@ -567,7 +567,7 @@ export default function HomeScreen() {
                         return { uri: formattedUrl };
                       } else {
                         console.log('Pas de photo pour:', item.name);
-                        return require('../assets/url_de_l_image_1.jpg');
+                        return require('../assets/default-salon.jpg');
                       }
                     })()}
                     style={homeScreenStyles.hairstyleImage}

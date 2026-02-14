@@ -19,7 +19,7 @@ import BookingFormScreen from '../screens/BookingFormScreen';
 import BarberListScreen from '../screens/BarberListScreen';
 import BarberDetailScreen from '../screens/BarberDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import SalonDetailScreen from '@screens/SalonDetailScreen';
+import SalonDetailScreen from '../screens/SalonDetailScreen';
 // Import des nouveaux écrans
 import FavoritesScreen from '../screens/FavoritesScreen';
 import { HistoryScreen } from '../screens/HistoryScreen';
