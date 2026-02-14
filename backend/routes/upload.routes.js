@@ -8,7 +8,7 @@ const fs = require('fs');
 router.post('/upload', uploadFile);
 
 // Route pour servir les photos de profil depuis le stockage local
-router.get('/profiles/:filename', async (req, res) => {
+router.get('/uploads/:filename', async (req, res) => {
   try {
     const { filename } = req.params;
     const filePath = path.join(__dirname, '../public/uploads', filename);
