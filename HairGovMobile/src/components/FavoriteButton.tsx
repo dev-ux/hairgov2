@@ -1,5 +1,5 @@
 // components/FavoriteButton.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFavorites } from '../hooks/useFavorites';
@@ -20,41 +20,19 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
   style,
   onPress
 }) => {
-  // Utiliser le hook approprié selon le type
-  const hairdresserFavorites = useFavorites();
-  const salonFavorites = useSalonFavorites();
+  // Temporairement désactivé pour éviter les crashes
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [loading, setLoading] = useState(false);
   
-  let toggleFavorite, isFavorite, loading;
-  
-  switch (itemType) {
-    case 'salon':
-      ({ toggleFavorite, isFavorite, loading } = salonFavorites);
-      break;
-    case 'hairdresser':
-    default:
-      ({ toggleFavorite, isFavorite, loading } = hairdresserFavorites);
-      break;
-  }
-
   const [scaleValue] = React.useState(new Animated.Value(1));
-
-  const favorited = isFavorite(itemId);
 
   const handlePress = async () => {
     if (loading) return;
 
-    console.log('🔍 FavoriteButton - handlePress:', {
+    console.log('🔍 FavoriteButton - handlePress (temporairement désactivé):', {
       itemType,
-      itemId,
-      itemIdLength: itemId.length,
-      itemIdStart: itemId.substring(0, 8) + '...'
+      itemId
     });
-
-    // Protection: ne pas continuer si itemId est invalide
-    if (!itemId || typeof itemId !== 'string') {
-      console.error('FavoriteButton - Invalid itemId:', itemId);
-      return;
-    }
 
     // Animation du cœur
     Animated.sequence([
@@ -70,14 +48,9 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       }),
     ]).start();
 
-    try {
-      // Toggle du favori
-      await toggleFavorite(itemId);
-    } catch (error) {
-      console.error('FavoriteButton - Error in toggleFavorite:', error);
-    }
+    // Temporairement désactivé - juste l'animation
+    setIsFavorited(!isFavorited);
     
-    // Callback personnalisé
     if (onPress) {
       onPress();
     }
@@ -102,9 +75,9 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
         }}
       >
         <Ionicons
-          name={favorited ? 'heart' : 'heart-outline'}
+          name={isFavorited ? "heart" : "heart-outline"}
           size={size}
-          color={favorited ? '#FF4757' : '#666'}
+          color={isFavorited ? "#FF4757" : "#666"}
         />
       </Animated.View>
     </TouchableOpacity>
