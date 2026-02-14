@@ -295,9 +295,10 @@ const SalonDetailScreen = () => {
                             </View>
                         )}
                         <View style={styles.favoriteButtonContainer}>
-                            {salon?.id && (
+                            {/* Temporairement désactivé pour tester le crash */}
+                            {/* {salon?.id && (
                                 <FavoriteButton itemId={salon.id} itemType="salon" size={24} />
-                            )}
+                            )} */}
                         </View>
                     </View>
                 </View>
