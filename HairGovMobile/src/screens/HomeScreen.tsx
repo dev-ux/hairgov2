@@ -555,21 +555,9 @@ export default function HomeScreen() {
                   style={homeScreenStyles.hairstyleCard}
                   onPress={() => navigation.navigate('HairstyleDetail', { hairstyleId: item.id })}
                 >
+                  {item.photo ? (
                   <Image
-                    source={(() => {
-                      if (item.photo) {
-                        const formattedUrl = formatImageUrl(item.photo);
-                        console.log('=== HOMESCREEN HAIRSTYLE DEBUG ===');
-                        console.log('Hairstyle:', item.name);
-                        console.log('Photo originale:', item.photo);
-                        console.log('URL formatée:', formattedUrl);
-                        console.log('==================================');
-                        return { uri: formattedUrl };
-                      } else {
-                        console.log('Pas de photo pour:', item.name);
-                        return require('../assets/default-salon.jpg');
-                      }
-                    })()}
+                    source={{ uri: formatImageUrl(item.photo) || '' }}
                     style={homeScreenStyles.hairstyleImage}
                     resizeMode="cover"
                     onError={(e) => {
@@ -584,6 +572,11 @@ export default function HomeScreen() {
                       }
                     }}
                   />
+                ) : (
+                  <View style={[homeScreenStyles.hairstyleImage, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f0f0' }]}>
+                    <Ionicons name="cut-outline" size={30} color="#999" />
+                  </View>
+                )}
                   <View style={homeScreenStyles.hairstyleInfo}>
                     <Text style={homeScreenStyles.hairstyleName} numberOfLines={1}>{item.name}</Text>
                     <Text style={homeScreenStyles.hairstyleDuration} numberOfLines={1}>
