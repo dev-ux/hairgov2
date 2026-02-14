@@ -50,6 +50,12 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       itemIdStart: itemId.substring(0, 8) + '...'
     });
 
+    // Protection: ne pas continuer si itemId est invalide
+    if (!itemId || typeof itemId !== 'string') {
+      console.error('FavoriteButton - Invalid itemId:', itemId);
+      return;
+    }
+
     // Animation du cœur
     Animated.sequence([
       Animated.timing(scaleValue, {
@@ -64,8 +70,12 @@ export const FavoriteButton: React.FC<FavoriteButtonProps> = ({
       }),
     ]).start();
 
-    // Toggle du favori
-    await toggleFavorite(itemId);
+    try {
+      // Toggle du favori
+      await toggleFavorite(itemId);
+    } catch (error) {
+      console.error('FavoriteButton - Error in toggleFavorite:', error);
+    }
     
     // Callback personnalisé
     if (onPress) {

@@ -15,20 +15,46 @@ export const useSalonFavorites = () => {
   const loadFavorites = async () => {
     try {
       setLoading(true);
+      console.log('🔍 useSalonFavorites - Starting loadFavorites...');
+      
       // Utiliser l'endpoint général et filtrer les salons
       const favoritesData = await favoriteService.getFavorites();
+      console.log('🔍 useSalonFavorites - favoritesData type:', typeof favoritesData);
       console.log('🔍 useSalonFavorites - favoritesData:', favoritesData);
       
+      // Protection robuste contre les données invalides
+      if (!favoritesData) {
+        console.error('Favorites data is null/undefined');
+        setFavorites([]);
+        return;
+      }
+      
       if (!Array.isArray(favoritesData)) {
-        console.error('Favorites data is not an array:', favoritesData);
+        console.error('Favorites data is not an array:', typeof favoritesData, favoritesData);
         setFavorites([]);
         return;
       }
       
       const favoriteIds = favoritesData
-        .filter((fav: any) => fav && fav.favorite_type === 'salon')
-        .map((fav: any) => fav.salon_id)
-        .filter((id: any) => id); // Filtrer les IDs null/undefined
+        .filter((fav: any) => {
+          if (!fav) {
+            console.warn('Favorite item is null/undefined, skipping');
+            return false;
+          }
+          if (typeof fav !== 'object') {
+            console.warn('Favorite item is not an object:', typeof fav, fav);
+            return false;
+          }
+          return fav.favorite_type === 'salon';
+        })
+        .map((fav: any) => {
+          if (!fav.salon_id) {
+            console.warn('Favorite item missing salon_id:', fav);
+            return null;
+          }
+          return fav.salon_id;
+        })
+        .filter((id: any) => id != null); // Filtre les null/undefined
         
       console.log('🔍 useSalonFavorites - favoriteIds:', favoriteIds);
       setFavorites(favoriteIds);
