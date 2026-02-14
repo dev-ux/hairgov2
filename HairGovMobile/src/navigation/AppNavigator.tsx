@@ -34,6 +34,7 @@ import BarberHomePage from '../screens/BarberHomePage';
 import ReservationDetailScreen from '../screens/ReservationDetailScreen';
 import LoginScreen from '@screens/auth/LoginScreen';
 import UserProfileScreen from '../screens/UserProfileScreen';
+import HairstylesGalleryScreen from '../screens/HairstylesGalleryScreen';
 // Import des nouvelles pages de filtres
 import SpecialOffersScreen from '../screens/SpecialOffersScreen';
 import TrendingHairstylesScreen from '../screens/TrendingHairstylesScreen';
@@ -75,6 +76,7 @@ export type RootStackParamList = {
   // Autres écrans du profil
   Favorites: undefined;
   Hairstyles: undefined;
+  HairstylesGallery: undefined;
   HairstyleDetail: { hairstyleId: string };
   History: undefined;
   Statistics: undefined;
@@ -485,6 +487,15 @@ export const AppNavigator = () => {
               </TouchableOpacity>
             ),
           })}
+        />
+        
+        <Stack.Screen 
+          name="HairstylesGallery" 
+          component={HairstylesGalleryScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
         />
         
         {/* Nouvelles pages de filtres */}
