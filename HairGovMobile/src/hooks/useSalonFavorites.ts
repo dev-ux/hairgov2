@@ -17,12 +17,24 @@ export const useSalonFavorites = () => {
       setLoading(true);
       // Utiliser l'endpoint général et filtrer les salons
       const favoritesData = await favoriteService.getFavorites();
+      console.log('🔍 useSalonFavorites - favoritesData:', favoritesData);
+      
+      if (!Array.isArray(favoritesData)) {
+        console.error('Favorites data is not an array:', favoritesData);
+        setFavorites([]);
+        return;
+      }
+      
       const favoriteIds = favoritesData
-        .filter((fav: any) => fav.favorite_type === 'salon')
-        .map((fav: any) => fav.salon_id);
+        .filter((fav: any) => fav && fav.favorite_type === 'salon')
+        .map((fav: any) => fav.salon_id)
+        .filter((id: any) => id); // Filtrer les IDs null/undefined
+        
+      console.log('🔍 useSalonFavorites - favoriteIds:', favoriteIds);
       setFavorites(favoriteIds);
     } catch (error) {
       console.error('Error loading salon favorites:', error);
+      setFavorites([]);
     } finally {
       setLoading(false);
     }
