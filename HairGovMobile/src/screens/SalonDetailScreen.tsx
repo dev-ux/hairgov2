@@ -75,24 +75,12 @@ const getWorkingImageUrl = (originalUrl: string): string => {
         return originalUrl;
     }
     
-    const urlMapping: { [key: string]: string } = {
-        'hairstyle-1770513464791-250ac316-33ea-4be5-a6e8-35e8472656c3.jpg': 'photos-1762358785558-9fb0fd5d-e8a9-4f47-9bc4-c2ec18a12da8.jpg',
-        'hairstyle-1770513424792-cdb056c9-fd44-40c6-8269-f4d02a5ed613.jpg': 'photos-1762358872925-cc14ac13-8b31-4145-abdf-ad86af4b1a9a.jpg',
-        // Mappings pour les photos locales qui retournent 404
-        'photos-1770845136428-17a270f8-bf2c-4d34-91c4-13ec040fb483.png': 'https://res.cloudinary.com/dfghcfcdb/image/upload/v1770845136428/hairstyles/photos-1770845136428-17a270f8-bf2c-4d34-91c4-13ec040fb483.png',
-        'photos-1770846353378-8604a8fd-522a-40b4-9969-66bb6783b6f7_gsysih.jpg': 'https://res.cloudinary.com/dfghcfcdb/image/upload/v1770846353378/hairstyles/photos-1770846353378-8604a8fd-522a-40b4-9969-66bb6783b6f7_gsysih.jpg',
-        'photos-1770846039904-b59cd200-b410-4f56-96ba-9514fac8b962_dqugon.jpg': 'https://res.cloudinary.com/dfghcfcdb/image/upload/v1770846039904/hairstyles/photos-1770846039904-b59cd200-b410-4f56-96ba-9514fac8b962_dqugon.jpg',
-        'hairstyle-1770822364995-44995564-a155-4199-8835-5a62f41692a3_f9rvdr.jpg': 'https://res.cloudinary.com/dfghcfcdb/image/upload/v1770822364995/hairstyles/hairstyle-1770822364995-44995564-a155-4199-8835-5a62f41692a3_f9rvdr.jpg',
-        'photos-1770774384200-38ad07af-495d-4e06-b5d4-48212418d8e1.jpg': 'https://res.cloudinary.com/dfghcfcdb/image/upload/v1770774384200/hairstyles/photos-1770774384200-38ad07af-495d-4e06-b5d4-48212418d8e1.jpg'
-    };
-
     // Extraire le nom du fichier de l'URL
     const filename = originalUrl.split('/').pop() || '';
-    const workingFilename = urlMapping[filename] || filename;
 
     // Construire l'URL correcte sans /api/v1/
     const baseUrl = 'https://hairgov2.onrender.com';
-    return `${baseUrl}/uploads/photos/${workingFilename}`;
+    return `${baseUrl}/uploads/photos/${filename}`;
 };
 
 type RootStackParamList = {
