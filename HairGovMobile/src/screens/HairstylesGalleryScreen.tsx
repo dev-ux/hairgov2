@@ -31,8 +31,8 @@ interface Hairstyle {
   photo?: string;
   category: string;
   price: number;
-  duration: number;
-  is_available: boolean;
+  estimated_duration: number;
+  is_active: boolean;
 }
 
 const HairstylesGalleryScreen = () => {
@@ -113,6 +113,22 @@ const HairstylesGalleryScreen = () => {
         )}
        
       </TouchableOpacity>
+      <View style={styles.hairstyleInfo}>
+        <Text style={[styles.hairstyleName, { color: colors.text }]} numberOfLines={2}>
+          {item.name}
+        </Text>
+        <Text style={[styles.hairstyleCategory, { color: colors.textSecondary }]} numberOfLines={1}>
+          {item.category}
+        </Text>
+        <View style={styles.hairstyleMeta}>
+          <Text style={[styles.hairstylePrice, { color: colors.primary }]}>
+            {item.price} €
+          </Text>
+          <Text style={[styles.hairstyleDuration, { color: colors.textSecondary }]}>
+            {item.estimated_duration} min
+          </Text>
+        </View>
+      </View>
      
     </TouchableOpacity>
   );

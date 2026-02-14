@@ -35,6 +35,7 @@ import ReservationDetailScreen from '../screens/ReservationDetailScreen';
 import LoginScreen from '@screens/auth/LoginScreen';
 import UserProfileScreen from '../screens/UserProfileScreen';
 import HairstylesGalleryScreen from '../screens/HairstylesGalleryScreen';
+import HairstyleDetailScreen from '../screens/HairstyleDetailScreen';
 // Import des nouvelles pages de filtres
 import SpecialOffersScreen from '../screens/SpecialOffersScreen';
 import TrendingHairstylesScreen from '../screens/TrendingHairstylesScreen';
@@ -492,6 +493,14 @@ export const AppNavigator = () => {
         <Stack.Screen 
           name="HairstylesGallery" 
           component={HairstylesGalleryScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="HairstyleDetail" 
+          component={HairstyleDetailScreen}
           options={{
             headerShown: false,
             animation: 'slide_from_right',
