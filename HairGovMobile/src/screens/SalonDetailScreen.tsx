@@ -270,6 +270,15 @@ const SalonDetailScreen = () => {
         );
     }
 
+    // Protection supplémentaire - ne pas rendre si salon est null
+    if (!salon) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#6C63FF" />
+            </View>
+        );
+    }
+
     return (
         <ScrollView style={styles.container}>
             {/* En-tête avec l'image */}
@@ -298,7 +307,9 @@ const SalonDetailScreen = () => {
                             </View>
                         )}
                         <View style={styles.favoriteButtonContainer}>
-                            <FavoriteButton itemId={salon.id} itemType="salon" size={24} />
+                            {salon?.id && (
+                                <FavoriteButton itemId={salon.id} itemType="salon" size={24} />
+                            )}
                         </View>
                     </View>
                 </View>
