@@ -80,11 +80,17 @@ const HairstylesGalleryScreen = () => {
       style={[styles.hairstyleCard, { backgroundColor: colors.card }]}
       onPress={() => navigation.navigate('HairstyleDetail', { hairstyleId: item.id })}
     >
-      <Image 
-        source={item.photo ? { uri: item.photo } : require('../assets/logo.png')}
-        style={styles.hairstyleImage}
-        resizeMode="cover"
-      />
+      {item.photo ? (
+        <Image 
+          source={{ uri: item.photo }}
+          style={styles.hairstyleImage}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={[styles.hairstyleImage, { backgroundColor: colors.input, justifyContent: 'center', alignItems: 'center' }]}>
+          <Ionicons name="cut-outline" size={40} color={colors.textSecondary} />
+        </View>
+      )}
       <View style={styles.hairstyleInfo}>
         <Text style={[styles.hairstyleName, { color: colors.text }]} numberOfLines={2}>
           {item.name}
