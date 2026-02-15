@@ -74,12 +74,21 @@ const getWorkingImageUrl = (originalUrl: string): string => {
     'hairstyle-1770513424792-cdb056c9-fd44-40c6-8269-f4d02a5ed613.jpg': 'photos-1762358872925-cc14ac13-8b31-4145-abdf-ad86af4b1a9a.jpg'
   };
   
-  // Extraire le nom du fichier de l'URL
-  const filename = originalUrl.split('/').pop() || '';
+  // Si l'URL commence par /uploads/photos/, extraire juste le nom du fichier
+  let filename = originalUrl;
+  if (originalUrl.startsWith('/uploads/photos/')) {
+    filename = originalUrl.replace('/uploads/photos/', '');
+  } else if (originalUrl.includes('/')) {
+    filename = originalUrl.split('/').pop() || '';
+  }
+  
   const workingFilename = urlMapping[filename] || filename;
   
-  // Retourner l'URL Cloudinary si mappée, sinon l'URL locale
-  return workingFilename.startsWith('http') ? workingFilename : `https://hairgov2.onrender.com/uploads/photos/${workingFilename}`;
+  // Construire l'URL finale correcte
+  const baseUrl = 'https://hairgov2.onrender.com';
+  const finalUrl = `${baseUrl}/uploads/photos/${workingFilename}`;
+  console.log('URL finale construite:', finalUrl);
+  return finalUrl;
 };
 
 const { width } = Dimensions.get('window');

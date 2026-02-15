@@ -286,7 +286,7 @@ const SalonDetailScreen = () => {
 
     return (
         <ScrollView style={styles.container}>
-            {/* En-tête avec l'image */}
+            {/* En-tête avec bouton de retour */}
             <View style={styles.headerContainer}>
                 <TouchableOpacity
                     onPress={() => navigation.goBack()}
@@ -294,195 +294,52 @@ const SalonDetailScreen = () => {
                 >
                     <Ionicons name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Détails du Salon</Text>
+                <Text style={styles.headerTitle}>Salon Details</Text>
                 <View style={{ width: 24 }} /> {/* Pour équilibrer le flexbox */}
             </View>
 
             <View style={styles.contentContainer}>
-                {/* En-tête avec le nom et la vérification */}
-                <View style={styles.headerRow}>
-                    <Text style={styles.salonName} numberOfLines={2}>
-                        {salon.name}
-                    </Text>
-                    <View style={styles.headerActions}>
-                        {salon.is_validated && (
-                            <View style={styles.verifiedBadge}>
-                                <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                                <Text style={styles.verifiedText}>Vérifié</Text>
-                            </View>
-                        )}
-                        <View style={styles.favoriteButtonContainer}>
-                            {salon?.id && (
-                                <FavoriteButton itemId={salon.id} itemType="salon" size={24} />
-                            )}
-                        </View>
-                    </View>
-                </View>
-
-                {/* Adresse */}
-                <View style={styles.infoRow}>
-                    <Ionicons name="location-outline" size={20} color="#6C63FF" />
-                    <Text style={styles.address}>{salon.address}</Text>
-                </View>
-
-                {/* Coiffeur */}
-                {salon.hairdresser ? (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Coiffeur</Text>
-                        <View style={styles.hairdresserInfo}>
-                            {salon.hairdresser.profile_photo ? (
-                                <Image
-                                    source={{ uri: salon.hairdresser.profile_photo }}
-                                    style={styles.avatar}
-                                    onError={() => {
-                                        if (salon.hairdresser) {
-                                            setSalon({
-                                                ...salon,
-                                                hairdresser: { ...salon.hairdresser, profile_photo: '' }
-                                            });
-                                        }
-                                    }}
-                                />
-                            ) : (
-                                <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                                    <Ionicons name="person" size={24} color="#fff" />
-                                </View>
-                            )}
-                            <View>
-                                <Text style={styles.hairdresserName}>
-                                    {salon.hairdresser.full_name ||
-                                        `${salon.hairdresser.first_name || ''} ${salon.hairdresser.last_name || ''}`.trim() ||
-                                        'Nom non disponible'}
-                                </Text>
-                                {salon.hairdresser.phone && (
-                                    <TouchableOpacity
-                                        style={styles.phoneButton}
-                                        onPress={() => handlePhonePress(salon.hairdresser?.phone)}
-                                    >
-                                        <Ionicons name="call-outline" size={16} color="#6C63FF" />
-                                        <Text style={styles.phoneText}>{salon.hairdresser.phone}</Text>
-                                    </TouchableOpacity>
-                                )}
-                            </View>
-                        </View>
-                    </View>
-                ) : (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Coiffeur</Text>
-                        <Text style={styles.hairdresserName}>Informations non disponibles</Text>
-                    </View>
-                )}
-
-                {/* Photos du salon */}
+                {/* Photo principale du salon */}
                 {salon.photos && Array.isArray(salon.photos) && salon.photos.length > 0 && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Photos</Text>
-                        <ScrollView
-                            horizontal
-                            showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.photosContainer}
-                        >
-                            {salon.photos?.map((photo, index) => {
-                                if (!photo || typeof photo !== 'string') {
-                                    console.warn('Photo invalide ignorée:', photo);
-                                    return null;
-                                }
+                    <View style={styles.photoContainer}>
+                        {(() => {
+                            const firstPhoto = salon.photos[0];
+                            if (firstPhoto && typeof firstPhoto === 'string') {
                                 try {
-                                    const imageUrl = getWorkingImageUrl(photo);
+                                    const imageUrl = getWorkingImageUrl(firstPhoto);
                                     return (
-                                        <View key={index} style={styles.photoItem}>
-                                            {imageUrl ? (
-                                                <Image
-                                                    source={{ uri: imageUrl, cache: 'reload' }}
-                                                    style={styles.photoImage}
-                                                    resizeMode="cover"
-                                                    onError={(e) => {
-                                                        console.error('Erreur de chargement de la photo du salon:', {
-                                                            error: e.nativeEvent.error,
-                                                            photo: photo,
-                                                            mappedUrl: imageUrl
-                                                        });
-                                                    }}
-                                                />
-                                            ) : (
-                                                <View style={[styles.photoImage, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}>
-                                                    <Ionicons name="image-outline" size={30} color="#999" />
-                                                </View>
-                                            )}
-                                        </View>
+                                        <Image
+                                            source={{ uri: imageUrl, cache: 'reload' }}
+                                            style={styles.mainPhoto}
+                                            resizeMode="cover"
+                                            onError={(e) => {
+                                                console.error('Erreur de chargement de la photo principale:', {
+                                                    error: e.nativeEvent.error,
+                                                    photo: firstPhoto,
+                                                    mappedUrl: imageUrl
+                                                });
+                                            }}
+                                        />
                                     );
                                 } catch (error) {
                                     console.error('Erreur dans getWorkingImageUrl:', error);
                                     return null;
                                 }
-                            })}
-                        </ScrollView>
+                            }
+                            return null;
+                        })()}
                     </View>
                 )}
 
-                {/* Description */}
-                {salon.description && salon.description.trim() && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Description</Text>
-                        <Text style={styles.description}>{salon.description}</Text>
-                    </View>
-                )}
+                {/* Nom du salon */}
+                <Text style={styles.salonName} numberOfLines={2}>
+                    {salon.name}
+                </Text>
 
-                {/* Carte */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Localisation</Text>
-                    <TouchableOpacity
-                        style={styles.mapContainer}
-                        onPress={handleMapPress}
-                        activeOpacity={0.8}
-                    >
-                        {salon.latitude && salon.longitude ? (
-                            <MapView
-                                style={styles.map}
-                                initialRegion={{
-                                    latitude: Number(salon.latitude) || 48.8566,
-                                    longitude: Number(salon.longitude) || 2.3522,
-                                    latitudeDelta: 0.01,
-                                    longitudeDelta: 0.01,
-                                }}
-                                scrollEnabled={false}
-                                zoomEnabled={false}
-                            >
-                                <Marker
-                                    coordinate={{
-                                        latitude: Number(salon.latitude) || 48.8566,
-                                        longitude: Number(salon.longitude) || 2.3522,
-                                    }}
-                                    title={salon.name}
-                                    description={salon.address}
-                                />
-                            </MapView>
-                        ) : (
-                            <View style={[styles.map, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }]}>
-                                <Ionicons name="location-outline" size={40} color="#ccc" />
-                                <Text style={{ color: '#999', marginTop: 8 }}>Localisation non disponible</Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-                </View>
-
-                {/* Boutons d'action */}
-                <View style={styles.buttonsContainer}>
-                    <TouchableOpacity
-                        style={[styles.button, styles.primaryButton]}
-                        onPress={handleBookPress}
-                    >
-                        <Ionicons name="calendar-outline" size={20} color="#fff" />
-                        <Text style={styles.buttonText}>Réserver</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.button, styles.secondaryButton]}
-                        onPress={handleMapPress}
-                    >
-                        <Ionicons name="navigate-outline" size={20} color="#6C63FF" />
-                        <Text style={[styles.buttonText, styles.secondaryButtonText]}>Y aller</Text>
-                    </TouchableOpacity>
+                {/* Adresse */}
+                <View style={styles.addressRow}>
+                    <Ionicons name="location-outline" size={20} color="#6C63FF" />
+                    <Text style={styles.address}>{salon.address}</Text>
                 </View>
             </View>
         </ScrollView>
@@ -496,20 +353,19 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         paddingTop: 40,
     },
-    // En-tête avec l'image
-    imageContainer: {
-        width: '100%',
-        height: 250,
-        backgroundColor: '#f5f5f5',
+    // Contenu principal
+    contentContainer: {
+        padding: 16,
     },
-    salonImage: {
-        width: '100%',
-        height: '100%',
-    },
-    noImage: {
-        justifyContent: 'center',
+    // En-tête
+    headerContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#e1e1e1',
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+        backgroundColor: '#fff',
     },
     backButton: {
         padding: 5,
@@ -520,121 +376,37 @@ const styles = StyleSheet.create({
         color: '#333',
         marginLeft: 10,
     },
-    // Contenu principal
-    contentContainer: {
-        padding: 16,
+    // Photo principale
+    photoContainer: {
+        width: '100%',
+        height: 250,
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginBottom: 20,
+        backgroundColor: '#f5f5f5',
     },
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 8,
+    mainPhoto: {
+        width: '100%',
+        height: '100%',
     },
+    // Nom du salon
     salonName: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
         color: '#333',
+        marginBottom: 12,
+    },
+    // Adresse
+    addressRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
     },
     address: {
         marginLeft: 8,
         color: '#666',
         flex: 1,
-    },
-    // Section coiffeur
-    section: {
-        marginBottom: 24,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 12,
-    },
-    hairdresserInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    avatar: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        marginRight: 12,
-    },
-    avatarPlaceholder: {
-        backgroundColor: '#6C63FF',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    hairdresserName: {
         fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-    },
-    phoneButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 4,
-    },
-    phoneText: {
-        color: '#6C63FF',
-        marginLeft: 4,
-        fontSize: 14,
-    },
-    headerContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-        backgroundColor: '#fff',
-    },
-    // Description
-    description: {
-        color: '#666',
-        lineHeight: 22,
-    },
-    // Carte
-    mapContainer: {
-        height: 200,
-        borderRadius: 12,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: '#eee',
-    },
-    map: {
-        flex: 1,
-    },
-    // Boutons d'action
-    buttonsContainer: {
-        flexDirection: 'row',
-        marginTop: 16,
-        marginBottom: 24,
-    },
-    button: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 14,
-        borderRadius: 8,
-        marginHorizontal: 4,
-    },
-    primaryButton: {
-        backgroundColor: '#6C63FF',
-    },
-    secondaryButton: {
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: '#6C63FF',
-    },
-    buttonText: {
-        color: '#fff',
-        fontWeight: '600',
-        marginLeft: 8,
-    },
-    secondaryButtonText: {
-        color: '#6C63FF',
     },
     // États
     loadingContainer: {
@@ -664,59 +436,6 @@ const styles = StyleSheet.create({
     retryButtonText: {
         color: '#fff',
         fontWeight: '600',
-    },
-    // Styles pour les photos
-    photosContainer: {
-        paddingLeft: 0,
-        paddingRight: 16,
-    },
-    photoItem: {
-        marginRight: 12,
-        borderRadius: 8,
-        overflow: 'hidden',
-        width: 200,
-        height: 150,
-    },
-    photoImage: {
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#f5f5f5',
-    },
-    // Styles pour les favoris
-    headerActions: {
-        flexDirection: 'column',
-        alignItems: 'flex-end',
-        gap: 8,
-    },
-    verifiedBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#E8F5E8',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-        marginLeft: 8,
-    },
-    verifiedText: {
-        color: '#4CAF50',
-        fontSize: 12,
-        fontWeight: '600',
-        marginLeft: 4,
-    },
-    favoriteButtonContainer: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        borderRadius: 20,
-        padding: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    infoRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 12,
     },
 });
 
