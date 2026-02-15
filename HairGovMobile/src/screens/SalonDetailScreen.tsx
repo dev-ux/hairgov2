@@ -341,6 +341,52 @@ const SalonDetailScreen = () => {
                     <Ionicons name="location-outline" size={20} color="#6C63FF" />
                     <Text style={styles.address}>{salon.address}</Text>
                 </View>
+
+                {/* Galerie de photos */}
+                {salon.photos && Array.isArray(salon.photos) && salon.photos.length > 1 && (
+                    <View style={styles.galleryContainer}>
+                        <Text style={styles.sectionTitle}>Photos</Text>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            contentContainerStyle={styles.galleryScroll}
+                        >
+                            {salon.photos.map((photo, index) => {
+                                if (!photo || typeof photo !== 'string') {
+                                    return null;
+                                }
+                                try {
+                                    const imageUrl = getWorkingImageUrl(photo);
+                                    return (
+                                        <View key={index} style={styles.galleryItem}>
+                                            {imageUrl ? (
+                                                <Image
+                                                    source={{ uri: imageUrl, cache: 'reload' }}
+                                                    style={styles.galleryPhoto}
+                                                    resizeMode="cover"
+                                                    onError={(e) => {
+                                                        console.error('Erreur de chargement de la photo de la galerie:', {
+                                                            error: e.nativeEvent.error,
+                                                            photo: photo,
+                                                            mappedUrl: imageUrl
+                                                        });
+                                                    }}
+                                                />
+                                            ) : (
+                                                <View style={[styles.galleryPhoto, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}>
+                                                    <Ionicons name="image-outline" size={30} color="#999" />
+                                                </View>
+                                            )}
+                                        </View>
+                                    );
+                                } catch (error) {
+                                    console.error('Erreur dans getWorkingImageUrl:', error);
+                                    return null;
+                                }
+                            })}
+                        </ScrollView>
+                    </View>
+                )}
             </View>
         </ScrollView>
     );
@@ -407,6 +453,32 @@ const styles = StyleSheet.create({
         color: '#666',
         flex: 1,
         fontSize: 16,
+    },
+    // Galerie de photos
+    galleryContainer: {
+        marginTop: 20,
+    },
+    sectionTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 12,
+    },
+    galleryScroll: {
+        paddingLeft: 0,
+        paddingRight: 16,
+    },
+    galleryItem: {
+        marginRight: 12,
+        borderRadius: 8,
+        overflow: 'hidden',
+        width: 200,
+        height: 150,
+    },
+    galleryPhoto: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#f5f5f5',
     },
     // États
     loadingContainer: {
