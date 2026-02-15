@@ -421,7 +421,7 @@ const SalonDetailScreen = () => {
                 )}
 
                 {/* Description */}
-                {salon.description && (
+                {salon.description && salon.description.trim() && (
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Description</Text>
                         <Text style={styles.description}>{salon.description}</Text>
