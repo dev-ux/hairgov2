@@ -363,6 +363,13 @@ exports.getSalon = async (req, res) => {
       data: salonData
     };
 
+    // Désactiver le cache HTTP pour éviter les 304 sur les détails de salon
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+
     res.json(response);
 
   } catch (error) {

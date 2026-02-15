@@ -74,7 +74,7 @@ const getWorkingImageUrl = (originalUrl: string): string => {
         console.log('getWorkingImageUrl - URL complète détectée:', originalUrl);
         return originalUrl;
     }
-    
+
     // Extraire le nom du fichier de l'URL
     const filename = originalUrl.split('/').pop() || '';
 
@@ -155,12 +155,29 @@ const SalonDetailScreen = () => {
         try {
             console.log('Récupération des détails du salon:', salonId);
             const response = await fetch(`${API_URL}/salons/${salonId}`);
+            console.log('Status detail salon:', response.status);
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `Erreur HTTP: ${response.status}`);
+            // 1) Gérer le 304 AVANT tout parse JSON
+            if (response.status === 304) {
+                // Si tu n'as pas de cache local pour ce salon, considère que c'est une erreur
+                throw new Error('Les données du salon n’ont pas changé (304) et aucune donnée locale n’est disponible.');
             }
 
+            // 2) Gérer les autres erreurs
+            if (!response.ok) {
+                let errorMessage = `Erreur HTTP: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData?.message) {
+                        errorMessage = errorData.message;
+                    }
+                } catch {
+                    // body vide ou non JSON
+                }
+                throw new Error(errorMessage);
+            }
+
+            // 3) Ici seulement, on parse le JSON
             const data = await response.json();
             console.log('Données reçues:', JSON.stringify(data, null, 2));
 
@@ -366,39 +383,39 @@ const SalonDetailScreen = () => {
                             contentContainerStyle={styles.photosContainer}
                         >
                             {salon.photos?.map((photo, index) => {
-    if (!photo || typeof photo !== 'string') {
-        console.warn('Photo invalide ignorée:', photo);
-        return null;
-    }
-    try {
-        const imageUrl = getWorkingImageUrl(photo);
-        return (
-            <View key={index} style={styles.photoItem}>
-                {imageUrl ? (
-                    <Image
-                        source={{ uri: imageUrl, cache: 'reload' }}
-                        style={styles.photoImage}
-                        resizeMode="cover"
-                        onError={(e) => {
-                            console.error('Erreur de chargement de la photo du salon:', {
-                                error: e.nativeEvent.error,
-                                photo: photo,
-                                mappedUrl: imageUrl
-                            });
-                        }}
-                    />
-                ) : (
-                    <View style={[styles.photoImage, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}>
-                        <Ionicons name="image-outline" size={30} color="#999" />
-                    </View>
-                )}
-            </View>
-        );
-    } catch (error) {
-        console.error('Erreur dans getWorkingImageUrl:', error);
-        return null;
-    }
-})}
+                                if (!photo || typeof photo !== 'string') {
+                                    console.warn('Photo invalide ignorée:', photo);
+                                    return null;
+                                }
+                                try {
+                                    const imageUrl = getWorkingImageUrl(photo);
+                                    return (
+                                        <View key={index} style={styles.photoItem}>
+                                            {imageUrl ? (
+                                                <Image
+                                                    source={{ uri: imageUrl, cache: 'reload' }}
+                                                    style={styles.photoImage}
+                                                    resizeMode="cover"
+                                                    onError={(e) => {
+                                                        console.error('Erreur de chargement de la photo du salon:', {
+                                                            error: e.nativeEvent.error,
+                                                            photo: photo,
+                                                            mappedUrl: imageUrl
+                                                        });
+                                                    }}
+                                                />
+                                            ) : (
+                                                <View style={[styles.photoImage, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}>
+                                                    <Ionicons name="image-outline" size={30} color="#999" />
+                                                </View>
+                                            )}
+                                        </View>
+                                    );
+                                } catch (error) {
+                                    console.error('Erreur dans getWorkingImageUrl:', error);
+                                    return null;
+                                }
+                            })}
                         </ScrollView>
                     </View>
                 )}
