@@ -16,6 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { Salon } from './HomeScreen';
 import { API_URL } from '../config/constants';
+import { FavoriteButton } from '../components/FavoriteButton';
 
 // Fonction utilitaire pour formater les URLs d'images
 const formatImageUrl = (url: string) => {
@@ -178,11 +179,16 @@ export default function AllSalonsScreen() {
           <Text style={styles.salonAddress} numberOfLines={1}>
             {item.address}
           </Text>
-          <View style={styles.ratingContainer}>
-            <Ionicons name="star" size={16} color="#FFD700" />
-            <Text style={styles.ratingText}>
-              {item.average_rating ? item.average_rating.toFixed(1) : 'N/A'}
-            </Text>
+          <View style={styles.bottomRow}>
+            <View style={styles.ratingContainer}>
+              <Ionicons name="star" size={16} color="#FFD700" />
+              <Text style={styles.ratingText}>
+                {item.average_rating ? item.average_rating.toFixed(1) : 'N/A'}
+              </Text>
+            </View>
+            <View style={styles.favoriteButtonContainer}>
+              <FavoriteButton itemId={item.id} itemType="salon" size={20} />
+            </View>
           </View>
         </View>
       </TouchableOpacity>
@@ -281,6 +287,21 @@ const styles = StyleSheet.create({
     marginLeft: 4,
     fontSize: 14,
     color: '#666',
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  favoriteButtonContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 16,
+    padding: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   loaderContainer: {
     flex: 1,

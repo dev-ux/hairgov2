@@ -295,7 +295,11 @@ const SalonDetailScreen = () => {
                     <Ionicons name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>Salon Details</Text>
-                <View style={{ width: 24 }} /> {/* Pour équilibrer le flexbox */}
+                <View style={styles.favoriteContainer}>
+                    {salon?.id && (
+                        <FavoriteButton itemId={salon.id} itemType="salon" size={24} />
+                    )}
+                </View>
             </View>
 
             <View style={styles.contentContainer}>
@@ -421,6 +425,16 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#333',
         marginLeft: 10,
+    },
+    favoriteContainer: {
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderRadius: 20,
+        padding: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
     // Photo principale
     photoContainer: {
