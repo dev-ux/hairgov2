@@ -27,21 +27,9 @@ import {
   CheckCircle as ActiveIcon,
   Block as InactiveIcon
 } from '@mui/icons-material';
-import { getUsers, updateUserStatus } from '../../services/user.service';
+import { getUsers, updateHairdresserStatus, User } from '../../services/user.service';
 import { format } from 'date-fns';
 import fr from 'date-fns/locale/fr';
-
-
-interface User {
-  id: string;
-  full_name: string;
-  email: string;
-  phone: string;
-  user_type: 'client' | 'hairdresser' | 'admin';
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
 
 const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -77,15 +65,16 @@ const UsersPage: React.FC = () => {
     fetchUsers();
   }, []);
 
-  const handleStatusChange = async (userId: string, isActive: boolean) => {
+  const handleStatusChange = async (user: User, isActive: boolean) => {
+    if (user.user_type !== 'hairdresser' || !user.hairdresser_id) {
+      setError('Le changement de statut n\'est disponible que pour les coiffeurs');
+      return;
+    }
     try {
-      await updateUserStatus(userId, isActive);
-      setUsers(users.map(user => 
-        user.id === userId ? { ...user, is_active: isActive } : user
-      ));
+      await updateHairdresserStatus(user.hairdresser_id, isActive);
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_active: isActive } : u));
     } catch (err: any) {
-      console.error('Error updating user status:', err);
-      setError(err.message || 'Erreur lors de la mise à jour du statut');
+      setError(typeof err === 'string' ? err : 'Erreur lors de la mise à jour du statut');
     }
   };
 
@@ -205,9 +194,10 @@ const UsersPage: React.FC = () => {
                             )}
                             <Switch
                               checked={user.is_active}
-                              onChange={(e) => handleStatusChange(user.id, e.target.checked)}
+                              onChange={(e) => handleStatusChange(user, e.target.checked)}
                               color="primary"
                               size="small"
+                              disabled={user.user_type !== 'hairdresser'}
                             />
                           </Box>
                         </Tooltip>

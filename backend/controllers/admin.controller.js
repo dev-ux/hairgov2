@@ -18,14 +18,25 @@ const getUsersList = async (req, res) => {
         'created_at',
         'updated_at'
       ],
-      raw: true,
+      include: [{
+        model: Hairdresser,
+        as: 'hairdresserProfile',
+        attributes: ['id'],
+        required: false
+      }],
       order: [['created_at', 'DESC']]
     });
 
+    const formatted = users.map(u => ({
+      ...u.toJSON(),
+      hairdresser_id: u.hairdresserProfile?.id || null,
+      hairdresserProfile: undefined
+    }));
+
     res.status(200).json({
       success: true,
-      count: users.length,
-      data: users
+      count: formatted.length,
+      data: formatted
     });
   } catch (error) {
     console.error('Erreur lors de la récupération des utilisateurs:', error);

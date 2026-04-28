@@ -391,6 +391,44 @@ const SalonDetailScreen = () => {
                         </ScrollView>
                     </View>
                 )}
+
+                {/* Carte de localisation */}
+                <View style={styles.mapContainer}>
+                    <Text style={styles.sectionTitle}>Localisation</Text>
+                    <TouchableOpacity
+                        style={styles.mapWrapper}
+                        onPress={handleMapPress}
+                        activeOpacity={0.8}
+                    >
+                        {salon.latitude && salon.longitude ? (
+                            <MapView
+                                style={styles.map}
+                                initialRegion={{
+                                    latitude: Number(salon.latitude) || 48.8566,
+                                    longitude: Number(salon.longitude) || 2.3522,
+                                    latitudeDelta: 0.01,
+                                    longitudeDelta: 0.01,
+                                }}
+                                scrollEnabled={false}
+                                zoomEnabled={false}
+                            >
+                                <Marker
+                                    coordinate={{
+                                        latitude: Number(salon.latitude) || 48.8566,
+                                        longitude: Number(salon.longitude) || 2.3522,
+                                    }}
+                                    title={salon.name}
+                                    description={salon.address}
+                                />
+                            </MapView>
+                        ) : (
+                            <View style={[styles.map, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }]}>
+                                <Ionicons name="location-outline" size={40} color="#ccc" />
+                                <Text style={{ color: '#999', marginTop: 8 }}>Localisation non disponible</Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                </View>
             </View>
         </ScrollView>
     );
@@ -493,6 +531,20 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         backgroundColor: '#f5f5f5',
+    },
+    // Carte de localisation
+    mapContainer: {
+        marginTop: 20,
+    },
+    mapWrapper: {
+        height: 200,
+        borderRadius: 12,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#eee',
+    },
+    map: {
+        flex: 1,
     },
     // États
     loadingContainer: {

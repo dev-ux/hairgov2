@@ -309,6 +309,29 @@ export const homeScreenStyles = StyleSheet.create({
     fontWeight: '500',
     color: '#ffffffff',
   },
+  retryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  distanceBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  distanceText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
   categoriesList: {
     paddingLeft: 20,
     paddingRight: 10,

@@ -40,6 +40,8 @@ const validationSchema = Yup.object({
   full_name: Yup.string().required('Le nom complet est requis'),
   email: Yup.string().email('Entrez un email valide').required('L\'email est requis'),
   phone: Yup.string().required('Le numéro de téléphone est requis'),
+  profession: Yup.string().required('La profession est requise'),
+  residential_address: Yup.string().required('L\'adresse est requise'),
   password: Yup.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères').required('Le mot de passe est requis'),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref('password'), undefined], 'Les mots de passe doivent correspondre')
@@ -52,10 +54,11 @@ const AddHairdresserForm: React.FC<AddHairdresserFormProps> = ({ open, onClose, 
 
   const formik = useFormik({
     initialValues: {
-      // Informations utilisateur
       full_name: '',
       email: '',
       phone: '',
+      profession: 'Coiffeur',
+      residential_address: '',
       password: '',
       confirmPassword: '',
     },
@@ -70,6 +73,8 @@ const AddHairdresserForm: React.FC<AddHairdresserFormProps> = ({ open, onClose, 
           full_name: values.full_name,
           email: values.email,
           phone: values.phone,
+          profession: values.profession,
+          residential_address: values.residential_address,
           password: values.password,
         };
         
@@ -189,6 +194,50 @@ const AddHairdresserForm: React.FC<AddHairdresserFormProps> = ({ open, onClose, 
               />
             </Grid>
             
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                id="profession"
+                name="profession"
+                label="Profession"
+                value={formik.values.profession}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.profession && Boolean(formik.errors.profession)}
+                helperText={formik.touched.profession && formik.errors.profession}
+                margin="normal"
+                disabled={loading}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                id="residential_address"
+                name="residential_address"
+                label="Adresse résidentielle"
+                value={formik.values.residential_address}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                error={formik.touched.residential_address && Boolean(formik.errors.residential_address)}
+                helperText={formik.touched.residential_address && formik.errors.residential_address}
+                margin="normal"
+                disabled={loading}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <HomeIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Divider sx={{ my: 1 }} />
+              <Typography variant="h6" gutterBottom>Mot de passe</Typography>
+            </Grid>
+
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth

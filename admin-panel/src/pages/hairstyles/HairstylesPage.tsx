@@ -74,7 +74,7 @@ const HairstylesPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await api.get('/hairstyles');
-      setHairstyles(response.data.data || []);
+      setHairstyles(response.data.data?.hairstyles || []);
       setError(null);
     } catch (err) {
       console.error('Erreur lors de la récupération des coiffures:', err);

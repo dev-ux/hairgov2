@@ -36,6 +36,7 @@ import LoginScreen from '@screens/auth/LoginScreen';
 import UserProfileScreen from '../screens/UserProfileScreen';
 import HairstylesGalleryScreen from '../screens/HairstylesGalleryScreen';
 import HairstyleDetailScreen from '../screens/HairstyleDetailScreen';
+import HairdresserBookingScreen from '../screens/HairdresserBookingScreen';
 // Import des nouvelles pages de filtres
 import SpecialOffersScreen from '../screens/SpecialOffersScreen';
 import TrendingHairstylesScreen from '../screens/TrendingHairstylesScreen';
@@ -82,6 +83,7 @@ export type RootStackParamList = {
   History: undefined;
   Statistics: undefined;
   Bookings: undefined;
+  HairdresserBooking: { hairdresserId: string; hairdresserName: string };
   Payments: undefined;
   Settings: undefined;
   // Autres écrans
@@ -153,18 +155,14 @@ const MainTabs = () => {
         }} 
       />
     
-      <Tab.Screen 
-        name="Booking" 
-        component={BookingScreen} 
-        options={{ 
+      <Tab.Screen
+        name="Bookings"
+        component={BookingsScreen}
+        options={{
           title: 'Réservations',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar" size={size} color={color} />
           )
-        }} 
-        initialParams={{
-          hairdresserId: '1', // ID par défaut, à remplacer par la logique de votre application
-          hairdresserName: 'Coiffeur', // Nom par défaut
         }}
       />
     </Tab.Navigator>
@@ -490,8 +488,16 @@ export const AppNavigator = () => {
           })}
         />
         
-        <Stack.Screen 
-          name="HairstylesGallery" 
+        <Stack.Screen
+          name="HairdresserBooking"
+          component={HairdresserBookingScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="HairstylesGallery"
           component={HairstylesGalleryScreen}
           options={{
             headerShown: false,

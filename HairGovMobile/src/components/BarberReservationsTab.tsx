@@ -111,15 +111,19 @@ export default function BarberReservationsTab() {
       id: reservation.id,
       clientName: reservation.client_name,
       clientAvatar: reservation.client_avatar,
+      hairstyleName: reservation.hairstyle?.name,
       description: reservation.hairstyle?.description || 'Service de coiffure',
-      price: `${reservation.client_price}€`,
+      price: `${reservation.client_price.toLocaleString()} FCFA`,
       locationPreference: reservation.service_type === 'home' ? 'domicile' as const : 'salon' as const,
       clientCoordinates: {
-        latitude: 48.8566,
-        longitude: 2.3522,
+        latitude: 5.3486,
+        longitude: -4.0082,
         address: reservation.location_address,
       },
       phoneNumber: reservation.client_phone,
+      status: reservation.status,
+      date: new Date(reservation.scheduled_time).toLocaleDateString('fr-FR'),
+      time: new Date(reservation.scheduled_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
     };
     navigation.navigate('ReservationDetail', { reservation: reservationDetail });
   };
@@ -205,7 +209,7 @@ export default function BarberReservationsTab() {
                   </View>
                   <View style={styles.detailRow}>
                     <Ionicons name="cash-outline" size={16} color="#666" />
-                    <Text style={styles.detailText}>{reservation.client_price}€</Text>
+                    <Text style={styles.detailText}>{reservation.client_price?.toLocaleString()} FCFA</Text>
                   </View>
                 </View>
               </View>

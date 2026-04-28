@@ -255,9 +255,9 @@ const BarberDetailScreen = () => {
         style={[styles.button, !barber.is_available && styles.buttonDisabled]}
         disabled={!barber.is_available}
         onPress={() => {
-          navigation.navigate('Booking', { 
+          navigation.navigate('HairdresserBooking', {
             hairdresserId: barber.id,
-            hairdresserName: barber.user?.full_name || 'le coiffeur'
+            hairdresserName: barber.user?.full_name || 'le coiffeur',
           });
         }}
       >

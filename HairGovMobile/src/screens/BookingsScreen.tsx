@@ -1,27 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
-  TouchableOpacity, 
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
   ActivityIndicator,
   SafeAreaView,
-  RefreshControl
+  RefreshControl,
+  Modal,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/constants';
 
-type Booking = {  
+type Booking = {
   id: string;
   client_name: string;
   client_phone: string;
-  hairstyle?: {
-    name: string;
-    description?: string;
-  };
+  hairstyle?: { name: string; description?: string };
   service_type: 'home' | 'salon';
   status: 'pending' | 'accepted' | 'rejected' | 'in_progress' | 'completed' | 'cancelled';
   scheduled_time: string;
@@ -30,63 +30,61 @@ type Booking = {
   service_fee: number;
   estimated_duration: number;
   created_at: string;
-  hairdresser?: {
-    full_name: string;
-    profile_photo?: string;
-  };
-  salon?: {
-    name: string;
-    address: string;
-  };
+  hairdresser?: { full_name: string; profile_photo?: string };
+  salon?: { name: string; address: string };
+  has_rating?: boolean;
+};
+
+const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
+  pending:    { label: 'En attente', bg: '#FFF8E6', text: '#FF9800' },
+  accepted:   { label: 'Confirmé',   bg: '#E3F2FD', text: '#2196F3' },
+  in_progress:{ label: 'En cours',   bg: '#EDE7F6', text: '#6C63FF' },
+  completed:  { label: 'Terminé',    bg: '#E8F5E9', text: '#4CAF50' },
+  rejected:   { label: 'Refusé',     bg: '#FFEBEE', text: '#F44336' },
+  cancelled:  { label: 'Annulé',     bg: '#FFEBEE', text: '#F44336' },
 };
 
 export const BookingsScreen = () => {
-  const navigation = useNavigation();
+  const navigation = useNavigation<any>();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Rating modal state
+  const [ratingModal, setRatingModal] = useState<{ visible: boolean; bookingId: string | null }>({
+    visible: false,
+    bookingId: null,
+  });
+  const [selectedStars, setSelectedStars] = useState(5);
+  const [comment, setComment] = useState('');
+  const [submittingRating, setSubmittingRating] = useState(false);
+
   const fetchBookings = async () => {
     try {
       setError(null);
       const token = await AsyncStorage.getItem('userToken');
-      
       if (!token) {
         setError('Vous devez être connecté pour voir vos réservations');
         return;
       }
 
-      console.log('Récupération des réservations client...');
       const response = await fetch(`${API_URL}/bookings/client`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
 
-      console.log('Réponse status:', response.status);
-      
       if (!response.ok) {
-        if (response.status === 401) {
-          setError('Session expirée. Veuillez vous reconnecter.');
-        } else {
-          setError(`Erreur: ${response.status}`);
-        }
+        setError(response.status === 401 ? 'Session expirée. Veuillez vous reconnecter.' : `Erreur: ${response.status}`);
         return;
       }
 
       const data = await response.json();
-      console.log('Données reçues:', data);
-
       if (data.success && data.data) {
         setBookings(data.data);
-        console.log(`Nombre de réservations: ${data.data.length}`);
       } else {
-        setError(data.message || 'Format de réponse invalide');
+        setError(data.message || 'Impossible de charger les réservations');
       }
-    } catch (error) {
-      console.error('Erreur lors de la récupération des réservations:', error);
+    } catch {
       setError('Impossible de charger les réservations');
     } finally {
       setLoading(false);
@@ -94,182 +92,154 @@ export const BookingsScreen = () => {
     }
   };
 
-  useEffect(() => {
-    fetchBookings();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchBookings();
+    }, [])
+  );
 
   const onRefresh = () => {
     setRefreshing(true);
     fetchBookings();
   };
 
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case 'accepted':
-      case 'confirmed':
-        return styles.statusConfirmed;
-      case 'pending':
-        return styles.statusPending;
-      case 'rejected':
-      case 'cancelled':
-        return styles.statusCancelled;
-      case 'in_progress':
-        return styles.statusInProgress;
-      case 'completed':
-        return styles.statusCompleted;
-      default:
-        return styles.statusPending;
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'En attente';
-      case 'accepted':
-      case 'confirmed':
-        return 'Confirmé';
-      case 'rejected':
-        return 'Refusé';
-      case 'cancelled':
-        return 'Annulé';
-      case 'in_progress':
-        return 'En cours';
-      case 'completed':
-        return 'Terminé';
-      default:
-        return status;
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   const handleCancelBooking = async (bookingId: string) => {
-    try {
-      const token = await AsyncStorage.getItem('userToken');
-      
-      const response = await fetch(`${API_URL}/bookings/${bookingId}/cancel`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+    Alert.alert('Annuler', 'Voulez-vous vraiment annuler cette réservation ?', [
+      { text: 'Non', style: 'cancel' },
+      {
+        text: 'Oui',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const token = await AsyncStorage.getItem('userToken');
+            const response = await fetch(`${API_URL}/bookings/${bookingId}/cancel`, {
+              method: 'PUT',
+              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            });
+            const data = await response.json();
+            if (data.success) {
+              fetchBookings();
+            } else {
+              Alert.alert('Erreur', data.message || 'Impossible d\'annuler');
+            }
+          } catch {
+            Alert.alert('Erreur', 'Une erreur est survenue');
+          }
+        },
+      },
+    ]);
+  };
 
+  const openRatingModal = (bookingId: string) => {
+    setSelectedStars(5);
+    setComment('');
+    setRatingModal({ visible: true, bookingId });
+  };
+
+  const handleSubmitRating = async () => {
+    if (!ratingModal.bookingId) return;
+    try {
+      setSubmittingRating(true);
+      const token = await AsyncStorage.getItem('userToken');
+      const response = await fetch(`${API_URL}/bookings/${ratingModal.bookingId}/rate`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating: selectedStars, comment }),
+      });
       const data = await response.json();
-      
       if (data.success) {
-        // Rafraîchir la liste
+        setRatingModal({ visible: false, bookingId: null });
+        Alert.alert('Merci !', 'Votre avis a été enregistré.');
         fetchBookings();
       } else {
-        setError(data.message || 'Impossible d\'annuler la réservation');
+        Alert.alert('Erreur', data.message || 'Impossible d\'enregistrer votre avis');
       }
-    } catch (error) {
-      console.error('Erreur lors de l\'annulation:', error);
-      setError('Erreur lors de l\'annulation');
+    } catch {
+      Alert.alert('Erreur', 'Une erreur est survenue');
+    } finally {
+      setSubmittingRating(false);
     }
   };
 
-  const renderItem = ({ item }: { item: Booking }) => (
-    <View style={styles.bookingCard}>
-      <View style={styles.bookingHeader}>
-        <View style={styles.salonInfo}>
-          <Text style={styles.salonName}>
-            {item.salon?.name || item.hairdresser?.full_name || 'Service de coiffure'}
-          </Text>
-          <Text style={styles.serviceName}>
-            {item.hairstyle?.name || 'Service'}
-          </Text>
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleDateString('fr-FR', {
+      day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+
+  const renderItem = ({ item }: { item: Booking }) => {
+    const statusCfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.pending;
+    const provider = item.hairdresser?.full_name || item.salon?.name || 'Coiffeur';
+
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View style={styles.cardHeaderLeft}>
+            <Text style={styles.providerName}>{provider}</Text>
+            <Text style={styles.serviceName}>{item.hairstyle?.name || 'Service'}</Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: statusCfg.bg }]}>
+            <Text style={[styles.statusText, { color: statusCfg.text }]}>{statusCfg.label}</Text>
+          </View>
         </View>
-        <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
-          <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
+
+        <View style={styles.cardBody}>
+          <View style={styles.infoRow}>
+            <Ionicons name="calendar-outline" size={16} color="#666" />
+            <Text style={styles.infoText}>{formatDate(item.scheduled_time)}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Ionicons name="location-outline" size={16} color="#666" />
+            <Text style={styles.infoText} numberOfLines={1}>
+              {item.service_type === 'home' ? 'À domicile' : 'En salon'} — {item.location_address}
+            </Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Ionicons name="cash-outline" size={16} color="#666" />
+            <Text style={styles.infoText}>
+              {item.client_price.toLocaleString()} FCFA
+              {item.service_fee > 0 ? ` + ${item.service_fee.toLocaleString()} FCFA frais` : ''}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.cardActions}>
+          {(item.status === 'pending' || item.status === 'accepted') && (
+            <TouchableOpacity
+              style={styles.cancelBtn}
+              onPress={() => handleCancelBooking(item.id)}
+            >
+              <Text style={styles.cancelBtnText}>Annuler</Text>
+            </TouchableOpacity>
+          )}
+          {item.status === 'completed' && !item.has_rating && (
+            <TouchableOpacity
+              style={styles.rateBtn}
+              onPress={() => openRatingModal(item.id)}
+            >
+              <Ionicons name="star" size={16} color="#fff" />
+              <Text style={styles.rateBtnText}>Donner un avis</Text>
+            </TouchableOpacity>
+          )}
+          {item.status === 'completed' && item.has_rating && (
+            <View style={styles.ratedLabel}>
+              <Ionicons name="star" size={14} color="#FF9800" />
+              <Text style={styles.ratedLabelText}>Noté</Text>
+            </View>
+          )}
         </View>
       </View>
-      
-      <View style={styles.bookingDetails}>
-        <Ionicons name="calendar-outline" size={20} color="#666" />
-        <Text style={styles.detailText}>{formatDate(item.scheduled_time)}</Text>
-      </View>
-      
-      <View style={styles.bookingDetails}>
-        <Ionicons name="location-outline" size={20} color="#666" />
-        <Text style={styles.detailText}>
-          {item.service_type === 'home' ? 'À domicile' : 'En salon'} - {item.location_address}
-        </Text>
-      </View>
-      
-      <View style={styles.bookingDetails}>
-        <Ionicons name="cash-outline" size={20} color="#666" />
-        <Text style={styles.detailText}>
-          {item.client_price} FCFA {item.service_fee > 0 && `+ ${item.service_fee} FCFA (frais)`}
-        </Text>
-      </View>
-      
-      <View style={styles.bookingDetails}>
-        <Ionicons name="time-outline" size={20} color="#666" />
-        <Text style={styles.detailText}>{item.estimated_duration} minutes</Text>
-      </View>
-      
-      <View style={styles.actions}>
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={() => navigation.navigate('Booking' as any, { 
-            reservation: {
-              id: item.id,
-              clientName: item.client_name,
-              clientAvatar: null,
-              description: item.hairstyle?.description || 'Service de coiffure',
-              price: `${item.client_price}€`,
-              locationPreference: item.service_type === 'home' ? 'domicile' : 'salon',
-              date: formatDate(item.scheduled_time),
-              time: new Date(item.scheduled_time).toLocaleTimeString('fr-FR', {
-                hour: '2-digit',
-                minute: '2-digit'
-              }),
-              status: item.status,
-              phoneNumber: item.client_phone
-            }
-          })}
-        >
-          <Text style={styles.actionButtonText}>Voir les détails</Text>
-        </TouchableOpacity>
-        
-        {(item.status === 'pending' || item.status === 'accepted') && (
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.cancelButton]}
-            onPress={() => handleCancelBooking(item.id)}
-          >
-            <Text style={[styles.actionButtonText, styles.cancelButtonText]}>Annuler</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-    </View>
-  );
+    );
+  };
 
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.headerContainer}>
-          <TouchableOpacity 
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={24} color="#000" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Mes Réservations</Text>
+        <View style={styles.topBar}>
+          <Text style={styles.topBarTitle}>Mes Réservations</Text>
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#6C63FF" />
-          <Text style={styles.loadingText}>Chargement de vos réservations...</Text>
+          <Text style={styles.loadingText}>Chargement...</Text>
         </View>
       </SafeAreaView>
     );
@@ -277,22 +247,19 @@ export const BookingsScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.headerContainer}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+      <View style={styles.topBar}>
+        <Text style={styles.topBarTitle}>Mes Réservations</Text>
+        <TouchableOpacity onPress={onRefresh}>
+          <Ionicons name="refresh-outline" size={22} color="#6C63FF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Mes Réservations</Text>
       </View>
-      
+
       {error ? (
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={60} color="#ff6b6b" />
+        <View style={styles.centerContent}>
+          <Ionicons name="alert-circle-outline" size={56} color="#ff6b6b" />
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchBookings}>
-            <Text style={styles.retryButtonText}>Réessayer</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={fetchBookings}>
+            <Text style={styles.retryBtnText}>Réessayer</Text>
           </TouchableOpacity>
         </View>
       ) : bookings.length > 0 ? (
@@ -300,215 +267,167 @@ export const BookingsScreen = () => {
           data={bookings}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
+          contentContainerStyle={styles.list}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         />
       ) : (
-        <View style={styles.emptyContainer}>
+        <View style={styles.centerContent}>
           <Ionicons name="calendar-outline" size={60} color="#ccc" />
-          <Text style={styles.emptyText}>Aucune réservation</Text>
-          <Text style={styles.emptySubtext}>Vous n'avez aucune réservation pour le moment</Text>
+          <Text style={styles.emptyTitle}>Aucune réservation</Text>
+          <Text style={styles.emptySubtext}>Réservez un coiffeur depuis l'accueil</Text>
+          <TouchableOpacity style={styles.homeBtn} onPress={() => navigation.navigate('Home')}>
+            <Text style={styles.homeBtnText}>Explorer les coiffeurs</Text>
+          </TouchableOpacity>
         </View>
       )}
+
+      {/* Rating Modal */}
+      <Modal visible={ratingModal.visible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Votre avis</Text>
+              <TouchableOpacity onPress={() => setRatingModal({ visible: false, bookingId: null })}>
+                <Ionicons name="close" size={24} color="#333" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.ratingLabel}>Note</Text>
+            <View style={styles.starsRow}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <TouchableOpacity key={star} onPress={() => setSelectedStars(star)}>
+                  <Ionicons
+                    name={star <= selectedStars ? 'star' : 'star-outline'}
+                    size={36}
+                    color={star <= selectedStars ? '#FF9800' : '#ddd'}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.ratingLabel}>Commentaire (optionnel)</Text>
+            <TextInput
+              style={styles.commentInput}
+              value={comment}
+              onChangeText={setComment}
+              placeholder="Décrivez votre expérience..."
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={3}
+            />
+
+            <TouchableOpacity
+              style={[styles.submitRatingBtn, submittingRating && styles.submitRatingBtnDisabled]}
+              onPress={handleSubmitRating}
+              disabled={submittingRating}
+            >
+              {submittingRating ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.submitRatingBtnText}>Envoyer mon avis</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
-      paddingTop: 60,
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#333',
-  },
-  listContent: {
-    paddingBottom: 80,
-  },
-  bookingCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  bookingHeader: {
+  container: { flex: 1, backgroundColor: '#f5f6fa' },
+  topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
-  },
-  salonName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-    textTransform: 'capitalize',
-  },
-  statusConfirmed: {
-    backgroundColor: '#e6f7e6',
-  },
-  statusPending: {
-    backgroundColor: '#fff8e6',
-  },
-  statusInProgress: {
-    backgroundColor: '#e3f2fd',
-  },
-  statusCompleted: {
-    backgroundColor: '#e8f5e8',
-  },
-  statusCancelled: {
-    backgroundColor: '#ffe6e6',
-  },
-  salonInfo: {
-    flex: 1,
-  },
-  serviceName: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 60,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 60,
     paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
-  errorText: {
-    fontSize: 16,
-    color: '#ff6b6b',
-    textAlign: 'center',
-    marginTop: 16,
-    marginBottom: 20,
+  topBarTitle: { fontSize: 20, fontWeight: '700', color: '#333' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 12, fontSize: 15, color: '#666' },
+  centerContent: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 12 },
+  errorText: { fontSize: 15, color: '#ff6b6b', textAlign: 'center' },
+  retryBtn: { backgroundColor: '#6C63FF', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 20 },
+  retryBtnText: { color: '#fff', fontWeight: '600' },
+  emptyTitle: { fontSize: 18, fontWeight: '600', color: '#666' },
+  emptySubtext: { fontSize: 14, color: '#999' },
+  homeBtn: { backgroundColor: '#6C63FF', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 24, marginTop: 8 },
+  homeBtnText: { color: '#fff', fontWeight: '700' },
+  list: { padding: 16, gap: 14 },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 6,
+    elevation: 3,
   },
-  retryButton: {
-    backgroundColor: '#6C63FF',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  bookingDetails: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  detailText: {
-    marginLeft: 8,
-    color: '#666',
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 12,
-  },
-  actionButton: {
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  cardHeaderLeft: { flex: 1 },
+  providerName: { fontSize: 16, fontWeight: '700', color: '#333', marginBottom: 4 },
+  serviceName: { fontSize: 14, color: '#666' },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, marginLeft: 8 },
+  statusText: { fontSize: 12, fontWeight: '700' },
+  cardBody: { gap: 8, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
+  infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  infoText: { fontSize: 13, color: '#666', flex: 1 },
+  cardActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 12 },
+  cancelBtn: {
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
-    marginLeft: 10,
-    backgroundColor: '#007AFF',
-  },
-  actionButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  cancelButton: {
-    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#FF3B30',
+    borderColor: '#F44336',
   },
-  cancelButtonText: {
-    color: '#FF3B30',
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 60,
-  },
-  emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#666',
-    marginTop: 16,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 8,
-  },
-  newBookingButton: {
-    position: 'absolute',
-    bottom: 30,
-    right: 20,
-    backgroundColor: '#007AFF',
+  cancelBtnText: { color: '#F44336', fontSize: 13, fontWeight: '600' },
+  rateBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 4,
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    backgroundColor: '#FF9800',
   },
-  newBookingButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
+  rateBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  ratedLabel: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  ratedLabelText: { fontSize: 13, color: '#FF9800', fontWeight: '600' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalCard: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    gap: 16,
   },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  modalTitle: { fontSize: 20, fontWeight: '700', color: '#333' },
+  ratingLabel: { fontSize: 14, fontWeight: '600', color: '#666' },
+  starsRow: { flexDirection: 'row', gap: 8 },
+  commentInput: {
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 15,
+    color: '#333',
+    textAlignVertical: 'top',
+    minHeight: 80,
+  },
+  submitRatingBtn: {
+    backgroundColor: '#6C63FF',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  submitRatingBtnDisabled: { backgroundColor: '#c5c2f5' },
+  submitRatingBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
 
 export default BookingsScreen;

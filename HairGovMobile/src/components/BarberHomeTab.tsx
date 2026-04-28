@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../contexts/AuthContext';
@@ -51,12 +51,11 @@ export default function BarberHomeTab() {
   const mapRef = useRef<MapView>(null);
   const { user } = useAuth();
 
-  useEffect(() => {
-    // Ne pas charger automatiquement les réservations à la connexion
-    // L'utilisateur pourra les charger manuellement si besoin
-    console.log('BarberHomeTab monté - pas de chargement automatique des réservations');
-    setLoading(false);
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchReservations();
+    }, [])
+  );
 
   const fetchReservations = async () => {
     try {
@@ -127,12 +126,15 @@ export default function BarberHomeTab() {
                   id: requestId,
                   clientName: request.client_name,
                   clientAvatar: request.client_avatar,
+                  hairstyleName: request.hairstyle?.name,
                   description: request.hairstyle?.description || 'Service de coiffure',
-                  price: `${request.client_price}€`,
+                  price: `${request.client_price.toLocaleString()} FCFA`,
                   locationPreference: request.service_type === 'home' ? 'domicile' as const : 'salon' as const,
-                  date: request.scheduled_time ? new Date(request.scheduled_time).toLocaleDateString() : '',
-                  time: request.scheduled_time ? new Date(request.scheduled_time).toLocaleTimeString() : '',
-                  status: 'accepted' as const,
+                  clientCoordinates: { latitude: 5.3486, longitude: -4.0082, address: request.location_address },
+                  phoneNumber: request.client_phone,
+                  date: request.scheduled_time ? new Date(request.scheduled_time).toLocaleDateString('fr-FR') : '',
+                  time: request.scheduled_time ? new Date(request.scheduled_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '',
+                  status: 'accepted',
                 };
                 navigation.navigate('ReservationDetail', { reservation });
               }
@@ -180,15 +182,23 @@ export default function BarberHomeTab() {
       id: request.id,
       clientName: request.client_name,
       clientAvatar: request.client_avatar,
+      hairstyleName: request.hairstyle?.name,
       description: request.hairstyle?.description || 'Service de coiffure',
-      price: `${request.client_price}€`,
+      price: `${request.client_price.toLocaleString()} FCFA`,
       locationPreference: request.service_type === 'home' ? 'domicile' as const : 'salon' as const,
       clientCoordinates: {
-        latitude: 48.8566,
-        longitude: 2.3522,
+        latitude: 5.3486,
+        longitude: -4.0082,
         address: request.location_address,
       },
       phoneNumber: request.client_phone,
+      status: request.status,
+      date: request.scheduled_time
+        ? new Date(request.scheduled_time).toLocaleDateString('fr-FR')
+        : undefined,
+      time: request.scheduled_time
+        ? new Date(request.scheduled_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        : undefined,
     };
     navigation.navigate('ReservationDetail', { reservation });
   };

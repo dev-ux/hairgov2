@@ -249,9 +249,9 @@ exports.toggleHairdresserStatus = async (req, res) => {
       });
     }
 
-    // Trouver le coiffeur avec son utilisateur associé
+    // Trouver le coiffeur par son ID ou par user_id
     console.log('Recherche du coiffeur avec ID:', id);
-    const hairdresser = await db.Hairdresser.findByPk(id, {
+    let hairdresser = await db.Hairdresser.findByPk(id, {
       include: [{
         model: db.User,
         as: 'user',
@@ -259,6 +259,19 @@ exports.toggleHairdresserStatus = async (req, res) => {
       }],
       transaction
     });
+
+    // Si non trouvé par PK, chercher par user_id
+    if (!hairdresser) {
+      hairdresser = await db.Hairdresser.findOne({
+        where: { user_id: id },
+        include: [{
+          model: db.User,
+          as: 'user',
+          attributes: ['id', 'is_active', 'full_name']
+        }],
+        transaction
+      });
+    }
     
     console.log('Coiffeur trouvé:', hairdresser ? 'Oui' : 'Non');
     if (hairdresser && hairdresser.user) {

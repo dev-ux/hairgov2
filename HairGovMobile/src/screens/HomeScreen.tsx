@@ -20,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { homeScreenStyles } from './styles/HomeScreen.styles';
+import * as Location from 'expo-location';
 // Import de l'image par défaut
 const defaultSalonImage = require('../assets/url_de_l_image_1.jpg');
 
@@ -116,6 +117,9 @@ export interface Salon {
   address: string;
   photos: string[];
   average_rating: number;
+  latitude: string | number;
+  longitude: string | number;
+  distance?: number;
   hairdresser: {
     id: string;
     full_name: string;
@@ -138,10 +142,14 @@ export default function HomeScreen() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [salons, setSalons] = useState<Salon[] | null>(null);
+  const [nearbySalons, setNearbySalons] = useState<Salon[] | null>(null);
   const [hairstyles, setHairstyles] = useState<Hairstyle[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingNearby, setLoadingNearby] = useState(true);
   const [loadingHairstyles, setLoadingHairstyles] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [currentPromoIndex, setCurrentPromoIndex] = useState(0);
@@ -289,9 +297,77 @@ export default function HomeScreen() {
       }
     };
 
+    // Fonction pour obtenir la position de l'utilisateur
+    const getUserLocation = async () => {
+      try {
+        setLoadingNearby(true);
+        setLocationError(null);
+        
+        // Demander la permission d'accéder à la localisation
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setLocationError('Permission de localisation refusée');
+          setLoadingNearby(false);
+          return;
+        }
+
+        // Obtenir la position actuelle
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        const { latitude, longitude } = location.coords;
+        setUserLocation({ latitude, longitude });
+        console.log('Position utilisateur:', { latitude, longitude });
+
+        // Calculer la distance et trier les salons
+        if (salons && salons.length > 0) {
+          const salonsWithDistance = salons.map(salon => {
+            const salonLat = parseFloat(salon.latitude as string);
+            const salonLng = parseFloat(salon.longitude as string);
+            
+            if (isNaN(salonLat) || isNaN(salonLng)) {
+              return { ...salon, distance: Infinity };
+            }
+
+            // Calcul de la distance en utilisant la formule de Haversine
+            const R = 6371; // Rayon de la Terre en km
+            const dLat = (salonLat - latitude) * Math.PI / 180;
+            const dLng = (salonLng - longitude) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(latitude * Math.PI / 180) * Math.cos(salonLat * Math.PI / 180) *
+                      Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distance = R * c;
+
+            return { ...salon, distance };
+          });
+
+          // Filtrer et trier les salons par distance (max 50km)
+          const nearby = salonsWithDistance
+            .filter(salon => salon.distance < 50 && salon.distance !== Infinity)
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, 5); // Prendre les 5 plus proches
+
+          setNearbySalons(nearby);
+          console.log('Salons proches trouvés:', nearby.length);
+        }
+      } catch (error) {
+        console.error('Erreur de localisation:', error);
+        setLocationError('Impossible d\'obtenir votre position');
+      } finally {
+        setLoadingNearby(false);
+      }
+    };
+
     fetchSalons();
     fetchHairstyles();
-  }, []);
+    
+    // Obtenir la localisation après le chargement des salons
+    setTimeout(() => {
+      getUserLocation();
+    }, 1000);
+  }, [salons]);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -403,12 +479,6 @@ export default function HomeScreen() {
 
             {/* Filtres */}
         <View style={homeScreenStyles.section}>
-          <View style={homeScreenStyles.sectionHeader}>
-            <Text style={[homeScreenStyles.sectionTitle, { color: colors.text }]}>Près de vous</Text>
-            <TouchableOpacity onPress={() => { /* Gérer l'action "Plus" */ }}>
-              <Text style={[homeScreenStyles.seeAll, { color: colors.primary }]}>Plus</Text>
-            </TouchableOpacity>
-          </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={homeScreenStyles.filterContainer}>
             <TouchableOpacity 
               style={[homeScreenStyles.filterButton, { backgroundColor: colors.primary}]}
@@ -463,8 +533,144 @@ export default function HomeScreen() {
             >
               <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Spécialiste</Text>
             </TouchableOpacity>
-           
           </ScrollView>
+        </View>
+
+        {/* Section "Près de vous" */}
+        <View style={homeScreenStyles.section}>
+          <View style={homeScreenStyles.sectionHeader}>
+            <Text style={[homeScreenStyles.sectionTitle, { color: colors.text }]}>Près de vous</Text>
+            <TouchableOpacity onPress={() => { /* Gérer l'action "Plus" */ }}>
+              <Text style={[homeScreenStyles.seeAll, { color: colors.primary }]}>Plus</Text>
+            </TouchableOpacity>
+          </View>
+          {loadingNearby ? (
+            <ActivityIndicator size="large" color={colors.primary} style={homeScreenStyles.loader} />
+          ) : locationError ? (
+            <View style={homeScreenStyles.errorContainer}>
+              <Text style={[homeScreenStyles.errorText, { color: colors.text }]}>{locationError}</Text>
+              <TouchableOpacity 
+                style={[homeScreenStyles.retryButton, { backgroundColor: colors.primary }]}
+                onPress={() => {
+                  const getUserLocation = async () => {
+                    try {
+                      setLoadingNearby(true);
+                      setLocationError(null);
+                      
+                      let { status } = await Location.requestForegroundPermissionsAsync();
+                      if (status !== 'granted') {
+                        setLocationError('Permission de localisation refusée');
+                        setLoadingNearby(false);
+                        return;
+                      }
+
+                      const location = await Location.getCurrentPositionAsync({
+                        accuracy: Location.Accuracy.Balanced,
+                      });
+
+                      const { latitude, longitude } = location.coords;
+                      setUserLocation({ latitude, longitude });
+
+                      if (salons && salons.length > 0) {
+                        const salonsWithDistance = salons.map(salon => {
+                          const salonLat = parseFloat(salon.latitude as string);
+                          const salonLng = parseFloat(salon.longitude as string);
+                          
+                          if (isNaN(salonLat) || isNaN(salonLng)) {
+                            return { ...salon, distance: Infinity };
+                          }
+
+                          const R = 6371;
+                          const dLat = (salonLat - latitude) * Math.PI / 180;
+                          const dLng = (salonLng - longitude) * Math.PI / 180;
+                          const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                                    Math.cos(latitude * Math.PI / 180) * Math.cos(salonLat * Math.PI / 180) *
+                                    Math.sin(dLng/2) * Math.sin(dLng/2);
+                          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                          const distance = R * c;
+
+                          return { ...salon, distance };
+                        });
+
+                        const nearby = salonsWithDistance
+                          .filter(salon => salon.distance < 50 && salon.distance !== Infinity)
+                          .sort((a, b) => a.distance - b.distance)
+                          .slice(0, 5);
+
+                        setNearbySalons(nearby);
+                      }
+                    } catch (error) {
+                      setLocationError('Impossible d\'obtenir votre position');
+                    } finally {
+                      setLoadingNearby(false);
+                    }
+                  };
+                  getUserLocation();
+                }}
+              >
+                <Text style={homeScreenStyles.retryButtonText}>Réessayer</Text>
+              </TouchableOpacity>
+            </View>
+          ) : nearbySalons === null ? (
+            <Text style={[homeScreenStyles.emptyText, { color: colors.textSecondary }]}>Chargement des salons proches...</Text>
+          ) : nearbySalons.length === 0 ? (
+            <Text style={[homeScreenStyles.emptyText, { color: colors.textSecondary }]}>Aucun salon trouvé à proximité (moins de 50km)</Text>
+          ) : (
+            <FlatList
+              data={nearbySalons}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[homeScreenStyles.salonCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  onPress={() => navigation.navigate('SalonDetail', { salonId: item.id })}
+                >
+                  <View style={homeScreenStyles.salonImageContainer}>
+                    <Image
+                      source={(() => {
+                        const imageUrl = item.photos?.[0];
+                        if (imageUrl) {
+                          const formattedUrl = formatImageUrl(imageUrl);
+                          if (formattedUrl) {
+                            return { uri: formattedUrl };
+                          }
+                        }
+                        return defaultSalonImage;
+                      })()}
+                      style={homeScreenStyles.salonImage}
+                      resizeMode="cover"
+                      defaultSource={defaultSalonImage}
+                      onError={(e) => {
+                        console.log('Erreur de chargement de l\'image du salon:', item.name, e);
+                      }}
+                    />
+                    <View style={[homeScreenStyles.ratingContainer, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+                      <Ionicons name="star" size={12} color="#FFD700" />
+                      <Text style={[homeScreenStyles.ratingText, { color: '#fff', fontSize: 10 }]}>
+                        {item.average_rating > 0 ? item.average_rating.toFixed(1) : 'Nouveau'}
+                      </Text>
+                    </View>
+                    {item.distance !== undefined && (
+                      <View style={[homeScreenStyles.distanceBadge, { backgroundColor: colors.primary }]}>
+                        <Text style={[homeScreenStyles.distanceText, { color: '#fff' }]}>
+                          {item.distance < 1 ? `${Math.round(item.distance * 1000)}m` : `${item.distance.toFixed(1)}km`}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={homeScreenStyles.salonInfo}>
+                    <Text style={[homeScreenStyles.salonName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+                    <Text style={[homeScreenStyles.salonAddress, { color: colors.textSecondary }]} numberOfLines={1}>{item.address}</Text>
+                    <Text style={[homeScreenStyles.hairdresserName, { color: colors.primary }]} numberOfLines={1}>
+                      {item.hairdresser?.full_name || 'Coiffeur non spécifié'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={homeScreenStyles.salonsList}
+            />
+          )}
         </View>
 
         {/* Liste des salons */}
