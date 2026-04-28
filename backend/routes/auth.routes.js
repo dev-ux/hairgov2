@@ -4,6 +4,7 @@ const router = express.Router();
 const authController = require('../controllers/auth.controller');
 const { validateRegister, validateLogin, validateAdminRegister, validateHairdresserRegister } = require('../validators/auth.validator');
 const { authenticate } = require('../middleware/auth.middleware');
+const { uploadProfilePhoto } = require('../middleware/upload.middleware');
 
 /**
  * @route   POST /api/v1/auth/register/client
@@ -102,5 +103,12 @@ router.get('/me', authenticate, authController.getMe);
  * @access  Private
  */
 router.put('/update-fcm-token', authenticate, authController.updateFCMToken);
+
+/**
+ * @route   PUT /api/v1/auth/update-profile
+ * @desc    Mettre à jour le profil utilisateur (photo, infos)
+ * @access  Private
+ */
+router.put('/update-profile', authenticate, uploadProfilePhoto, authController.updateProfile);
 
 module.exports = router;

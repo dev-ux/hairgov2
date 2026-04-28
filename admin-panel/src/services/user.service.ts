@@ -1,12 +1,13 @@
 import api from '../config/api';
 
-interface User {
+export interface User {
   id: string;
   full_name: string;
   email: string;
   phone: string;
   user_type: 'client' | 'hairdresser' | 'admin';
   is_active: boolean;
+  hairdresser_id?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -33,11 +34,10 @@ export const getUsers = async (): Promise<{ success: boolean; data: User[]; coun
   }
 };
 
-export const updateUserStatus = async (userId: string, isActive: boolean): Promise<void> => {
+export const updateHairdresserStatus = async (hairdresserId: string, isActive: boolean): Promise<void> => {
   try {
-    await api.patch(`/admin/users/${userId}/status`, { is_active: isActive });
+    await api.patch(`/admin/hairdressers/${hairdresserId}/status`, { is_active: isActive });
   } catch (error: any) {
-    console.error('Error updating user status:', error);
     throw error.response?.data?.error || error.message;
   }
 };

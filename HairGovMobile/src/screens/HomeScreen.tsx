@@ -18,7 +18,9 @@ import { RootStackParamList } from '../navigation/AppNavigator';
 import { API_URL } from '../config/constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../contexts/ThemeContext';
 import { homeScreenStyles } from './styles/HomeScreen.styles';
+import * as Location from 'expo-location';
 // Import de l'image par défaut
 const defaultSalonImage = require('../assets/url_de_l_image_1.jpg');
 
@@ -32,14 +34,28 @@ const formatImageUrl = (url: string) => {
 
     console.log('URL originale reçue:', url);
 
+    // Si c'est déjà une URL complète (Cloudinary ou autre), la retourner directement
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      console.log('URL complète détectée, retour direct:', url);
+      return url;
+    }
+
     // Nettoyer l'URL (supprimer les accolades, espaces, guillemets et autres caractères invalides)
     let cleanUrl = url.replace(/[{}"']/g, '').trim();
     
-    // Si l'URL commence par /uploads/, la nettoyer et construire l'URL complète
+    // Si l'URL commence par /uploads/photos/, la nettoyer et construire l'URL complète
     if (cleanUrl.startsWith('/uploads/photos/')) {
       const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
       const fullUrl = `${baseUrl}${cleanUrl}`;
       console.log('URL uploads/photos détectée, URL finale:', fullUrl);
+      return fullUrl;
+    }
+
+    // Si l'URL commence par /uploads/hairstyles/, la nettoyer et construire l'URL complète
+    if (cleanUrl.startsWith('/uploads/hairstyles/')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      const fullUrl = `${baseUrl}${cleanUrl}`;
+      console.log('URL uploads/hairstyles détectée, URL finale:', fullUrl);
       return fullUrl;
     }
 
@@ -48,6 +64,14 @@ const formatImageUrl = (url: string) => {
       const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
       const fullUrl = `${baseUrl}${cleanUrl}`;
       console.log('URL uploads détectée, URL finale:', fullUrl);
+      return fullUrl;
+    }
+
+    // Si l'URL commence par profiles-, construire l'URL complète
+    if (cleanUrl.startsWith('profiles-')) {
+      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+      const fullUrl = `${baseUrl}/uploads/${cleanUrl}`;
+      console.log('URL profiles détectée, URL finale:', fullUrl);
       return fullUrl;
     }
 
@@ -93,6 +117,9 @@ export interface Salon {
   address: string;
   photos: string[];
   average_rating: number;
+  latitude: string | number;
+  longitude: string | number;
+  distance?: number;
   hairdresser: {
     id: string;
     full_name: string;
@@ -111,13 +138,18 @@ interface UserData {
 export default function HomeScreen() {
   type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
   const navigation = useNavigation<NavigationProp>();
+  const { colors } = useTheme();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [salons, setSalons] = useState<Salon[] | null>(null);
+  const [nearbySalons, setNearbySalons] = useState<Salon[] | null>(null);
   const [hairstyles, setHairstyles] = useState<Hairstyle[] | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingNearby, setLoadingNearby] = useState(true);
   const [loadingHairstyles, setLoadingHairstyles] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [currentPromoIndex, setCurrentPromoIndex] = useState(0);
@@ -249,7 +281,7 @@ export default function HomeScreen() {
         const responseData = await response.json();
         console.log('Réponse de l\'API pour les coiffures:', { status: response.status, data: responseData });
         if (response.ok && responseData.success) {
-          const hairstylesData = responseData.data || [];
+          const hairstylesData = responseData.data.hairstyles || [];
           console.log('Coiffures chargées avec succès:', hairstylesData);
           setHairstyles(Array.isArray(hairstylesData) ? hairstylesData : []);
         } else {
@@ -265,9 +297,77 @@ export default function HomeScreen() {
       }
     };
 
+    // Fonction pour obtenir la position de l'utilisateur
+    const getUserLocation = async () => {
+      try {
+        setLoadingNearby(true);
+        setLocationError(null);
+        
+        // Demander la permission d'accéder à la localisation
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setLocationError('Permission de localisation refusée');
+          setLoadingNearby(false);
+          return;
+        }
+
+        // Obtenir la position actuelle
+        const location = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        const { latitude, longitude } = location.coords;
+        setUserLocation({ latitude, longitude });
+        console.log('Position utilisateur:', { latitude, longitude });
+
+        // Calculer la distance et trier les salons
+        if (salons && salons.length > 0) {
+          const salonsWithDistance = salons.map(salon => {
+            const salonLat = parseFloat(salon.latitude as string);
+            const salonLng = parseFloat(salon.longitude as string);
+            
+            if (isNaN(salonLat) || isNaN(salonLng)) {
+              return { ...salon, distance: Infinity };
+            }
+
+            // Calcul de la distance en utilisant la formule de Haversine
+            const R = 6371; // Rayon de la Terre en km
+            const dLat = (salonLat - latitude) * Math.PI / 180;
+            const dLng = (salonLng - longitude) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(latitude * Math.PI / 180) * Math.cos(salonLat * Math.PI / 180) *
+                      Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const distance = R * c;
+
+            return { ...salon, distance };
+          });
+
+          // Filtrer et trier les salons par distance (max 50km)
+          const nearby = salonsWithDistance
+            .filter(salon => salon.distance < 50 && salon.distance !== Infinity)
+            .sort((a, b) => a.distance - b.distance)
+            .slice(0, 5); // Prendre les 5 plus proches
+
+          setNearbySalons(nearby);
+          console.log('Salons proches trouvés:', nearby.length);
+        }
+      } catch (error) {
+        console.error('Erreur de localisation:', error);
+        setLocationError('Impossible d\'obtenir votre position');
+      } finally {
+        setLoadingNearby(false);
+      }
+    };
+
     fetchSalons();
     fetchHairstyles();
-  }, []);
+    
+    // Obtenir la localisation après le chargement des salons
+    setTimeout(() => {
+      getUserLocation();
+    }, 1000);
+  }, [salons]);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -296,22 +396,22 @@ export default function HomeScreen() {
 
 
   return (
-    <SafeAreaView style={homeScreenStyles.container}>
+    <SafeAreaView style={[homeScreenStyles.container, { backgroundColor: colors.background }]}>
       <ScrollView style={homeScreenStyles.scrollView}>
         {/* En-tête */}
         <View style={homeScreenStyles.header}>
           <View>
-            <Text style={homeScreenStyles.greeting}>
+            <Text style={[homeScreenStyles.greeting, { color: colors.textSecondary }]}>
               Bonjour, {user?.full_name || 'Client'}
             </Text>
-            <Text style={homeScreenStyles.title}>Trouvez votre salon</Text>
+            <Text style={[homeScreenStyles.title, { color: colors.text }]}>Trouvez votre salon</Text>
           </View>
 
           <TouchableOpacity
             style={homeScreenStyles.notificationButton}
             onPress={() => navigation.navigate('Notifications')}
           >
-            <Ionicons name="notifications-outline" size={24} color="#6C63FF" />
+            <Ionicons name="notifications-outline" size={24} color={colors.primary} />
             <View style={homeScreenStyles.notificationBadge} />
           </TouchableOpacity>
 
@@ -319,19 +419,19 @@ export default function HomeScreen() {
             style={homeScreenStyles.profileButton}
             onPress={() => navigation.navigate('Profile')}
           >
-            <Ionicons name="person" size={24} color="#6C63FF" />
+            <Ionicons name="person" size={24} color={colors.primary} />
           </TouchableOpacity>
         </View>
 
         {/* Barre de recherche */}
-        <View style={homeScreenStyles.searchContainer}>
-          <Ionicons name="search" size={20} color="#666" style={homeScreenStyles.searchIcon} />
+        <View style={[homeScreenStyles.searchContainer, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Ionicons name="search" size={20} color={colors.textSecondary} style={homeScreenStyles.searchIcon} />
           <TextInput
-            style={homeScreenStyles.searchInput}
+            style={[homeScreenStyles.searchInput, { color: colors.text }]}
             placeholder="Rechercher un salon ou un service..."
+            placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor="#999"
           />
         </View>
 
@@ -344,7 +444,6 @@ export default function HomeScreen() {
             showsHorizontalScrollIndicator={false}
             pagingEnabled
             keyExtractor={(item) => item.id}
-            initialScrollIndex={currentPromoIndex}
             onMomentumScrollEnd={(event) => {
               const index = Math.round(event.nativeEvent.contentOffset.x / (width - 40));
               setCurrentPromoIndex(index);
@@ -373,87 +472,166 @@ export default function HomeScreen() {
               offset: (width - 40) * index + 20, // Ajout du padding initial
               index,
             })}
-            snapToInterval={width - 40} // Assure le snap parfait
-            decelerationRate="fast" // Défilement plus rapide et précis
+            snapToInterval={width - 40} 
+            decelerationRate="fast" 
           />
         </View>
 
             {/* Filtres */}
         <View style={homeScreenStyles.section}>
-          <View style={homeScreenStyles.sectionHeader}>
-            <Text style={homeScreenStyles.sectionTitle}>Près de vous</Text>
-            <TouchableOpacity onPress={() => { /* Gérer l'action "Plus" */ }}>
-              <Text style={homeScreenStyles.seeAll}>Plus</Text>
-            </TouchableOpacity>
-          </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={homeScreenStyles.filterContainer}>
-            <TouchableOpacity style={[homeScreenStyles.filterButton, homeScreenStyles.filterButtonActive]}>
+            <TouchableOpacity 
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.primary}]}
+              onPress={() => {
+                try {
+                  const parentNavigation = navigation.getParent();
+                  if (parentNavigation) {
+                    parentNavigation.navigate('SpecialOffers');
+                  } else {
+                    navigation.navigate('SpecialOffers' as never);
+                  }
+                } catch (error) {
+                  console.error('Erreur de navigation SpecialOffers:', error);
+                }
+              }}
+            >
               <Text style={homeScreenStyles.filterButtonTextActive}>Offre spéciales</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={homeScreenStyles.filterButton}>
-              <Text style={homeScreenStyles.filterButtonText}>Coiffure tendances</Text>
+            <TouchableOpacity 
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface }]}
+              onPress={() => {
+                try {
+                  const parentNavigation = navigation.getParent();
+                  if (parentNavigation) {
+                    parentNavigation.navigate('TrendingHairstyles');
+                  } else {
+                    navigation.navigate('TrendingHairstyles' as never);
+                  }
+                } catch (error) {
+                  console.error('Erreur de navigation TrendingHairstyles:', error);
+                }
+              }}
+            >
+              <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Tendances</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={homeScreenStyles.filterButton}>
-              <Text style={homeScreenStyles.filterButtonText}>Spécialiste</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={homeScreenStyles.filterButton}>
-              <Text style={homeScreenStyles.filterButtonText}>Historique</Text>
+            
+            <TouchableOpacity 
+              style={[homeScreenStyles.filterButton, { backgroundColor: colors.surface }]}
+              onPress={() => {
+                try {
+                  const parentNavigation = navigation.getParent();
+                  if (parentNavigation) {
+                    parentNavigation.navigate('Specialists');
+                  } else {
+                    navigation.navigate('Specialists' as never);
+                    navigation.navigate('Specialists' as never);
+                  }
+                } catch (error) {
+                  console.error('Erreur de navigation Specialists:', error);
+                }
+              }}
+            >
+              <Text style={[homeScreenStyles.filterButtonText, { color: colors.text }]}>Spécialiste</Text>
             </TouchableOpacity>
           </ScrollView>
         </View>
 
-        {/* Liste des salons */}
+        {/* Section "Près de vous" */}
         <View style={homeScreenStyles.section}>
           <View style={homeScreenStyles.sectionHeader}>
-            <Text style={homeScreenStyles.sectionTitle}>Nos Salons</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('AllSalons')}>
-              <Text style={homeScreenStyles.seeAll}>Voir tout</Text>
+            <Text style={[homeScreenStyles.sectionTitle, { color: colors.text }]}>Près de vous</Text>
+            <TouchableOpacity onPress={() => { /* Gérer l'action "Plus" */ }}>
+              <Text style={[homeScreenStyles.seeAll, { color: colors.primary }]}>Plus</Text>
             </TouchableOpacity>
           </View>
-
-          {loading ? (
-            <ActivityIndicator size="large" color="#6C63FF" style={homeScreenStyles.loader} />
-          ) : error ? (
+          {loadingNearby ? (
+            <ActivityIndicator size="large" color={colors.primary} style={homeScreenStyles.loader} />
+          ) : locationError ? (
             <View style={homeScreenStyles.errorContainer}>
-              <Text style={homeScreenStyles.errorText}>{error}</Text>
-              <Text style={homeScreenStyles.errorDetail}>Vérifiez que le serveur est en cours d'exécution sur {API_URL}</Text>
+              <Text style={[homeScreenStyles.errorText, { color: colors.text }]}>{locationError}</Text>
+              <TouchableOpacity 
+                style={[homeScreenStyles.retryButton, { backgroundColor: colors.primary }]}
+                onPress={() => {
+                  const getUserLocation = async () => {
+                    try {
+                      setLoadingNearby(true);
+                      setLocationError(null);
+                      
+                      let { status } = await Location.requestForegroundPermissionsAsync();
+                      if (status !== 'granted') {
+                        setLocationError('Permission de localisation refusée');
+                        setLoadingNearby(false);
+                        return;
+                      }
+
+                      const location = await Location.getCurrentPositionAsync({
+                        accuracy: Location.Accuracy.Balanced,
+                      });
+
+                      const { latitude, longitude } = location.coords;
+                      setUserLocation({ latitude, longitude });
+
+                      if (salons && salons.length > 0) {
+                        const salonsWithDistance = salons.map(salon => {
+                          const salonLat = parseFloat(salon.latitude as string);
+                          const salonLng = parseFloat(salon.longitude as string);
+                          
+                          if (isNaN(salonLat) || isNaN(salonLng)) {
+                            return { ...salon, distance: Infinity };
+                          }
+
+                          const R = 6371;
+                          const dLat = (salonLat - latitude) * Math.PI / 180;
+                          const dLng = (salonLng - longitude) * Math.PI / 180;
+                          const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                                    Math.cos(latitude * Math.PI / 180) * Math.cos(salonLat * Math.PI / 180) *
+                                    Math.sin(dLng/2) * Math.sin(dLng/2);
+                          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                          const distance = R * c;
+
+                          return { ...salon, distance };
+                        });
+
+                        const nearby = salonsWithDistance
+                          .filter(salon => salon.distance < 50 && salon.distance !== Infinity)
+                          .sort((a, b) => a.distance - b.distance)
+                          .slice(0, 5);
+
+                        setNearbySalons(nearby);
+                      }
+                    } catch (error) {
+                      setLocationError('Impossible d\'obtenir votre position');
+                    } finally {
+                      setLoadingNearby(false);
+                    }
+                  };
+                  getUserLocation();
+                }}
+              >
+                <Text style={homeScreenStyles.retryButtonText}>Réessayer</Text>
+              </TouchableOpacity>
             </View>
-          ) : salons === null ? (
-            <Text style={homeScreenStyles.emptyText}>Chargement des données en cours...</Text>
-          ) : salons.length === 0 ? (
-            <Text style={homeScreenStyles.emptyText}>Aucun salon disponible pour le moment</Text>
+          ) : nearbySalons === null ? (
+            <Text style={[homeScreenStyles.emptyText, { color: colors.textSecondary }]}>Chargement des salons proches...</Text>
+          ) : nearbySalons.length === 0 ? (
+            <Text style={[homeScreenStyles.emptyText, { color: colors.textSecondary }]}>Aucun salon trouvé à proximité (moins de 50km)</Text>
           ) : (
             <FlatList
-              data={salons.slice(0, 5)} // Afficher seulement les 5 premiers salons
+              data={nearbySalons}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={homeScreenStyles.salonCard}
+                  style={[homeScreenStyles.salonCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                   onPress={() => navigation.navigate('SalonDetail', { salonId: item.id })}
                 >
                   <View style={homeScreenStyles.salonImageContainer}>
                     <Image
                       source={(() => {
                         const imageUrl = item.photos?.[0];
-                        const formattedUrl = imageUrl ? formatImageUrl(imageUrl) : null;
-
-                        console.log('Chargement de l\'image pour le salon:', {
-                          nom: item.name,
-                          id: item.id,
-                          urlOriginale: imageUrl,
-                          urlFormatee: formattedUrl,
-                          aDesPhotos: item.photos?.length > 0
-                        });
-
-                        if (formattedUrl) {
-                          // Vérifier si l'URL semble valide
-                          if (formattedUrl.includes('undefined') || !formattedUrl.includes('http')) {
-                            console.warn('URL d\'image potentiellement invalide:', formattedUrl);
-                            return defaultSalonImage;
+                        if (imageUrl) {
+                          const formattedUrl = formatImageUrl(imageUrl);
+                          if (formattedUrl) {
+                            return { uri: formattedUrl };
                           }
-                          return {
-                            uri: formattedUrl,
-                            cache: 'reload'
-                          };
                         }
                         return defaultSalonImage;
                       })()}
@@ -461,26 +639,98 @@ export default function HomeScreen() {
                       resizeMode="cover"
                       defaultSource={defaultSalonImage}
                       onError={(e) => {
-                        console.error('Erreur de chargement de l\'image:', {
-                          error: e.nativeEvent.error,
-                          salon: item.name,
-                          id: item.id,
-                          photoUrl: item.photos?.[0],
-                          formattedUrl: item.photos?.[0] ? formatImageUrl(item.photos[0]) : null
-                        });
+                        console.log('Erreur de chargement de l\'image du salon:', item.name, e);
+                      }}
+                    />
+                    <View style={[homeScreenStyles.ratingContainer, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+                      <Ionicons name="star" size={12} color="#FFD700" />
+                      <Text style={[homeScreenStyles.ratingText, { color: '#fff', fontSize: 10 }]}>
+                        {item.average_rating > 0 ? item.average_rating.toFixed(1) : 'Nouveau'}
+                      </Text>
+                    </View>
+                    {item.distance !== undefined && (
+                      <View style={[homeScreenStyles.distanceBadge, { backgroundColor: colors.primary }]}>
+                        <Text style={[homeScreenStyles.distanceText, { color: '#fff' }]}>
+                          {item.distance < 1 ? `${Math.round(item.distance * 1000)}m` : `${item.distance.toFixed(1)}km`}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                  <View style={homeScreenStyles.salonInfo}>
+                    <Text style={[homeScreenStyles.salonName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+                    <Text style={[homeScreenStyles.salonAddress, { color: colors.textSecondary }]} numberOfLines={1}>{item.address}</Text>
+                    <Text style={[homeScreenStyles.hairdresserName, { color: colors.primary }]} numberOfLines={1}>
+                      {item.hairdresser?.full_name || 'Coiffeur non spécifié'}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+              )}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={homeScreenStyles.salonsList}
+            />
+          )}
+        </View>
+
+        {/* Liste des salons */}
+        <View style={homeScreenStyles.section}>
+          <View style={homeScreenStyles.sectionHeader}>
+            <Text style={[homeScreenStyles.sectionTitle, { color: colors.text }]}>Nos Salons</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('AllSalons')}>
+              <Text style={[homeScreenStyles.seeAll, { color: colors.primary }]}>Voir tout</Text>
+            </TouchableOpacity>
+          </View>
+
+          {loading ? (
+            <ActivityIndicator size="large" color={colors.primary} style={homeScreenStyles.loader} />
+          ) : error ? (
+            <View style={homeScreenStyles.errorContainer}>
+              <Text style={[homeScreenStyles.errorText, { color: colors.text }]}>{error}</Text>
+              <Text style={[homeScreenStyles.errorDetail, { color: colors.textSecondary }]}>Vérifiez que le serveur est en cours d'exécution sur {API_URL}</Text>
+            </View>
+          ) : salons === null ? (
+            <Text style={[homeScreenStyles.emptyText, { color: colors.textSecondary }]}>Chargement des données en cours...</Text>
+          ) : salons.length === 0 ? (
+            <Text style={[homeScreenStyles.emptyText, { color: colors.textSecondary }]}>Aucun salon disponible pour le moment</Text>
+          ) : (
+            <FlatList
+              data={salons.slice(0, 5)} // Afficher seulement les 5 premiers salons
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={[homeScreenStyles.salonCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  onPress={() => navigation.navigate('SalonDetail', { salonId: item.id })}
+                >
+                  <View style={homeScreenStyles.salonImageContainer}>
+                    <Image
+                      source={(() => {
+                        const imageUrl = item.photos?.[0];
+                        if (imageUrl) {
+                          const formattedUrl = formatImageUrl(imageUrl);
+                          if (formattedUrl) {
+                            return { uri: formattedUrl };
+                          }
+                        }
+                        return defaultSalonImage;
+                      })()}
+                      style={homeScreenStyles.salonImage}
+                      resizeMode="cover"
+                      defaultSource={defaultSalonImage}
+                      onError={(e) => {
+                        console.log('Erreur de chargement de l\'image du salon:', item.name, e);
                       }}
                     />
                     <View style={homeScreenStyles.ratingContainer}>
                       <Ionicons name="star" size={14} color="#FFD700" />
-                      <Text style={homeScreenStyles.ratingText}>
+                      <Text style={[homeScreenStyles.ratingText, { color: colors.text }]}>
                         {item.average_rating > 0 ? item.average_rating.toFixed(1) : 'Nouveau'}
                       </Text>
                     </View>
                   </View>
                   <View style={homeScreenStyles.salonInfo}>
-                    <Text style={homeScreenStyles.salonName} numberOfLines={1}>{item.name}</Text>
-                    <Text style={homeScreenStyles.salonAddress} numberOfLines={1}>{item.address}</Text>
-                    <Text style={homeScreenStyles.hairdresserName} numberOfLines={1}>
+                    <Text style={[homeScreenStyles.salonName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
+                    <Text style={[homeScreenStyles.salonAddress, { color: colors.textSecondary }]} numberOfLines={1}>{item.address}</Text>
+                    <Text style={[homeScreenStyles.hairdresserName, { color: colors.primary }]} numberOfLines={1}>
                       {item.hairdresser?.full_name || 'Coiffeur non spécifié'}
                     </Text>
                   </View>
@@ -498,7 +748,7 @@ export default function HomeScreen() {
         <View style={homeScreenStyles.section}>
           <View style={homeScreenStyles.sectionHeader}>
             <Text style={homeScreenStyles.sectionTitle}>Nos Coiffures</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Hairstyles')}>
+            <TouchableOpacity onPress={() => navigation.navigate('HairstylesGallery')}>
               <Text style={homeScreenStyles.seeAll}>Voir tout</Text>
             </TouchableOpacity>
           </View>
@@ -519,12 +769,28 @@ export default function HomeScreen() {
                   style={homeScreenStyles.hairstyleCard}
                   onPress={() => navigation.navigate('HairstyleDetail', { hairstyleId: item.id })}
                 >
+                  {item.photo ? (
                   <Image
-                    source={item.photo ? { uri: `${API_URL}/uploads/hairstyles/${item.photo}` } : require('../assets/url_de_l_image_1.jpg')}
+                    source={{ uri: formatImageUrl(item.photo) || '' }}
                     style={homeScreenStyles.hairstyleImage}
                     resizeMode="cover"
-                    onError={(e) => console.error('Erreur de chargement de l\'image:', e.nativeEvent.error)}
+                    onError={(e) => {
+                      try {
+                        console.error('Erreur de chargement de l\'image hairstyle:', {
+                          error: e?.nativeEvent?.error || 'Unknown error',
+                          hairstyle: item.name,
+                          photo: item.photo
+                        });
+                      } catch (logError) {
+                        console.error('Erreur lors du logging de l\'erreur hairstyle:', logError);
+                      }
+                    }}
                   />
+                ) : (
+                  <View style={[homeScreenStyles.hairstyleImage, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f0f0' }]}>
+                    <Ionicons name="cut-outline" size={30} color="#999" />
+                  </View>
+                )}
                   <View style={homeScreenStyles.hairstyleInfo}>
                     <Text style={homeScreenStyles.hairstyleName} numberOfLines={1}>{item.name}</Text>
                     <Text style={homeScreenStyles.hairstyleDuration} numberOfLines={1}>
@@ -539,7 +805,7 @@ export default function HomeScreen() {
               contentContainerStyle={homeScreenStyles.hairstylesList}
             />
           )}
-        </View>
+        </View> 
 
         
   

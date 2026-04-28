@@ -12,10 +12,30 @@ import {
   Dimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../contexts/AuthContext';
-import { createSalon, getMySalon, updateSalon, Salon as SalonType, CreateSalonData } from '../services/salon.service';
+import { createSalonWithPhotos, createSalon, getMySalon, updateSalon, Salon as SalonType, CreateSalonData } from '../services/salon.service';
+import AddressSelector from './AddressSelector';
 
 const { width } = Dimensions.get('window');
+
+// Fonction pour formater les URLs d'images
+const formatImageUrl = (url: string) => {
+  if (!url) return null;
+  
+  // Si c'est déjà une URL complète (Cloudinary), la retourner directement
+  if (url.startsWith('http')) {
+    return url;
+  }
+  
+  // Si c'est un chemin local, ne pas l'afficher
+  if (url.startsWith('/uploads/')) {
+    console.log('⚠️ URL locale détectée, non affichée:', url);
+    return null;
+  }
+  
+  return url;
+};
 
 interface Salon {
   id: string;
@@ -36,6 +56,7 @@ export default function BarberSalonTab() {
   const [loading, setLoading] = useState(true);
   const [editingMode, setEditingMode] = useState(false);
   const [creatingMode, setCreatingMode] = useState(false);
+  const [showAddressSelector, setShowAddressSelector] = useState(false);
   const [formData, setFormData] = useState<CreateSalonData>({
     name: '',
     address: '',
@@ -47,6 +68,125 @@ export default function BarberSalonTab() {
     business_hours: '',
     photos: []
   });
+
+  // Demander les permissions pour l'appareil photo et la galerie
+  useEffect(() => {
+    (async () => {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission requise',
+          'Désolé, nous avons besoin des permissions pour accéder à vos photos pour que cela fonctionne !'
+        );
+      }
+    })();
+  }, []);
+
+  const handleAddPhoto = async () => {
+    try {
+      // Demander à l'utilisateur de choisir entre la galerie ou l'appareil photo
+      Alert.alert(
+        'Ajouter une photo',
+        'Choisissez comment vous voulez ajouter une photo',
+        [
+          {
+            text: 'Galerie',
+            onPress: pickImageFromGallery,
+          },
+          {
+            text: 'Appareil photo',
+            onPress: pickImageFromCamera,
+          },
+          {
+            text: 'Annuler',
+            style: 'cancel',
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de photo:', error);
+      Alert.alert('Erreur', 'Impossible d\'ajouter une photo');
+    }
+  };
+
+  const pickImageFromGallery = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const currentPhotos = formData.photos || [];
+        const newPhotos = [...currentPhotos, result.assets[0].uri];
+        setFormData(prev => ({ ...prev, photos: newPhotos }));
+      }
+    } catch (error) {
+      console.error('Error picking image:', error);
+      Alert.alert('Erreur', 'Impossible de sélectionner cette photo');
+    }
+  };
+
+  const pickImageFromCamera = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      if (permissionResult.granted === false) {
+        Alert.alert('Permission requise', 'Autorisez l\'accès à la caméra pour prendre des photos');
+        return;
+      }
+
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const currentPhotos = formData.photos || [];
+        const newPhotos = [...currentPhotos, result.assets[0].uri];
+        setFormData(prev => ({ ...prev, photos: newPhotos }));
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Erreur', 'Impossible de prendre cette photo');
+    }
+  };
+
+  const handleAddressSelect = (city: any) => {
+    setFormData(prev => ({
+      ...prev,
+      address: city.name,
+      latitude: city.latitude,
+      longitude: city.longitude
+    }));
+  };
+
+  const addPhotoToSalon = async (photoUri: string) => {
+    try {
+      if (creatingMode) {
+        // Mode création : ajouter au formulaire
+        const currentPhotos = formData.photos || [];
+        const updatedPhotos = [...currentPhotos, photoUri];
+        setFormData({ ...formData, photos: updatedPhotos });
+      } else if (salon) {
+        // Mode édition : mettre à jour le salon existant
+        const currentPhotos = salon.photos || [];
+        const updatedPhotos = [...currentPhotos, photoUri];
+        const updatedSalon = { ...salon, photos: updatedPhotos };
+        setSalon(updatedSalon);
+        
+        // Mettre à jour sur le backend
+        await updateSalon(salon.id, { photos: updatedPhotos });
+        Alert.alert('Succès', 'Photo ajoutée avec succès');
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de la photo au salon:', error);
+      Alert.alert('Erreur', 'Impossible d\'ajouter la photo au salon');
+    }
+  };
 
   useEffect(() => {
     fetchSalonInfo();
@@ -106,8 +246,12 @@ export default function BarberSalonTab() {
 
     try {
       if (creatingMode) {
-        // Create new salon
-        const response = await createSalon(formData);
+        // Create new salon avec photos si disponibles
+        const hasPhotos = formData.photos && formData.photos.length > 0;
+        const response = hasPhotos 
+          ? await createSalonWithPhotos(formData)
+          : await createSalon(formData);
+          
         if (response.success) {
           setSalon(response.data);
           setCreatingMode(false);
@@ -220,14 +364,23 @@ export default function BarberSalonTab() {
 
             <View style={styles.infoRow}>
               <Text style={styles.label}>Adresse *</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.address}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, address: text }))}
-                placeholder="Adresse complète du salon"
-                multiline
-                numberOfLines={3}
-              />
+              <View style={styles.addressContainer}>
+                <TextInput
+                  style={[styles.input, styles.textArea, styles.addressInput]}
+                  value={formData.address}
+                  onChangeText={(text) => setFormData(prev => ({ ...prev, address: text }))}
+                  placeholder="Adresse complète du salon"
+                  multiline
+                  numberOfLines={3}
+                />
+                <TouchableOpacity
+                  style={styles.addressSelectorButton}
+                  onPress={() => setShowAddressSelector(true)}
+                >
+                  <Ionicons name="location" size={20} color="#007AFF" />
+                  <Text style={styles.addressSelectorText}>Choisir une ville</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View style={styles.infoRow}>
@@ -275,6 +428,22 @@ export default function BarberSalonTab() {
             </View>
           </View>
 
+          {/* Photos du salon */}
+          <View style={styles.photosSection}>
+            <Text style={styles.sectionTitle}>Photos du salon</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {formData.photos && formData.photos.map((photo, index) => {
+                const imageUrl = formatImageUrl(photo);
+                return imageUrl ? (
+                  <Image key={index} source={{ uri: imageUrl }} style={styles.photo} />
+                ) : null;
+              })}
+              <TouchableOpacity style={styles.addPhotoButton} onPress={handleAddPhoto}>
+                <Ionicons name="add" size={24} color="#6C63FF" />
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+
           {/* Actions */}
           <View style={styles.actionsSection}>
             <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
@@ -289,6 +458,12 @@ export default function BarberSalonTab() {
             </TouchableOpacity>
           </View>
         </ScrollView>
+        <AddressSelector
+          visible={showAddressSelector}
+          onClose={() => setShowAddressSelector(false)}
+          onSelect={handleAddressSelect}
+          placeholder="Rechercher une ville en Côte d'Ivoire..."
+        />
       </SafeAreaView>
     );
   }
@@ -316,10 +491,13 @@ export default function BarberSalonTab() {
           <View style={styles.photosSection}>
             <Text style={styles.sectionTitle}>Photos du salon</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {salon.photos.map((photo, index) => (
-                <Image key={index} source={{ uri: photo }} style={styles.photo} />
-              ))}
-              <TouchableOpacity style={styles.addPhotoButton}>
+              {salon.photos.map((photo, index) => {
+                const imageUrl = formatImageUrl(photo);
+                return imageUrl ? (
+                  <Image key={index} source={{ uri: imageUrl }} style={styles.photo} />
+                ) : null;
+              })}
+              <TouchableOpacity style={styles.addPhotoButton} onPress={handleAddPhoto}>
                 <Ionicons name="add" size={24} color="#6C63FF" />
               </TouchableOpacity>
             </ScrollView>
@@ -571,5 +749,30 @@ const styles = StyleSheet.create({
   },
   saveButtonDisabled: {
     backgroundColor: '#ccc',
+  },
+  addressContainer: {
+    position: 'relative',
+  },
+  addressInput: {
+    paddingRight: 120, // Space for the button
+  },
+  addressSelectorButton: {
+    position: 'absolute',
+    right: 10,
+    top: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f8ff',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  addressSelectorText: {
+    fontSize: 12,
+    color: '#007AFF',
+    marginLeft: 4,
+    fontWeight: '500',
   },
 });

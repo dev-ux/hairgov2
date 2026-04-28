@@ -14,7 +14,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useAuth } from '../contexts/AuthContext';
@@ -51,24 +51,37 @@ export default function BarberHomeTab() {
   const mapRef = useRef<MapView>(null);
   const { user } = useAuth();
 
-  useEffect(() => {
-    fetchReservations();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchReservations();
+    }, [])
+  );
 
   const fetchReservations = async () => {
     try {
       setLoading(true);
+      console.log('Fetching hairdresser bookings...');
       const response = await getHairdresserBookings();
       
-      if (response.success && response.data) {
+      console.log('Bookings response:', response);
+      
+      if (response && response.success && response.data) {
         setClientRequests(response.data.bookings || []);
       } else {
-        console.error('Error in response:', response.message);
+        console.warn('Unexpected response format:', response);
         setClientRequests([]);
       }
     } catch (error: any) {
       console.error('Error fetching reservations:', error);
+      // Ne pas faire crasher l'app, juste afficher une liste vide
       setClientRequests([]);
+      
+      // Optionnel: afficher une alerte une seule fois
+      if (error.response?.status === 401) {
+        console.log('Unauthorized - token might be expired');
+      } else if (error.response?.status >= 500) {
+        console.log('Server error - using empty list');
+      }
     } finally {
       setLoading(false);
     }
@@ -98,32 +111,42 @@ export default function BarberHomeTab() {
       console.log('Accepting request:', requestId);
       const response = await acceptBooking(requestId);
       
-      if (response.success) {
-        Alert.alert('Succès', 'Réservation acceptée avec succès');
-        // Refresh the reservations list
-        fetchReservations();
-        // Navigate to reservation details
-        const request = clientRequests.find(req => req.id === requestId);
-        if (request) {
-          const reservation = {
-            id: requestId,
-            clientName: request.client_name,
-            clientAvatar: request.client_avatar,
-            description: request.hairstyle?.description || 'Service de coiffure',
-            price: `${request.client_price}€`,
-            locationPreference: request.service_type === 'home' ? 'domicile' as const : 'salon' as const,
-            date: request.scheduled_time ? new Date(request.scheduled_time).toLocaleDateString() : '',
-            time: request.scheduled_time ? new Date(request.scheduled_time).toLocaleTimeString() : '',
-            status: 'accepted' as const,
-          };
-          navigation.navigate('ReservationDetail', { reservation });
-        }
+      if (response && response.success) {
+        Alert.alert(
+          'Succès', 
+          'Réservation acceptée avec succès',
+          [
+            { text: 'OK', onPress: () => {
+              // Refresh the reservations list
+              fetchReservations();
+              // Navigate to reservation details
+              const request = clientRequests.find(req => req.id === requestId);
+              if (request) {
+                const reservation = {
+                  id: requestId,
+                  clientName: request.client_name,
+                  clientAvatar: request.client_avatar,
+                  hairstyleName: request.hairstyle?.name,
+                  description: request.hairstyle?.description || 'Service de coiffure',
+                  price: `${request.client_price.toLocaleString()} FCFA`,
+                  locationPreference: request.service_type === 'home' ? 'domicile' as const : 'salon' as const,
+                  clientCoordinates: { latitude: 5.3486, longitude: -4.0082, address: request.location_address },
+                  phoneNumber: request.client_phone,
+                  date: request.scheduled_time ? new Date(request.scheduled_time).toLocaleDateString('fr-FR') : '',
+                  time: request.scheduled_time ? new Date(request.scheduled_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '',
+                  status: 'accepted',
+                };
+                navigation.navigate('ReservationDetail', { reservation });
+              }
+            }}
+          ]
+        );
       } else {
         Alert.alert('Erreur', 'Impossible d\'accepter la réservation');
       }
     } catch (error: any) {
       console.error('Error accepting request:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Impossible d\'accepter la réservation';
+      const errorMessage = error?.response?.data?.message || error?.message || 'Impossible d\'accepter la réservation';
       Alert.alert('Erreur', errorMessage);
     }
   };
@@ -133,16 +156,23 @@ export default function BarberHomeTab() {
       console.log('Refusing request:', requestId);
       const response = await rejectBooking(requestId);
       
-      if (response.success) {
-        Alert.alert('Succès', 'Réservation refusée');
-        // Refresh the reservations list
-        fetchReservations();
+      if (response && response.success) {
+        Alert.alert(
+          'Succès', 
+          'Réservation refusée',
+          [
+            { text: 'OK', onPress: () => {
+              // Refresh the reservations list
+              fetchReservations();
+            }}
+          ]
+        );
       } else {
         Alert.alert('Erreur', 'Impossible de refuser la réservation');
       }
     } catch (error: any) {
       console.error('Error refusing request:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Impossible de refuser la réservation';
+      const errorMessage = error?.response?.data?.message || error?.message || 'Impossible de refuser la réservation';
       Alert.alert('Erreur', errorMessage);
     }
   };
@@ -152,15 +182,23 @@ export default function BarberHomeTab() {
       id: request.id,
       clientName: request.client_name,
       clientAvatar: request.client_avatar,
+      hairstyleName: request.hairstyle?.name,
       description: request.hairstyle?.description || 'Service de coiffure',
-      price: `${request.client_price}€`,
+      price: `${request.client_price.toLocaleString()} FCFA`,
       locationPreference: request.service_type === 'home' ? 'domicile' as const : 'salon' as const,
       clientCoordinates: {
-        latitude: 48.8566,
-        longitude: 2.3522,
+        latitude: 5.3486,
+        longitude: -4.0082,
         address: request.location_address,
       },
       phoneNumber: request.client_phone,
+      status: request.status,
+      date: request.scheduled_time
+        ? new Date(request.scheduled_time).toLocaleDateString('fr-FR')
+        : undefined,
+      time: request.scheduled_time
+        ? new Date(request.scheduled_time).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+        : undefined,
     };
     navigation.navigate('ReservationDetail', { reservation });
   };
@@ -254,6 +292,22 @@ export default function BarberHomeTab() {
           <Animated.View style={[styles.detailsSheet, { height: sheetHeight }]}>
             <View style={styles.dragHandle} />
             <Text style={styles.detailsTitle}>Demandes de réservation</Text>
+            
+            {/* Bouton de rafraîchissement */}
+            <TouchableOpacity 
+              style={styles.refreshButton}
+              onPress={fetchReservations}
+              disabled={loading}
+            >
+              <Ionicons 
+                name={loading ? "refresh" : "refresh-outline"} 
+                size={20} 
+                color="#6C63FF" 
+              />
+              <Text style={styles.refreshButtonText}>
+                {loading ? 'Chargement...' : 'Rafraîchir'}
+              </Text>
+            </TouchableOpacity>
             
             {loading ? (
               <View style={styles.loadingContainer}>
@@ -454,6 +508,25 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: '#666',
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f8f9fa',
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    alignSelf: 'center',
+  },
+  refreshButtonText: {
+    color: '#6C63FF',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   emptyContainer: {
     flex: 1,

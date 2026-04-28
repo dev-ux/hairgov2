@@ -6,7 +6,6 @@ const { width } = Dimensions.get('window');
 export const homeScreenStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   scrollView: {
     flex: 1,
@@ -18,21 +17,19 @@ export const homeScreenStyles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 10,
+    marginTop:30
   },
   greeting: {
     fontSize: 16,
-    color: '#666',
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
   },
   notificationButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 70,
@@ -51,7 +48,6 @@ export const homeScreenStyles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F0F0F0',
     justifyContent: 'center',
     alignItems: 'center',
     marginLeft: 10,
@@ -116,7 +112,6 @@ export const homeScreenStyles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
     borderRadius: 10,
     marginHorizontal: 20,
     marginVertical: 10,
@@ -129,12 +124,11 @@ export const homeScreenStyles = StyleSheet.create({
   searchInput: {
     flex: 1,
     marginLeft: 10,
-    color: '#333',
     fontSize: 16,
   },
   // Sections
   section: {
-    marginTop: 20,
+    marginTop: 30,
     paddingHorizontal: 20,
   },
   sectionHeader: {
@@ -146,10 +140,8 @@ export const homeScreenStyles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
   },
   seeAll: {
-    color: '#6C63FF',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -162,21 +154,18 @@ export const homeScreenStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   errorText: {
-    color: '#FF6B6B',
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 10,
   },
   errorDetail: {
-    color: '#666',
     textAlign: 'center',
     fontSize: 14,
     marginTop: 5,
   },
   emptyText: {
     textAlign: 'center',
-    color: '#666',
     fontSize: 16,
     marginTop: 20,
     fontStyle: 'italic',
@@ -189,7 +178,6 @@ export const homeScreenStyles = StyleSheet.create({
   salonCard: {
     width: 220,
     marginRight: 15,
-    backgroundColor: '#fff',
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -202,26 +190,22 @@ export const homeScreenStyles = StyleSheet.create({
     width: '100%',
     height: 140,
     position: 'relative',
-    backgroundColor: '#f0f0f0',
     overflow: 'hidden',
     borderRadius: 8,
   },
   salonImage: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#f5f5f5',
   },
   defaultImageContainer: {
     width: '100%',
     height: '100%',
-    backgroundColor: '#f5f5f5',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
   },
   defaultImageText: {
     marginTop: 8,
-    color: '#666',
     fontSize: 12,
     textAlign: 'center',
     paddingHorizontal: 10,
@@ -239,7 +223,6 @@ export const homeScreenStyles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 14,
-    color: '#666',
     marginLeft: 4,
     marginRight: 8,
   },
@@ -249,17 +232,14 @@ export const homeScreenStyles = StyleSheet.create({
   salonName: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 5,
   },
   salonAddress: {
     fontSize: 12,
-    color: '#666',
     marginBottom: 4,
   },
   hairdresserName: {
     fontSize: 12,
-    color: '#6C63FF',
   },
   // Coiffures
   hairstylesList: {
@@ -273,7 +253,6 @@ export const homeScreenStyles = StyleSheet.create({
     width: 220,
     height: 220,
     marginRight: 16,
-    backgroundColor: '#F0F0F0',
     borderRadius: 10,
     overflow: 'hidden',
     alignItems: 'center',
@@ -291,44 +270,67 @@ export const homeScreenStyles = StyleSheet.create({
   hairstyleName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 8,
   },
   hairstyleDuration: {
     fontSize: 14,
-    color: '#666',
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
   },
   // Styles pour les filtres
   filterContainer: {
     paddingLeft: 0,
     paddingRight: 20,
+    marginTop: 10,
+    marginBottom:20
   },
   filterButton: {
-    backgroundColor: '#f5f5f5',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     marginRight: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   filterButtonActive: {
-    backgroundColor: '#6C63FF',
-    borderColor: '#6C63FF',
+    borderColor: '#2844f8ff',
+    color: '#f7f7f7ff',
   },
   filterButtonText: {
     fontSize: 14,
-    color: '#666',
     fontWeight: '500',
   },
   filterButtonTextActive: {
     fontSize: 14,
-    color: '#fff',
     fontWeight: '500',
+    color: '#ffffffff',
+  },
+  retryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  distanceBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  distanceText: {
+    fontSize: 10,
+    fontWeight: '600',
   },
   categoriesList: {
     paddingLeft: 20,
@@ -336,11 +338,9 @@ export const homeScreenStyles = StyleSheet.create({
   },
   salonCategory: {
     fontSize: 12,
-    color: '#6C63FF',
   },
   popularSalonCard: {
     flexDirection: 'row',
-    backgroundColor: '#fff',
     borderRadius: 12,
     marginBottom: 15,
     shadowColor: '#000',

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "HairGovMobile",
+    "name": "Scizz",
     "slug": "HairGovMobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,20 +8,27 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "image": "./assets/splash-icon2.png",
+      "resizeMode": "contain"
     },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+        }
+      ]
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.marvinj0r.scizz"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#6C63FF"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
+      "icon": "./assets/icon.png",
       "package": "com.marvinj0r.scizz",
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",

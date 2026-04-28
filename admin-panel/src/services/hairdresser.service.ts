@@ -29,3 +29,18 @@ export const getActiveHairdressers = async (): Promise<Hairdresser[]> => {
     return [];
   }
 };
+
+export const getHairdresserById = async (id: string) => {
+  try {
+    const response = await api.get(`/admin/hairdressers/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching hairdresser by ID:', error);
+    throw error;
+  }
+};
+
+export const hairdresserService = {
+  getActiveHairdressers,
+  getHairdresserById,
+};

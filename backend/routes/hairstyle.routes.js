@@ -14,6 +14,36 @@ router.post(
   hairstyleController.addHairstyle
 );
 
+// Route pour modifier une coiffure
+router.put(
+  '/:id',
+  verifyToken,
+  isAdmin,
+  uploadSingle,
+  handleUploadErrors,
+  hairstyleController.updateHairstyle
+);
+
+// Route pour supprimer une coiffure
+router.delete(
+  '/:id',
+  verifyToken,
+  isAdmin,
+  hairstyleController.deleteHairstyle
+);
+
+// Route temporaire pour ajouter des hairstyles sans authentification
+router.post(
+  '/temp-add',
+  hairstyleController.addHairstyleTemp
+);
+
+// Route pour ajouter les hairstyles de base (seed) - temporairement publique
+router.post(
+  '/seed',
+  hairstyleController.seedHairstyles
+);
+
 router.get(
   '/',
   hairstyleController.getHairstyles

@@ -45,7 +45,7 @@ export const VerifyOtpScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute<VerifyOtpRouteProp>();
   
-  const [otp, setOtp] = useState(['', '', '', '']);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendDisabled, setResendDisabled] = useState(false);
@@ -69,8 +69,8 @@ export const VerifyOtpScreen = () => {
   const handleVerifyOtp = async () => {
     const otpCode = otp.join('');
     
-    if (otpCode.length !== 4) {
-      setError('Veuillez entrer un code OTP valide à 4 chiffres');
+    if (otpCode.length !== 6) {
+      setError('Veuillez entrer un code OTP valide à 6 chiffres');
       return;
     }
     
@@ -135,13 +135,10 @@ export const VerifyOtpScreen = () => {
 
   const handleResendOtp = async () => {
     try {
-      setResendDisabled(true);
+      setResendDisabled(true); +
       setCountdown(30);
       setError('');
       
-      // Ici, vous devrez appeler votre API pour renvoyer l'OTP
-      // Par exemple :
-      // await AuthService.resendOtp(userId || phone);
       
       console.log('Demande de renvoi du code OTP à:', phone);
       
@@ -208,13 +205,13 @@ export const VerifyOtpScreen = () => {
 
       <View style={styles.content}>
         <Text style={styles.subtitle}>
-          Entrez le code à 4 chiffres envoyé au {phone ? formatPhoneNumber(phone) : email}
+          Entrez le code à 6 chiffres envoyé au {phone ? formatPhoneNumber(phone) : email}
         </Text>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <View style={styles.otpContainer}>
-          {[0, 1, 2, 3].map((index) => (
+          {[0, 1, 2, 3, 4, 5].map((index) => (
             <TextInput
               key={index}
               ref={(ref) => {

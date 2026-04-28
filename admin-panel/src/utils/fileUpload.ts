@@ -12,7 +12,7 @@ export const uploadFile = async (file: File): Promise<UploadResponse> => {
 
   try {
     // Remplacez cette URL par votre endpoint de téléversement
-    const response = await axios.post('http://localhost:3001/api/v1/upload', formData, {
+    const response = await axios.post('https://hairgov2.onrender.com/api/v1/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

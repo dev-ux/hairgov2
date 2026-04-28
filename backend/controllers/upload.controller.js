@@ -62,7 +62,10 @@ const uploadFile = (req, res) => {
     }
 
     // Construire l'URL complète du fichier
-    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://hairgov2.onrender.com' 
+      : `${req.protocol}://${req.get('host')}`;
+    const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
 
     res.status(200).json({
       success: true,

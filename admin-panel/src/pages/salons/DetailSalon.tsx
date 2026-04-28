@@ -34,16 +34,18 @@ interface Salon {
   latitude: number;
   longitude: number;
   photos: string[];
+  logo?: string;
   is_validated: boolean;
   created_at: string;
   updated_at: string;
-  hairdresser: {
+  hairdresser?: {
     id: string;
-    user: {
-      full_name: string;
-      email: string;
-      phone: string;
-    };
+    full_name: string;
+    email: string;
+    phone: string;
+    first_name?: string;
+    last_name?: string;
+    profile_photo?: string;
   };
   business_hours?: Record<string, string>;
 }
@@ -68,6 +70,8 @@ const DetailSalon: React.FC = () => {
         
         if (response.data.success) {
           console.log('Détails du salon:', response.data.data);
+          console.log('Données du coiffeur:', response.data.data.hairdresser);
+          console.log('Logo du salon:', response.data.data.logo);
           setSalon({
             ...response.data.data,
             // S'assurer que les photos sont toujours un tableau
@@ -115,10 +119,22 @@ const DetailSalon: React.FC = () => {
 
   // Fonction pour formater l'URL de l'image
   const formatImageUrl = (url: string) => {
-    console.log('URL originale:', url);
+    console.log('🔍 URL originale:', url);
     if (!url) {
-      console.log('URL vide');
+      console.log('❌ URL vide');
       return '';
+    }
+    
+    // Si c'est déjà une URL complète (Cloudinary, http, https), la retourner telle quelle
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      console.log('✅ URL complète détectée, retour direct:', url);
+      return url;
+    }
+    
+    // Si c'est une URL locale, ne pas essayer de la charger
+    if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
+      console.log('⚠️ URL locale détectée, ne pas charger:', url);
+      return ''; // Retourner vide pour éviter NS_BINDING_ABORTED
     }
     
     // Supprimer les accolades si présentes
@@ -130,8 +146,8 @@ const DetailSalon: React.FC = () => {
       cleanUrl = cleanUrl.substring(1);
     }
     
-    // Construire l'URL complète
-    const baseUrl = api.defaults.baseURL || 'http://localhost:3001';
+    // Construire l'URL complète pour les chemins locaux uniquement
+    const baseUrl = api.defaults.baseURL || 'https://hairgov2.onrender.com/api/v1';
     console.log('URL de base de l\'API:', baseUrl);
     
     // S'assurer qu'il n'y a pas de double slash
@@ -180,6 +196,43 @@ const DetailSalon: React.FC = () => {
         <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
           <ArrowBackIcon />
         </IconButton>
+        <Box sx={{ mr: 3 }}>
+          {salon.logo ? (
+            <img
+              src={salon.logo.startsWith('http') ? salon.logo : formatImageUrl(salon.logo)}
+              alt={`Logo ${salon.name}`}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.onerror = null;
+                target.src = 'https://via.placeholder.com/80x80?text=Logo';
+              }}
+              style={{
+                width: 80,
+                height: 80,
+                objectFit: 'cover',
+                borderRadius: '50%',
+                border: '2px solid #e0e0e0'
+              }}
+            />
+          ) : (
+            <Box
+              sx={{
+                width: 80,
+                height: 80,
+                borderRadius: '50%',
+                backgroundColor: '#f5f5f5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px dashed #ccc'
+              }}
+            >
+              <Typography variant="caption" color="textSecondary">
+                Pas de logo
+              </Typography>
+            </Box>
+          )}
+        </Box>
         <Typography variant="h4" component="h1">
           {salon.name}
         </Typography>
@@ -214,26 +267,56 @@ const DetailSalon: React.FC = () => {
             </Typography>
             {salon.photos && salon.photos.length > 0 ? (
               <Box display="flex" flexWrap="wrap" gap={2}>
-                {salon.photos.map((photo, index) => (
-                  <Box
-                    key={index}
-                    component="img"
-                    src={formatImageUrl(photo)}
-                    alt={`${salon.name} ${index + 1}`}
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.src = 'https://via.placeholder.com/200x150?text=Image+non+disponible';
-                    }}
-                    sx={{
-                      width: 200,
-                      height: 150,
-                      objectFit: 'cover',
-                      borderRadius: 1,
-                      border: '1px solid #eee',
-                    }}
-                  />
-                ))}
+                {salon.photos.map((photo, index) => {
+                  const isLocalFile = photo.startsWith('file://');
+                  const imageUrl = isLocalFile ? null : formatImageUrl(photo);
+                  
+                  return (
+                    <Box key={index}>
+                      {isLocalFile ? (
+                        // Affichage pour les fichiers locaux
+                        <Box
+                          sx={{
+                            width: 200,
+                            height: 150,
+                            borderRadius: 1,
+                            backgroundColor: '#f5f5f5',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: '2px dashed #ccc',
+                          }}
+                        >
+                          <Typography variant="body2" color="text.secondary" align="center">
+                            Photo locale
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" align="center">
+                            (Non accessible depuis le web)
+                          </Typography>
+                        </Box>
+                      ) : (
+                        // Affichage normal pour les URLs web
+                        <img
+                          src={imageUrl || ''}
+                          alt={`${salon.name} ${index + 1}`}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null;
+                            target.src = 'https://via.placeholder.com/200x150?text=Image+non+disponible';
+                          }}
+                          style={{
+                            width: 200,
+                            height: 150,
+                            objectFit: 'cover',
+                            borderRadius: 4,
+                            border: '1px solid #eee',
+                          }}
+                        />
+                      )}
+                    </Box>
+                  );
+                })}
               </Box>
             ) : (
               <Typography color="textSecondary">Aucune photo disponible</Typography>
@@ -290,18 +373,18 @@ const DetailSalon: React.FC = () => {
               <Grid item xs={12} sm={6} md={4}>
                 <Box display="flex" alignItems="center" mb={1}>
                   <Typography variant="subtitle2" sx={{ minWidth: 100 }}>Nom:</Typography>
-                  <Typography>{salon.hairdresser?.user?.full_name || 'Non spécifié'}</Typography>
+                  <Typography>{salon.hairdresser?.full_name || 'Non spécifié'}</Typography>
                 </Box>
                 <Box display="flex" alignItems="center" mb={1}>
                   <PhoneIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
                   <Typography variant="body2" color="textSecondary">
-                    {salon.hairdresser?.user?.phone || 'Non spécifié'}
+                    {salon.hairdresser?.phone || 'Non spécifié'}
                   </Typography>
                 </Box>
                 <Box display="flex" alignItems="center">
                   <EmailIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
                   <Typography variant="body2" color="textSecondary">
-                    {salon.hairdresser?.user?.email || 'Non spécifié'}
+                    {salon.hairdresser?.email || 'Non spécifié'}
                   </Typography>
                 </Box>
               </Grid>

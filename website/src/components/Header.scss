@@ -1,0 +1,241 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  transition: all $transition-normal;
+  border-bottom: 1px solid transparent;
+
+  &.scrolled {
+    background: rgba(255, 255, 255, 0.98);
+    border-bottom-color: $gray-200;
+    box-shadow: $shadow-md;
+  }
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: $font-size-xl;
+  color: $primary-color;
+  transition: all $transition-normal;
+
+  &:hover {
+    transform: scale(1.05);
+  }
+}
+
+.logo-img {
+  width: 100px;
+  height: 100px;
+  margin-right: $spacing-sm;
+  border-radius: $border-radius-md;
+}
+
+.logo-text {
+  background: linear-gradient(135deg, $primary-color, $secondary-color);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.nav-menu {
+  display: flex;
+  align-items: center;
+}
+
+.nav-list {
+  display: flex;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: $spacing-xl;
+}
+
+.nav-item {
+  position: relative;
+}
+
+.nav-link {
+  text-decoration: none;
+  color: $gray-600;
+  font-weight: 500;
+  font-size: $font-size-base;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $border-radius-md;
+  transition: all $transition-normal;
+  position: relative;
+
+  &:hover {
+    color: $primary-color;
+    background: rgba($primary-color, 0.1);
+  }
+
+  &.nav-link-cta {
+    background: linear-gradient(135deg, $primary-color, $primary-dark);
+    color: $white;
+    padding: $spacing-sm $spacing-lg;
+
+    &:hover {
+      background: linear-gradient(135deg, $primary-dark, $primary-color);
+      transform: translateY(-2px);
+      box-shadow: $shadow-md;
+    }
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background: $primary-color;
+    transition: all $transition-normal;
+    transform: translateX(-50%);
+  }
+
+  &:hover::after {
+    width: 80%;
+  }
+}
+
+.mobile-menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: $spacing-sm;
+  z-index: 1001;
+}
+
+.hamburger {
+  display: block;
+  position: relative;
+  width: 24px;
+  height: 18px;
+
+  span {
+    display: block;
+    position: absolute;
+    height: 2px;
+    width: 100%;
+    background: $primary-color;
+    border-radius: 2px;
+    opacity: 1;
+    left: 0;
+    transform: rotate(0deg);
+    transition: all $transition-normal;
+
+    &:nth-child(1) {
+      top: 0px;
+    }
+
+    &:nth-child(2) {
+      top: 8px;
+    }
+
+    &:nth-child(3) {
+      top: 16px;
+    }
+  }
+
+  &.active {
+    span {
+      &:nth-child(1) {
+        top: 8px;
+        transform: rotate(135deg);
+      }
+
+      &:nth-child(2) {
+        opacity: 0;
+        left: -60px;
+      }
+
+      &:nth-child(3) {
+        top: 8px;
+        transform: rotate(-135deg);
+      }
+    }
+  }
+}
+
+@include mobile {
+  .nav {
+    padding: $spacing-sm 0;
+  }
+
+  .logo-text {
+    font-size: $font-size-lg;
+  }
+
+  .nav-menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 80%;
+    max-width: 300px;
+    height: 100vh;
+    background: $white;
+    box-shadow: $shadow-xl;
+    transition: right $transition-normal;
+    z-index: 999;
+
+    &.active {
+      right: 0;
+    }
+  }
+
+  .nav-list {
+    flex-direction: column;
+    gap: 0;
+    padding: $spacing-xl 0;
+    height: 100%;
+    justify-content: flex-start;
+    align-items: stretch;
+  }
+
+  .nav-item {
+    border-bottom: 1px solid $gray-200;
+  }
+
+  .nav-link {
+    display: block;
+    padding: $spacing-lg $spacing-xl;
+    text-align: left;
+    border-radius: 0;
+
+    &:hover {
+      background: rgba($primary-color, 0.05);
+    }
+
+    &.nav-link-cta {
+      margin: $spacing-lg $spacing-md;
+      border-radius: $border-radius-full;
+      text-align: center;
+    }
+
+    &::after {
+      display: none;
+    }
+  }
+
+  .mobile-menu-toggle {
+    display: block;
+  }
+}

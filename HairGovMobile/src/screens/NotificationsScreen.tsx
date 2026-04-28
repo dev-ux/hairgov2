@@ -222,6 +222,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
     backgroundColor: '#fff',
+    marginTop: 30,
   },
   backButton: {
     padding: 5,
@@ -232,7 +233,7 @@ const styles = StyleSheet.create({
     color: '#333',
     flex: 1,
     textAlign: 'center',
-    marginLeft: -24, // Pour compenser le bouton de retour
+    marginLeft: -24, 
   },
   markAllButton: {
     padding: 5,

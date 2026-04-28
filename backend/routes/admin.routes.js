@@ -3,12 +3,19 @@ const router = express.Router();
 const { authenticate, isAdmin } = require('../middleware/auth.middleware');
 const { getUsersList } = require('../controllers/admin.controller');
 const { getDashboardStats } = require('../controllers/dashboard.controller');
-const { createSalon } = require('../controllers/admin/salon.admin.controller');
+const { createSalon, updateSalon, validateSalon } = require('../controllers/admin/salon.admin.controller');
 const { 
   validateHairdresser, 
   getHairdressers: getHairdressersAdmin,
-  toggleHairdresserStatus 
+  toggleHairdresserStatus,
+  getHairdresserById 
 } = require('../controllers/admin/hairdresser.admin.controller');
+const {
+  addTrendingHairstyle,
+  removeTrendingHairstyle,
+  updateTrendingHairstyle,
+  getAllTrendingHairstyles
+} = require('../controllers/admin/trendhairstyle.admin.controller');
 const { uploadFields, handleUploadErrors } = require('../middleware/upload.middleware');
 const db = require('../models');
 const { Op } = require('sequelize');
@@ -36,6 +43,13 @@ router.get('/users', getUsersList);
 router.get('/hairdressers', getHairdressersAdmin);
 
 /**
+ * @route   GET /admin/hairdressers/:id
+ * @desc    Récupérer un coiffeur spécifique (Admin uniquement)
+ * @access  Private/Admin
+ */
+router.get('/hairdressers/:id', getHairdresserById);
+
+/**
  * @route   PATCH /admin/hairdressers/:id/validate
  * @route   PUT /admin/hairdressers/:id/approve
  * @desc    Valider ou rejeter un coiffeur (Admin uniquement)
@@ -60,6 +74,56 @@ router.patch('/hairdressers/:id/status', toggleHairdresserStatus);
  * @access  Privé (Admin)
  */
 router.get('/dashboard/stats', getDashboardStats);
+
+/**
+ * @route   GET /admin/salons/:id
+ * @desc    Récupérer les détails d'un salon spécifique (Admin uniquement)
+ * @access  Private/Admin
+ */
+router.get('/salons/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const salon = await db.Salon.findOne({
+      where: { id },
+      include: [
+        {
+          model: db.Hairdresser,
+          as: 'hairdresser',
+          include: [
+            {
+              model: db.User,
+              as: 'user',
+              attributes: ['id', 'full_name', 'email', 'phone', 'profile_photo']
+            }
+          ]
+        }
+      ]
+    });
+
+    if (!salon) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'SALON_NOT_FOUND',
+          message: 'Salon non trouvé'
+        }
+      });
+    }
+
+    res.json({
+      success: true,
+      data: salon
+    });
+  } catch (error) {
+    console.error('Error fetching salon:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Une erreur est survenue lors de la récupération du salon',
+      details: error.message
+    });
+  }
+});
 
 /**
  * @route   GET /api/v1/admin/salons
@@ -149,5 +213,100 @@ router.post(
   uploadFields,
   createSalon
 );
+
+/**
+ * @route   PUT /api/v1/admin/salons/:id
+ * @desc    Mettre à jour un salon (Admin uniquement)
+ * @access  Private/Admin
+ */
+router.put(
+  '/salons/:id',
+  uploadFields,
+  updateSalon
+);
+
+/**
+ * @route   DELETE /api/v1/admin/salons/:id
+ * @desc    Supprimer un salon (Admin uniquement)
+ * @access  Private/Admin
+ */
+router.delete('/salons/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Vérifier si le salon existe
+    const salon = await db.Salon.findByPk(id);
+    
+    if (!salon) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'SALON_NOT_FOUND',
+          message: 'Salon non trouvé'
+        }
+      });
+    }
+
+    // Supprimer le salon
+    await salon.destroy();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Salon supprimé avec succès'
+    });
+  } catch (error) {
+    console.error('Erreur lors de la suppression du salon:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'SERVER_ERROR',
+        message: 'Une erreur est survenue lors de la suppression du salon',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      }
+    });
+  }
+});
+
+/**
+ * @route   PATCH /api/v1/admin/salons/:id/validate
+ * @desc    Valider ou invalider un salon (Admin uniquement)
+ * @body    {boolean} is_validated - Statut de validation (true/false)
+ * @access  Private/Admin
+ */
+router.patch('/salons/:id/validate', validateSalon);
+
+// ==========================================
+// ROUTES POUR LA GESTION DES TENDANCES
+// ==========================================
+
+/**
+ * @route   GET /api/v1/admin/trending-hairstyles
+ * @desc    Lister toutes les tendances (Admin uniquement)
+ * @access  Private/Admin
+ */
+router.get('/trending-hairstyles', getAllTrendingHairstyles);
+
+/**
+ * @route   POST /api/v1/admin/trending-hairstyles
+ * @desc    Ajouter une coiffure en tendance (Admin uniquement)
+ * @body    {object} - Données de la tendance
+ * @access  Private/Admin
+ */
+router.post('/trending-hairstyles', addTrendingHairstyle);
+
+/**
+ * @route   PUT /api/v1/admin/trending-hairstyles/:id
+ * @desc    Mettre à jour une tendance (Admin uniquement)
+ * @body    {object} - Données mises à jour
+ * @access  Private/Admin
+ */
+router.put('/trending-hairstyles/:id', updateTrendingHairstyle);
+
+/**
+ * @route   DELETE /api/v1/admin/trending-hairstyles/:id
+ * @desc    Supprimer une coiffure des tendances (Admin uniquement)
+ * @access  Private/Admin
+ */
+router.delete('/trending-hairstyles/:id', removeTrendingHairstyle);
 
 module.exports = router;

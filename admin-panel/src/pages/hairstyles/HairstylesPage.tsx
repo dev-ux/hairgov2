@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import {
   Box,
   Typography,
-  Button,
   Paper,
   Table,
   TableBody,
@@ -12,14 +10,21 @@ import {
   TableHead,
   TableRow,
   TablePagination,
+  Button,
   IconButton,
-  Tooltip,
+  Chip,
   CircularProgress,
   Alert,
   Avatar,
-  Chip,
+  Tooltip,
 } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+} from '@mui/icons-material';
+import { useSnackbar } from 'notistack';
+import api from '../../services/api';
 import AddHairstyleForm, { HairstyleFormData } from './AddHairstyleForm';
 import { enqueueSnackbar } from 'notistack';
 
@@ -35,8 +40,6 @@ interface Hairstyle {
   updated_at: string;
 }
 
-const API_URL = 'http://localhost:3001';
-
 const HairstylesPage: React.FC = () => {
   const [hairstyles, setHairstyles] = useState<Hairstyle[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -44,17 +47,38 @@ const HairstylesPage: React.FC = () => {
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
   const [openAddForm, setOpenAddForm] = useState<boolean>(false);
+  const [editingHairstyle, setEditingHairstyle] = useState<Hairstyle | null>(null);
+
+  // Fonction pour formater les URLs des photos
+  const formatPhotoUrl = (photo: string | undefined) => {
+    if (!photo) return '/default-hairstyle.jpg';
+    
+    // Si l'URL est déjà complète (Cloudinary, Unsplash, etc.), la retourner telle quelle
+    if (photo.startsWith('http')) {
+      return photo;
+    }
+    
+    // Si l'URL commence par /uploads/, construire l'URL complète
+    if (photo.startsWith('/uploads/')) {
+      return `https://hairgov2.onrender.com${photo}`;
+    }
+    
+    // Sinon, retourner l'image par défaut
+    return '/default-hairstyle.jpg';
+  };
+  const [openEditForm, setOpenEditForm] = useState<boolean>(false);
+  const { enqueueSnackbar } = useSnackbar();
 
   // Récupérer la liste des coiffures
   const fetchHairstyles = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/api/v1/hairstyles`);
-      setHairstyles(response.data.data || []);
+      const response = await api.get('/hairstyles');
+      setHairstyles(response.data.data?.hairstyles || []);
       setError(null);
     } catch (err) {
       console.error('Erreur lors de la récupération des coiffures:', err);
-      setError('Impossible de charger les coiffures. Veuillez réessayer.');
+      setError('Erreur lors du chargement des coiffures');
       enqueueSnackbar('Erreur lors du chargement des coiffures', { variant: 'error' });
     } finally {
       setLoading(false);
@@ -90,10 +114,9 @@ const HairstylesPage: React.FC = () => {
         formDataToSend.append('photo', formData.photos[0]);
       }
       
-      await axios.post(`${API_URL}/api/v1/hairstyles`, formDataToSend, {
+      await api.post('/hairstyles', formDataToSend, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
       });
       
@@ -104,6 +127,54 @@ const HairstylesPage: React.FC = () => {
     }
   };
 
+  const handleAddToTrends = async (hairstyle: Hairstyle) => {
+    try {
+      // Demander à l'admin les informations pour la tendance
+      const trendingScore = window.prompt('Score de tendance (0.00 - 5.00):', '4.0');
+      
+      // Extraire la catégorie valide depuis la catégorie de la coiffure
+      let validCategory = 'Mixte'; // valeur par défaut
+      if (hairstyle.category) {
+        if (hairstyle.category.toLowerCase().includes('femme')) {
+          validCategory = 'Femme';
+        } else if (hairstyle.category.toLowerCase().includes('homme')) {
+          validCategory = 'Homme';
+        } else if (hairstyle.category.toLowerCase().includes('enfant')) {
+          validCategory = 'Enfant';
+        }
+      }
+      
+      const category = window.prompt(`Catégorie (Homme, Femme, Mixte, Enfant):`, validCategory);
+      const difficulty = window.prompt('Difficulté (facile, moyen, difficile):', 'moyen');
+      const duration = window.prompt('Durée en minutes:', '45');
+      const priceRange = window.prompt('Gamme de prix (ex: 30-50€):', '30-50€');
+
+      if (trendingScore === null || category === null || difficulty === null || duration === null || priceRange === null) {
+        enqueueSnackbar('Tous les champs sont obligatoires', { variant: 'error' });
+        return;
+      }
+
+      const trendData = {
+        hairstyle_id: hairstyle.id,
+        trending_score: parseFloat(trendingScore),
+        category,
+        difficulty,
+        duration_minutes: parseInt(duration),
+        price_range: priceRange,
+        is_active: true
+      };
+
+      console.log('🔍 Debug Frontend - Données envoyées:', trendData);
+      console.log('🔍 Debug Frontend - hairstyle.id:', hairstyle.id, 'type:', typeof hairstyle.id);
+
+      await api.post('/admin/trending-hairstyles', trendData);
+      enqueueSnackbar('Coiffure ajoutée aux tendances avec succès!', { variant: 'success' });
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout aux tendances:', error);
+      enqueueSnackbar('Erreur lors de l\'ajout aux tendances', { variant: 'error' });
+    }
+  };
+
   const handleCloseAddForm = (added = false) => {
     setOpenAddForm(false);
     if (added) {
@@ -111,10 +182,52 @@ const HairstylesPage: React.FC = () => {
     }
   };
 
+  const handleEditHairstyle = (hairstyle: Hairstyle) => {
+    setEditingHairstyle(hairstyle);
+    setOpenEditForm(true);
+  };
+
+  const handleUpdateHairstyle = async (formData: Omit<HairstyleFormData, 'photoPreviews'>) => {
+    try {
+      const formDataToSend = new FormData();
+      
+      // Ajouter les champs du formulaire
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('estimated_duration', formData.estimated_duration.toString());
+      formDataToSend.append('category', formData.category);
+      formDataToSend.append('is_active', formData.is_active.toString());
+      
+      // Ajouter le premier fichier comme 'photo' si nouvelle photo
+      if (formData.photos && formData.photos.length > 0 && formData.photos[0] instanceof File) {
+        formDataToSend.append('photo', formData.photos[0]);
+      }
+      
+      await api.put(`/hairstyles/${editingHairstyle?.id}`, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      });
+      
+      handleCloseEditForm(true);
+    } catch (error) {
+      console.error('Erreur lors de la modification de la coiffure:', error);
+      enqueueSnackbar('Erreur lors de la modification de la coiffure', { variant: 'error' });
+    }
+  };
+
+  const handleCloseEditForm = (updated = false) => {
+    setOpenEditForm(false);
+    setEditingHairstyle(null);
+    if (updated) {
+      fetchHairstyles();
+    }
+  };
+
   const handleDeleteHairstyle = async (id: string) => {
     if (window.confirm('Êtes-vous sûr de vouloir supprimer cette coiffure ?')) {
       try {
-        await axios.delete(`${API_URL}/api/v1/hairstyles/${id}`);
+        await api.delete(`/hairstyles/${id}`);
         enqueueSnackbar('Coiffure supprimée avec succès', { variant: 'success' });
         fetchHairstyles();
       } catch (err) {
@@ -168,13 +281,13 @@ const HairstylesPage: React.FC = () => {
                 <TableCell>Durée (min)</TableCell>
                 <TableCell>Catégorie</TableCell>
                 <TableCell>Statut</TableCell>
-                <TableCell align="right">Actions</TableCell>
+                <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {hairstyles.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                     <Typography variant="body1" color="textSecondary">
                       Aucune coiffure trouvée
                     </Typography>
@@ -196,7 +309,7 @@ const HairstylesPage: React.FC = () => {
                     <TableRow hover key={hairstyle.id}>
                       <TableCell>
                         <Avatar
-                          src={hairstyle.photo ? `${API_URL}${hairstyle.photo}` : '/default-hairstyle.jpg'}
+                          src={formatPhotoUrl(hairstyle.photo)}
                           alt={hairstyle.name}
                           variant="rounded"
                           sx={{ width: 56, height: 56 }}
@@ -237,27 +350,41 @@ const HairstylesPage: React.FC = () => {
                         />
                       </TableCell>
                       <TableCell align="right">
-                        <Tooltip title="Modifier">
-                          <IconButton size="small">
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Supprimer">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleDeleteHairstyle(hairstyle.id)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Tooltip title="Modifier">
+                            <IconButton 
+                              size="small"
+                              onClick={() => handleEditHairstyle(hairstyle)}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Ajouter aux tendances">
+                            <IconButton 
+                              size="small"
+                              color="secondary"
+                              onClick={() => handleAddToTrends(hairstyle)}
+                            >
+                              📈
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Supprimer">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => handleDeleteHairstyle(hairstyle.id)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))
               )}
               {emptyRows > 0 && (
                 <TableRow style={{ height: 53 * emptyRows }}>
-                  <TableCell colSpan={7} />
+                  <TableCell colSpan={8} />
                 </TableRow>
               )}
             </TableBody>
@@ -282,6 +409,13 @@ const HairstylesPage: React.FC = () => {
         open={openAddForm} 
         onClose={handleCloseAddForm}
         onSubmit={handleAddHairstyle}
+      />
+      
+      <AddHairstyleForm 
+        open={openEditForm} 
+        onClose={handleCloseEditForm}
+        onSubmit={handleUpdateHairstyle}
+        editingHairstyle={editingHairstyle}
       />
     </Box>
   );

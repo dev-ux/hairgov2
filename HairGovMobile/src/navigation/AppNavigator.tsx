@@ -12,7 +12,6 @@ import { Onboarding3 } from '../screens/Onboarding3';
 import HomeScreen from '../screens/HomeScreen';
 import MapScreen from '../screens/MapScreen';
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
-import LoginScreen from '../screens/auth/LoginScreen';
 import { VerifyOtpScreen } from '../screens/auth/VerifyOtpScreen';
 import BookingScreen from '../screens/BookingScreen';
 import CreateBookingScreen from '../screens/CreateBookingScreen';
@@ -20,10 +19,10 @@ import BookingFormScreen from '../screens/BookingFormScreen';
 import BarberListScreen from '../screens/BarberListScreen';
 import BarberDetailScreen from '../screens/BarberDetailScreen';
 import ProfileScreen from '../screens/ProfileScreen';
-import SalonDetailScreen from '@screens/SalonDetailScreen';
+import SalonDetailScreen from '../screens/SalonDetailScreen';
 // Import des nouveaux écrans
 import FavoritesScreen from '../screens/FavoritesScreen';
-import HistoryScreen from '../screens/HistoryScreen';
+import { HistoryScreen } from '../screens/HistoryScreen';
 import StatisticsScreen from '../screens/StatisticsScreen';
 import BookingsScreen from '../screens/BookingsScreen';
 import PaymentsScreen from '../screens/PaymentsScreen';
@@ -33,6 +32,15 @@ import NotificationDetailScreen from '../screens/NotificationDetailScreen';
 import AllSalonsScreen from '../screens/AllSalonsScreen';
 import BarberHomePage from '../screens/BarberHomePage';
 import ReservationDetailScreen from '../screens/ReservationDetailScreen';
+import LoginScreen from '@screens/auth/LoginScreen';
+import UserProfileScreen from '../screens/UserProfileScreen';
+import HairstylesGalleryScreen from '../screens/HairstylesGalleryScreen';
+import HairstyleDetailScreen from '../screens/HairstyleDetailScreen';
+import HairdresserBookingScreen from '../screens/HairdresserBookingScreen';
+// Import des nouvelles pages de filtres
+import SpecialOffersScreen from '../screens/SpecialOffersScreen';
+import TrendingHairstylesScreen from '../screens/TrendingHairstylesScreen';
+import SpecialistsScreen from '../screens/SpecialistsScreen';
 
 // Définition des types pour la navigation
 export type RootStackParamList = {
@@ -53,8 +61,13 @@ export type RootStackParamList = {
   Home: undefined;
   // Profil
   Profile: undefined;
+  UserProfile: undefined;
   // Autres écrans
   AllSalons: undefined;
+  // Nouvelles pages de filtres
+  SpecialOffers: undefined;
+  TrendingHairstyles: undefined;
+  Specialists: undefined;
   // Réservation
   Booking: {
     hairdresserId: string;
@@ -65,10 +78,12 @@ export type RootStackParamList = {
   // Autres écrans du profil
   Favorites: undefined;
   Hairstyles: undefined;
+  HairstylesGallery: undefined;
   HairstyleDetail: { hairstyleId: string };
   History: undefined;
   Statistics: undefined;
   Bookings: undefined;
+  HairdresserBooking: { hairdresserId: string; hairdresserName: string };
   Payments: undefined;
   Settings: undefined;
   // Autres écrans
@@ -140,18 +155,14 @@ const MainTabs = () => {
         }} 
       />
     
-      <Tab.Screen 
-        name="Booking" 
-        component={BookingScreen} 
-        options={{ 
+      <Tab.Screen
+        name="Bookings"
+        component={BookingsScreen}
+        options={{
           title: 'Réservations',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="calendar" size={size} color={color} />
           )
-        }} 
-        initialParams={{
-          hairdresserId: '1', // ID par défaut, à remplacer par la logique de votre application
-          hairdresserName: 'Coiffeur', // Nom par défaut
         }}
       />
     </Tab.Navigator>
@@ -384,6 +395,25 @@ export const AppNavigator = () => {
           })}
         />
         <Stack.Screen 
+          name="UserProfile" 
+          component={UserProfileScreen}
+          options={({ navigation }) => ({
+            title: 'Profil',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        <Stack.Screen 
           name="Notifications" 
           component={NotificationsScreen}
           options={({ navigation }) => ({
@@ -441,10 +471,105 @@ export const AppNavigator = () => {
         <Stack.Screen 
           name="AllSalons" 
           component={AllSalonsScreen}
-          options={{
+          options={({ navigation }) => ({
             title: 'Tous les salons',
             animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 10,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        
+        <Stack.Screen
+          name="HairdresserBooking"
+          component={HairdresserBookingScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
           }}
+        />
+        <Stack.Screen
+          name="HairstylesGallery"
+          component={HairstylesGalleryScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen 
+          name="HairstyleDetail" 
+          component={HairstyleDetailScreen}
+          options={{
+            headerShown: false,
+            animation: 'slide_from_right',
+          }}
+        />
+        
+        {/* Nouvelles pages de filtres */}
+        <Stack.Screen 
+          name="SpecialOffers" 
+          component={SpecialOffersScreen}
+          options={({ navigation }) => ({
+            title: 'Offres Spéciales',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        <Stack.Screen 
+          name="TrendingHairstyles" 
+          component={TrendingHairstylesScreen}
+          options={({ navigation }) => ({
+            title: 'Coiffures Tendances',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        <Stack.Screen 
+          name="Specialists" 
+          component={SpecialistsScreen}
+          options={({ navigation }) => ({
+            title: 'Spécialistes',
+            animation: 'slide_from_right',
+            headerLeft: () => (
+              <TouchableOpacity 
+                onPress={() => navigation.goBack()}
+                style={{
+                  marginLeft: 10,
+                  padding: 8,
+                }}
+              >
+                <Ionicons name="arrow-back" size={24} color="#000" />
+              </TouchableOpacity>
+            ),
+          })}
         />
       </Stack.Navigator>
     </NavigationContainer>

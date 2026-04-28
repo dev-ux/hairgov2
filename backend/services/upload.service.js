@@ -1,67 +1,83 @@
 // services/upload.service.js
-const AWS = require('aws-sdk');
 const { v4: uuidv4 } = require('uuid');
 const path = require('path');
-
-// Configuration AWS S3
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  region: process.env.AWS_REGION || 'us-east-1'
-});
-
-const BUCKET_NAME = process.env.AWS_S3_BUCKET || 'hairgov2-uploads';
+const fs = require('fs');
 
 /**
- * Upload un fichier vers S3
+ * Upload un fichier localement
  */
 const uploadFile = async (file, folder = 'uploads') => {
   try {
     const fileExtension = path.extname(file.originalname);
-    const fileName = `${folder}/${uuidv4()}${fileExtension}`;
+    const uploadDir = path.join(__dirname, '../public/uploads');
     
-    const params = {
-      Bucket: BUCKET_NAME,
-      Key: fileName,
-      Body: file.buffer,
-      ContentType: file.mimetype,
-      ACL: 'public-read'
-    };
-
-    const uploadResult = await s3.upload(params).promise();
+    // Créer le dossier s'il n'existe pas
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    
+    // Gérer les différents formats de fichiers
+    let fileBuffer;
+    if (file.buffer) {
+      // Fichier venant de multer avec buffer
+      fileBuffer = file.buffer;
+    } else if (file.data) {
+      // Fichier venant d'Express file upload
+      fileBuffer = file.data;
+    } else {
+      throw new Error('Format de fichier non supporté');
+    }
+    
+    // Générer un nom de fichier unique
+    const fileName = `${folder}-${Date.now()}-${uuidv4()}${fileExtension}`;
+    const localPath = path.join(uploadDir, fileName);
+    
+    // Écrire le fichier localement
+    fs.writeFileSync(localPath, fileBuffer);
+    
+    // Construire l'URL du fichier
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? 'https://hairgov2.onrender.com' 
+      : 'http://localhost:10000';
+    const fileUrl = `${baseUrl}/uploads/${fileName}`;
+    
+    console.log(`💾 Fichier uploadé localement: ${fileName}`);
     
     return {
-      url: uploadResult.Location,
-      key: uploadResult.Key,
+      url: fileUrl,
+      key: fileName,
       name: file.originalname,
-      size: file.size,
+      size: file.size || fileBuffer.length,
       type: file.mimetype
     };
   } catch (error) {
-    console.error('Error uploading file to S3:', error);
+    console.error('Error uploading file locally:', error);
     throw error;
   }
 };
 
 /**
- * Supprimer un fichier de S3
+ * Supprimer un fichier localement
  */
 const deleteFile = async (fileUrl) => {
   try {
     if (!fileUrl) return;
     
-    // Extraire la clé du fichier à partir de l'URL
-    const key = fileUrl.split('/').slice(3).join('/');
+    // Extraire le nom du fichier de l'URL
+    const fileName = fileUrl.split('/').pop();
+    if (!fileName) return;
     
-    const params = {
-      Bucket: BUCKET_NAME,
-      Key: key
-    };
+    const filePath = path.join(__dirname, '../public/uploads', fileName);
     
-    await s3.deleteObject(params).promise();
+    // Supprimer le fichier s'il existe
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(`🗑️ Fichier supprimé: ${fileName}`);
+    }
+    
     return true;
   } catch (error) {
-    console.error('Error deleting file from S3:', error);
+    console.error('Error deleting file locally:', error);
     throw error;
   }
 };

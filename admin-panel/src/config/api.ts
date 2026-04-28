@@ -1,7 +1,10 @@
 import axios from 'axios';
 
-// Utilisation du port 3001 pour le backend
-const API_URL = 'http://localhost:3001/api/v1';
+// URL de production pour le backend déployé sur Render
+const API_URL = 'https://hairgov2.onrender.com/api/v1';
+
+// Alternative pour développement local (commentée)
+// const API_URL = 'http://localhost:3001/api/v1';
 
 // Création d'une instance axios personnalisée
 const api = axios.create({

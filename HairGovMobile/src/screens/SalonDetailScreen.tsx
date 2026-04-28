@@ -16,54 +16,71 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import MapView, { Marker } from 'react-native-maps';
 import { API_URL } from '../config/constants';
+import { FavoriteButton } from '../components/FavoriteButton';
 
 // Fonction utilitaire pour formater les URLs d'images
 const formatImageUrl = (url: string) => {
-  try {
-    if (!url) {
-      return null;
+    try {
+        if (!url) {
+            return null;
+        }
+
+        // Nettoyer l'URL (supprimer les accolades, espaces, guillemets et autres caractères invalides)
+        let cleanUrl = url.replace(/[{}"']/g, '').trim();
+
+        // Si l'URL est déjà une URL complète, la retourner telle quelle
+        if (cleanUrl.startsWith('http')) {
+            return cleanUrl;
+        }
+
+        // Si l'URL commence par /uploads/photos/, la nettoyer et construire l'URL complète
+        if (cleanUrl.startsWith('/uploads/photos/')) {
+            const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+            return `${baseUrl}${cleanUrl}`;
+        }
+
+        // Si l'URL commence par /uploads/, la nettoyer et construire l'URL complète
+        if (cleanUrl.startsWith('/uploads/')) {
+            const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+            return `${baseUrl}${cleanUrl}`;
+        }
+
+        // Si l'URL commence par photos-, construire l'URL complète
+        if (cleanUrl.startsWith('photos-')) {
+            const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+            return `${baseUrl}/uploads/photos/${cleanUrl}`;
+        }
+
+        // Si l'URL ne contient que le nom du fichier sans préfixe
+        if (!cleanUrl.includes('/')) {
+            const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+            return `${baseUrl}/uploads/photos/${cleanUrl}`;
+        }
+
+        // Pour tout autre cas, essayer de construire avec /uploads/photos/
+        const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
+        const fileName = cleanUrl.split('/').pop();
+        return `${baseUrl}/uploads/photos/${fileName}`;
+    } catch (error) {
+        console.error('Erreur lors du formatage de l\'URL:', error);
+        return null;
+    }
+};
+
+// Solution temporaire : mapper les URLs manquantes vers des images existantes
+const getWorkingImageUrl = (originalUrl: string): string => {
+    // Si c'est déjà une URL complète (Cloudinary), la retourner directement
+    if (originalUrl.startsWith('http://') || originalUrl.startsWith('https://')) {
+        console.log('getWorkingImageUrl - URL complète détectée:', originalUrl);
+        return originalUrl;
     }
 
-    // Nettoyer l'URL (supprimer les accolades, espaces, guillemets et autres caractères invalides)
-    let cleanUrl = url.replace(/[{}"']/g, '').trim();
+    // Extraire le nom du fichier de l'URL
+    const filename = originalUrl.split('/').pop() || '';
 
-    // Si l'URL est déjà une URL complète, la retourner telle quelle
-    if (cleanUrl.startsWith('http')) {
-      return cleanUrl;
-    }
-
-    // Si l'URL commence par /uploads/photos/, la nettoyer et construire l'URL complète
-    if (cleanUrl.startsWith('/uploads/photos/')) {
-      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-      return `${baseUrl}${cleanUrl}`;
-    }
-
-    // Si l'URL commence par /uploads/, la nettoyer et construire l'URL complète
-    if (cleanUrl.startsWith('/uploads/')) {
-      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-      return `${baseUrl}${cleanUrl}`;
-    }
-
-    // Si l'URL commence par photos-, construire l'URL complète
-    if (cleanUrl.startsWith('photos-')) {
-      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-      return `${baseUrl}/uploads/photos/${cleanUrl}`;
-    }
-
-    // Si l'URL ne contient que le nom du fichier sans préfixe
-    if (!cleanUrl.includes('/')) {
-      const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-      return `${baseUrl}/uploads/photos/${cleanUrl}`;
-    }
-
-    // Pour tout autre cas, essayer de construire avec /uploads/photos/
-    const baseUrl = API_URL.replace('/api/v1', '').replace(/\/$/, '');
-    const fileName = cleanUrl.split('/').pop();
-    return `${baseUrl}/uploads/photos/${fileName}`;
-  } catch (error) {
-    console.error('Erreur lors du formatage de l\'URL:', error);
-    return null;
-  }
+    // Construire l'URL correcte sans /api/v1/
+    const baseUrl = 'https://hairgov2.onrender.com';
+    return `${baseUrl}/uploads/photos/${filename}`;
 };
 
 type RootStackParamList = {
@@ -77,8 +94,9 @@ type SalonDetailScreenRouteProp = RouteProp<RootStackParamList, 'SalonDetail'>;
 
 interface Hairdresser {
     id: string;
-    first_name: string;
-    last_name: string;
+    full_name?: string;
+    first_name?: string;
+    last_name?: string;
     email?: string;
     phone?: string;
     profile_photo: string | null;
@@ -135,20 +153,59 @@ const SalonDetailScreen = () => {
         }
 
         try {
+            console.log('Récupération des détails du salon:', salonId);
             const response = await fetch(`${API_URL}/salons/${salonId}`);
-            const data = await response.json();
+            console.log('Status detail salon:', response.status);
 
-            if (!response.ok) {
-                throw new Error(data.message || 'Erreur lors du chargement du salon');
+            // 1) Gérer le 304 AVANT tout parse JSON
+            if (response.status === 304) {
+                // Si tu n'as pas de cache local pour ce salon, considère que c'est une erreur
+                throw new Error('Les données du salon n’ont pas changé (304) et aucune donnée locale n’est disponible.');
             }
+
+            // 2) Gérer les autres erreurs
+            if (!response.ok) {
+                let errorMessage = `Erreur HTTP: ${response.status}`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData?.message) {
+                        errorMessage = errorData.message;
+                    }
+                } catch {
+                    // body vide ou non JSON
+                }
+                throw new Error(errorMessage);
+            }
+
+            // 3) Ici seulement, on parse le JSON
+            const data = await response.json();
+            console.log('Données reçues:', JSON.stringify(data, null, 2));
 
             if (data.success && data.data) {
-                setSalon(data.data);
+                // Validation des données reçues
+                const salonData = data.data;
+
+                // S'assurer que les coordonnées sont des nombres valides
+                if (salonData.latitude) {
+                    salonData.latitude = parseFloat(salonData.latitude);
+                }
+                if (salonData.longitude) {
+                    salonData.longitude = parseFloat(salonData.longitude);
+                }
+
+                // Validation des coordonnées
+                if (isNaN(salonData.latitude) || isNaN(salonData.longitude)) {
+                    console.warn('Coordonnées GPS invalides, utilisation de valeurs par défaut');
+                    salonData.latitude = 48.8566; // Paris par défaut
+                    salonData.longitude = 2.3522;
+                }
+
+                setSalon(salonData);
             } else {
-                throw new Error('Données du salon non disponibles');
+                throw new Error(data.message || 'Données du salon non disponibles');
             }
         } catch (err) {
-            console.error('Erreur:', err);
+            console.error('Erreur lors du chargement du salon:', err);
             setError(err instanceof Error ? err.message : 'Une erreur est survenue');
         } finally {
             setLoading(false);
@@ -218,9 +275,18 @@ const SalonDetailScreen = () => {
         );
     }
 
+    // Protection supplémentaire - ne pas rendre si salon est null
+    if (!salon) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#6C63FF" />
+            </View>
+        );
+    }
+
     return (
         <ScrollView style={styles.container}>
-            {/* En-tête avec l'image */}
+            {/* En-tête avec bouton de retour */}
             <View style={styles.headerContainer}>
                 <TouchableOpacity
                     onPress={() => navigation.goBack()}
@@ -228,158 +294,139 @@ const SalonDetailScreen = () => {
                 >
                     <Ionicons name="arrow-back" size={24} color="#000" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Détails du Salon</Text>
-                <View style={{ width: 24 }} /> {/* Pour équilibrer le flexbox */}
+                <Text style={styles.headerTitle}>Salon Details</Text>
+                <View style={styles.favoriteContainer}>
+                    {salon?.id && (
+                        <FavoriteButton itemId={salon.id} itemType="salon" size={24} />
+                    )}
+                </View>
             </View>
 
             <View style={styles.contentContainer}>
-                {/* En-tête avec le nom et la vérification */}
-                <View style={styles.headerRow}>
-                    <Text style={styles.salonName} numberOfLines={2}>
-                        {salon.name}
-                    </Text>
-                    {salon.is_validated && (
-                        <View style={styles.verifiedBadge}>
-                            <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                            <Text style={styles.verifiedText}>Vérifié</Text>
-                        </View>
-                    )}
-                </View>
+                {/* Photo principale du salon */}
+                {salon.photos && Array.isArray(salon.photos) && salon.photos.length > 0 && (
+                    <View style={styles.photoContainer}>
+                        {(() => {
+                            const firstPhoto = salon.photos[0];
+                            if (firstPhoto && typeof firstPhoto === 'string') {
+                                try {
+                                    const imageUrl = getWorkingImageUrl(firstPhoto);
+                                    return (
+                                        <Image
+                                            source={{ uri: imageUrl, cache: 'reload' }}
+                                            style={styles.mainPhoto}
+                                            resizeMode="cover"
+                                            onError={(e) => {
+                                                console.error('Erreur de chargement de la photo principale:', {
+                                                    error: e.nativeEvent.error,
+                                                    photo: firstPhoto,
+                                                    mappedUrl: imageUrl
+                                                });
+                                            }}
+                                        />
+                                    );
+                                } catch (error) {
+                                    console.error('Erreur dans getWorkingImageUrl:', error);
+                                    return null;
+                                }
+                            }
+                            return null;
+                        })()}
+                    </View>
+                )}
+
+                {/* Nom du salon */}
+                <Text style={styles.salonName} numberOfLines={2}>
+                    {salon.name}
+                </Text>
 
                 {/* Adresse */}
-                <View style={styles.infoRow}>
+                <View style={styles.addressRow}>
                     <Ionicons name="location-outline" size={20} color="#6C63FF" />
                     <Text style={styles.address}>{salon.address}</Text>
                 </View>
 
-                {/* Coiffeur */}
-                {salon.hairdresser && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Coiffeur</Text>
-                        <View style={styles.hairdresserInfo}>
-                            {salon.hairdresser.profile_photo ? (
-                                <Image
-                                    source={{ uri: salon.hairdresser.profile_photo }}
-                                    style={styles.avatar}
-                                    onError={() => {
-                                        if (salon.hairdresser) {
-                                            setSalon({
-                                                ...salon,
-                                                hairdresser: { ...salon.hairdresser, profile_photo: '' }
-                                            });
-                                        }
-                                    }}
-                                />
-                            ) : (
-                                <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                                    <Ionicons name="person" size={24} color="#fff" />
-                                </View>
-                            )}
-                            <View>
-                                <Text style={styles.hairdresserName}>
-                                    {salon.hairdresser.first_name} {salon.hairdresser.last_name}
-                                </Text>
-                                {salon.hairdresser.phone && (
-                                    <TouchableOpacity
-                                        style={styles.phoneButton}
-                                        onPress={() => handlePhonePress(salon.hairdresser?.phone)}
-                                    >
-                                        <Ionicons name="call-outline" size={16} color="#6C63FF" />
-                                        <Text style={styles.phoneText}>{salon.hairdresser.phone}</Text>
-                                    </TouchableOpacity>
-                                )}
-                            </View>
-                        </View>
-                    </View>
-                )}
-
-                {/* Photos du salon */}
-                {salon.photos && salon.photos.length > 0 && (
-                    <View style={styles.section}>
+                {/* Galerie de photos */}
+                {salon.photos && Array.isArray(salon.photos) && salon.photos.length > 1 && (
+                    <View style={styles.galleryContainer}>
                         <Text style={styles.sectionTitle}>Photos</Text>
-                        <ScrollView 
-                            horizontal 
+                        <ScrollView
+                            horizontal
                             showsHorizontalScrollIndicator={false}
-                            contentContainerStyle={styles.photosContainer}
+                            contentContainerStyle={styles.galleryScroll}
                         >
                             {salon.photos.map((photo, index) => {
-                                const imageUrl = formatImageUrl(photo);
-                                return (
-                                    <View key={index} style={styles.photoItem}>
-                                        <Image
-                                            source={imageUrl ? { uri: imageUrl, cache: 'reload' } : require('../assets/url_de_l_image_1.jpg')}
-                                            style={styles.photoImage}
-                                            resizeMode="cover"
-                                            onError={(e) => {
-                                                console.error('Erreur de chargement de la photo du salon:', {
-                                                    error: e.nativeEvent.error,
-                                                    photo: photo,
-                                                    formattedUrl: imageUrl
-                                                });
-                                            }}
-                                        />
-                                    </View>
-                                );
+                                if (!photo || typeof photo !== 'string') {
+                                    return null;
+                                }
+                                try {
+                                    const imageUrl = getWorkingImageUrl(photo);
+                                    return (
+                                        <View key={index} style={styles.galleryItem}>
+                                            {imageUrl ? (
+                                                <Image
+                                                    source={{ uri: imageUrl, cache: 'reload' }}
+                                                    style={styles.galleryPhoto}
+                                                    resizeMode="cover"
+                                                    onError={(e) => {
+                                                        console.error('Erreur de chargement de la photo de la galerie:', {
+                                                            error: e.nativeEvent.error,
+                                                            photo: photo,
+                                                            mappedUrl: imageUrl
+                                                        });
+                                                    }}
+                                                />
+                                            ) : (
+                                                <View style={[styles.galleryPhoto, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}>
+                                                    <Ionicons name="image-outline" size={30} color="#999" />
+                                                </View>
+                                            )}
+                                        </View>
+                                    );
+                                } catch (error) {
+                                    console.error('Erreur dans getWorkingImageUrl:', error);
+                                    return null;
+                                }
                             })}
                         </ScrollView>
                     </View>
                 )}
 
-                {/* Description */}
-                {salon.description && (
-                    <View style={styles.section}>
-                        <Text style={styles.sectionTitle}>Description</Text>
-                        <Text style={styles.description}>{salon.description}</Text>
-                    </View>
-                )}
-
-                {/* Carte */}
-                <View style={styles.section}>
+                {/* Carte de localisation */}
+                <View style={styles.mapContainer}>
                     <Text style={styles.sectionTitle}>Localisation</Text>
                     <TouchableOpacity
-                        style={styles.mapContainer}
+                        style={styles.mapWrapper}
                         onPress={handleMapPress}
                         activeOpacity={0.8}
                     >
-                        <MapView
-                            style={styles.map}
-                            initialRegion={{
-                                latitude: Number(salon.latitude) || 0,
-                                longitude: Number(salon.longitude) || 0,
-                                latitudeDelta: 0.01,
-                                longitudeDelta: 0.01,
-                            }}
-                            scrollEnabled={false}
-                            zoomEnabled={false}
-                        >
-                            <Marker
-                                coordinate={{
-                                    latitude: Number(salon.latitude) || 0,
-                                    longitude: Number(salon.longitude) || 0,
+                        {salon.latitude && salon.longitude ? (
+                            <MapView
+                                style={styles.map}
+                                initialRegion={{
+                                    latitude: Number(salon.latitude) || 48.8566,
+                                    longitude: Number(salon.longitude) || 2.3522,
+                                    latitudeDelta: 0.01,
+                                    longitudeDelta: 0.01,
                                 }}
-                                title={salon.name}
-                                description={salon.address}
-                            />
-                        </MapView>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Boutons d'action */}
-                <View style={styles.buttonsContainer}>
-                    <TouchableOpacity
-                        style={[styles.button, styles.primaryButton]}
-                        onPress={handleBookPress}
-                    >
-                        <Ionicons name="calendar-outline" size={20} color="#fff" />
-                        <Text style={styles.buttonText}>Réserver</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.button, styles.secondaryButton]}
-                        onPress={handleMapPress}
-                    >
-                        <Ionicons name="navigate-outline" size={20} color="#6C63FF" />
-                        <Text style={[styles.buttonText, styles.secondaryButtonText]}>Y aller</Text>
+                                scrollEnabled={false}
+                                zoomEnabled={false}
+                            >
+                                <Marker
+                                    coordinate={{
+                                        latitude: Number(salon.latitude) || 48.8566,
+                                        longitude: Number(salon.longitude) || 2.3522,
+                                    }}
+                                    title={salon.name}
+                                    description={salon.address}
+                                />
+                            </MapView>
+                        ) : (
+                            <View style={[styles.map, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#f5f5f5' }]}>
+                                <Ionicons name="location-outline" size={40} color="#ccc" />
+                                <Text style={{ color: '#999', marginTop: 8 }}>Localisation non disponible</Text>
+                            </View>
+                        )}
                     </TouchableOpacity>
                 </View>
             </View>
@@ -394,20 +441,19 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         paddingTop: 40,
     },
-    // En-tête avec l'image
-    imageContainer: {
-        width: '100%',
-        height: 250,
-        backgroundColor: '#f5f5f5',
+    // Contenu principal
+    contentContainer: {
+        padding: 16,
     },
-    salonImage: {
-        width: '100%',
-        height: '100%',
-    },
-    noImage: {
-        justifyContent: 'center',
+    // En-tête
+    headerContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: '#e1e1e1',
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+        backgroundColor: '#fff',
     },
     backButton: {
         padding: 5,
@@ -418,51 +464,51 @@ const styles = StyleSheet.create({
         color: '#333',
         marginLeft: 10,
     },
-    // Contenu principal
-    contentContainer: {
-        padding: 16,
+    favoriteContainer: {
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderRadius: 20,
+        padding: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
     },
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 8,
+    // Photo principale
+    photoContainer: {
+        width: '100%',
+        height: 250,
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginBottom: 20,
+        backgroundColor: '#f5f5f5',
     },
+    mainPhoto: {
+        width: '100%',
+        height: '100%',
+    },
+    // Nom du salon
     salonName: {
-        fontSize: 24,
+        fontSize: 28,
         fontWeight: 'bold',
         color: '#333',
-        flex: 1,
+        marginBottom: 12,
     },
-    verifiedBadge: {
+    // Adresse
+    addressRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#E8F5E9',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 12,
-        marginLeft: 8,
-    },
-    verifiedText: {
-        color: '#4CAF50',
-        fontSize: 12,
-        marginLeft: 4,
-        fontWeight: '500',
-    },
-    // Informations de base
-    infoRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 20,
     },
     address: {
         marginLeft: 8,
         color: '#666',
         flex: 1,
+        fontSize: 16,
     },
-    // Section coiffeur
-    section: {
-        marginBottom: 24,
+    // Galerie de photos
+    galleryContainer: {
+        marginTop: 20,
     },
     sectionTitle: {
         fontSize: 18,
@@ -470,52 +516,27 @@ const styles = StyleSheet.create({
         color: '#333',
         marginBottom: 12,
     },
-    hairdresserInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    galleryScroll: {
+        paddingLeft: 0,
+        paddingRight: 16,
     },
-    avatar: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+    galleryItem: {
         marginRight: 12,
+        borderRadius: 8,
+        overflow: 'hidden',
+        width: 200,
+        height: 150,
     },
-    avatarPlaceholder: {
-        backgroundColor: '#6C63FF',
-        justifyContent: 'center',
-        alignItems: 'center',
+    galleryPhoto: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#f5f5f5',
     },
-    hairdresserName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-    },
-    phoneButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 4,
-    },
-    phoneText: {
-        color: '#6C63FF',
-        marginLeft: 4,
-        fontSize: 14,
-    },
-    headerContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-        backgroundColor: '#fff',
-    },
-    // Description
-    description: {
-        color: '#666',
-        lineHeight: 22,
-    },
-    // Carte
+    // Carte de localisation
     mapContainer: {
+        marginTop: 20,
+    },
+    mapWrapper: {
         height: 200,
         borderRadius: 12,
         overflow: 'hidden',
@@ -524,37 +545,6 @@ const styles = StyleSheet.create({
     },
     map: {
         flex: 1,
-    },
-    // Boutons d'action
-    buttonsContainer: {
-        flexDirection: 'row',
-        marginTop: 16,
-        marginBottom: 24,
-    },
-    button: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 14,
-        borderRadius: 8,
-        marginHorizontal: 4,
-    },
-    primaryButton: {
-        backgroundColor: '#6C63FF',
-    },
-    secondaryButton: {
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: '#6C63FF',
-    },
-    buttonText: {
-        color: '#fff',
-        fontWeight: '600',
-        marginLeft: 8,
-    },
-    secondaryButtonText: {
-        color: '#6C63FF',
     },
     // États
     loadingContainer: {
@@ -584,23 +574,6 @@ const styles = StyleSheet.create({
     retryButtonText: {
         color: '#fff',
         fontWeight: '600',
-    },
-    // Styles pour les photos
-    photosContainer: {
-        paddingLeft: 0,
-        paddingRight: 16,
-    },
-    photoItem: {
-        marginRight: 12,
-        borderRadius: 8,
-        overflow: 'hidden',
-        width: 200,
-        height: 150,
-    },
-    photoImage: {
-        width: '100%',
-        height: '100%',
-        backgroundColor: '#f5f5f5',
     },
 });
 

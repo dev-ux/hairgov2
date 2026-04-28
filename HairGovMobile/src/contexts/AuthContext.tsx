@@ -7,8 +7,13 @@ interface User {
   full_name: string;
   email: string;
   phone: string;
-  user_type: 'client' | 'hairdresser' | 'guest';
+  user_type: 'client' | 'hairdresser' | 'admin' | 'guest';
+  profile_photo?: string;
   profile_picture?: string;
+  is_active?: boolean;
+  is_verified?: boolean;
+  created_at?: string;
+  updated_at?: string;
   // Ajoutez d'autres champs utilisateur si nécessaire
 }
 
@@ -66,7 +71,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const response = await AuthService.login(phone, password);
       console.log('Réponse de l\'API:', response);
       
-      if (response.data?.user) {
+      if (response && response.data && response.data.user) {
         // Mettre à jour l'état de l'utilisateur
         const userData = response.data.user;
         setUser(userData);
@@ -82,13 +87,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Retourner true pour indiquer que la connexion a réussi
         return true;
       } else {
-        throw new Error('Aucune donnée utilisateur reçue');
+        console.warn('Réponse API invalide:', response);
+        throw new Error('Réponse invalide du serveur');
       }
     } catch (error: any) {
       console.error('Erreur lors de la connexion:', error);
-      const errorMessage = error.message || 'Une erreur est survenue lors de la connexion';
+      
+      // Gérer différents types d'erreurs
+      let errorMessage = 'Une erreur est survenue lors de la connexion';
+      
+      if (error.response) {
+        // Erreur HTTP
+        if (error.response.status === 401) {
+          errorMessage = 'Téléphone ou mot de passe incorrect';
+        } else if (error.response.status === 400) {
+          errorMessage = 'Données invalides';
+        } else if (error.response.status >= 500) {
+          errorMessage = 'Erreur serveur, veuillez réessayer';
+        }
+      } else if (error.request) {
+        // Erreur réseau
+        errorMessage = 'Erreur de connexion, vérifiez votre internet';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       setError(errorMessage);
-      throw error;
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -98,8 +123,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const generateTestOtp = (phone: string) => {
     if (!__DEV__) return;
     
-    // Générer un code OTP à 4 chiffres
-    const otp = Math.floor(1000 + Math.random() * 9000).toString();
+    // Générer un code OTP à 6 chiffres
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
     console.log(`\n=================================`);
     console.log(`CODE OTP POUR ${phone}: ${otp}`);
     console.log(`(Ceci est un code de test en mode développement)`);

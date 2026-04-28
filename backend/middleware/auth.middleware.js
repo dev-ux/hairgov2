@@ -7,10 +7,14 @@ const { User } = require('../models');
  */
 const authenticate = async (req, res, next) => {
   try {
+    console.log('🔍 Auth middleware - Request URL:', req.url);
+    console.log('🔍 Auth middleware - Auth header:', req.headers.authorization ? 'Present' : 'Missing');
+    
     // Récupérer le token du header
     const authHeader = req.headers.authorization;
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('🔍 Auth middleware - No Bearer token found');
       return res.status(401).json({
         success: false,
         error: {
@@ -21,14 +25,18 @@ const authenticate = async (req, res, next) => {
     }
 
     const token = authHeader.substring(7);
+    console.log('🔍 Auth middleware - Token extracted:', token.substring(0, 20) + '...');
 
     // Vérifier et décoder le token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('🔍 Auth middleware - Token decoded, userId:', decoded.userId);
 
     // Récupérer l'utilisateur
     const user = await User.findByPk(decoded.userId, {
       attributes: { exclude: ['password_hash'] }
     });
+
+    console.log('🔍 Auth middleware - User found:', user ? 'Yes' : 'No');
 
     if (!user) {
       return res.status(401).json({
@@ -55,6 +63,7 @@ const authenticate = async (req, res, next) => {
     req.userId = user.id;
     req.userType = user.user_type;
 
+    console.log('🔍 Auth middleware - Success, userId:', req.userId, 'userType:', req.userType);
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {

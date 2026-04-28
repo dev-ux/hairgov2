@@ -294,7 +294,12 @@ export const HairdressersPage: React.FC = () => {
               filteredHairdressers
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((hairdresser) => (
-                  <TableRow key={hairdresser.id}>
+                  <TableRow 
+                    key={hairdresser.id}
+                    hover
+                    sx={{ cursor: 'pointer' }}
+                    onClick={() => navigate(`/hairdressers/${hairdresser.id}`)}
+                  >
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
                         <Avatar
@@ -354,7 +359,8 @@ export const HairdressersPage: React.FC = () => {
                       <Tooltip title="Modifier">
                         <IconButton
                           size="small"
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             // Logique de modification
                           }}
                         >
@@ -366,7 +372,8 @@ export const HairdressersPage: React.FC = () => {
                           size="small"
                           color={hairdresser.user.is_active ? 'error' : 'success'}
                           disabled={updatingId === hairdresser.id}
-                          onClick={async () => {
+                          onClick={async (e) => {
+                            e.stopPropagation();
                             await toggleHairdresserStatus(hairdresser.id, hairdresser.user.is_active);
                           }}
                         >

@@ -30,9 +30,10 @@ import {
   Person as PersonIcon,
   AccessTime as TimeIcon,
   LocationOn as LocationIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  Delete as DeleteIcon
 } from '@mui/icons-material';
-import { getAllBookings, Booking } from '../../services/booking.service';
+import { getAllBookings, Booking, deleteBooking } from '../../services/booking.service';
 
 const BookingsPage: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -40,6 +41,9 @@ const BookingsPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchBookings = async () => {
     try {
@@ -67,6 +71,39 @@ const BookingsPage: React.FC = () => {
   const handleCloseDetails = () => {
     setDetailsOpen(false);
     setSelectedBooking(null);
+  };
+
+  const handleDeleteClick = (booking: Booking, event: React.MouseEvent) => {
+    event.stopPropagation();
+    setBookingToDelete(booking);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!bookingToDelete) return;
+
+    try {
+      setDeleting(true);
+      const response = await deleteBooking(bookingToDelete.id);
+      
+      if (response.success) {
+        setBookings(prev => prev.filter(b => b.id !== bookingToDelete.id));
+        setDeleteDialogOpen(false);
+        setBookingToDelete(null);
+      } else {
+        setError('Erreur lors de la suppression de la réservation');
+      }
+    } catch (err) {
+      console.error('Error deleting booking:', err);
+      setError('Erreur lors de la suppression de la réservation');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setBookingToDelete(null);
   };
 
   useEffect(() => {
@@ -174,12 +211,13 @@ const BookingsPage: React.FC = () => {
                   <TableCell sx={{ fontWeight: 'bold' }}>Client</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Service</TableCell>
                   <TableCell sx={{ fontWeight: 'bold' }}>Statut</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {bookings.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} align="center" sx={{ py: 8 }}>
+                    <TableCell colSpan={4} align="center" sx={{ py: 8 }}>
                       <Box sx={{ textAlign: 'center', color: 'text.secondary' }}>
                         <CalendarIcon sx={{ fontSize: 64, mb: 2 }} />
                         <Typography variant="h6">Aucune réservation</Typography>
@@ -214,6 +252,17 @@ const BookingsPage: React.FC = () => {
                           color={getStatusColor(booking.status) as any}
                           size="small"
                         />
+                      </TableCell>
+                      <TableCell>
+                        <Tooltip title="Supprimer la réservation">
+                          <IconButton 
+                            onClick={(e) => handleDeleteClick(booking, e)}
+                            color="error"
+                            size="small"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
                   ))
@@ -449,6 +498,46 @@ const BookingsPage: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDetails}>Fermer</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog de confirmation de suppression */}
+      <Dialog 
+        open={deleteDialogOpen} 
+        onClose={handleDeleteCancel}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Typography variant="h6" color="error" fontWeight="bold">
+            Confirmer la suppression
+          </Typography>
+        </DialogTitle>
+        <DialogContent>
+          <Typography>
+            Êtes-vous sûr de vouloir supprimer la réservation de{' '}
+            <strong>{bookingToDelete?.client_name}</strong> ?
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            Cette action est irréversible et supprimera définitivement la réservation du système.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={handleDeleteCancel} 
+            disabled={deleting}
+          >
+            Annuler
+          </Button>
+          <Button 
+            onClick={handleDeleteConfirm} 
+            variant="contained" 
+            color="error"
+            disabled={deleting}
+            startIcon={<DeleteIcon />}
+          >
+            {deleting ? 'Suppression...' : 'Supprimer'}
+          </Button>
         </DialogActions>
       </Dialog>
     </Box>

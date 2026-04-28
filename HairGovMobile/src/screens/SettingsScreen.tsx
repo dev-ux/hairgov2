@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/AppNavigator';
+import { useTheme } from '../contexts/ThemeContext';
 
 const SettingItem = ({ 
   icon, 
@@ -19,36 +22,41 @@ const SettingItem = ({
   isSwitch?: boolean;
   switchValue?: boolean;
   onValueChange?: (value: boolean) => void;
-}) => (
-  <TouchableOpacity 
-    style={styles.settingItem} 
-    onPress={!isSwitch ? onPress : undefined}
-    disabled={isSwitch}
-  >
-    <View style={styles.settingLeft}>
-      <Ionicons name={icon as any} size={22} color="#666" style={styles.settingIcon} />
-      <View>
-        <Text style={styles.settingTitle}>{title}</Text>
-        {value && <Text style={styles.settingValue}>{value}</Text>}
+}) => {
+  const { colors } = useTheme();
+  
+  return (
+    <TouchableOpacity 
+      style={[styles.settingItem, { borderBottomColor: colors.border }]}
+      onPress={onPress}
+      disabled={isSwitch}
+    >
+      <View style={styles.settingLeft}>
+        <Ionicons name={icon as any} size={24} color={colors.primary} style={styles.settingIcon} />
+        <View>
+          <Text style={[styles.settingTitle, { color: colors.text }]}>{title}</Text>
+          {value && <Text style={[styles.settingValue, { color: colors.textSecondary }]}>{value}</Text>}
+        </View>
       </View>
-    </View>
-    {isSwitch ? (
-      <Switch
-        value={switchValue}
-        onValueChange={onValueChange}
-        trackColor={{ false: '#f0f0f0', true: '#007AFF' }}
-        thumbColor="#fff"
-      />
-    ) : (
-      <Ionicons name="chevron-forward" size={20} color="#ccc" />
-    )}
-  </TouchableOpacity>
-);
+      {isSwitch ? (
+        <Switch
+          value={switchValue}
+          onValueChange={onValueChange}
+          trackColor={{ false: '#767577', true: colors.primary }}
+          thumbColor="#fff"
+        />
+      ) : (
+        <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
+      )}
+    </TouchableOpacity>
+  );
+};
 
 export const SettingsScreen = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(true);
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { isDarkMode, toggleTheme, colors } = useTheme();
 
   const handleLogout = () => {
     Alert.alert(
@@ -66,28 +74,27 @@ export const SettingsScreen = () => {
       ]
     );
   };
-  const navigation = useNavigation();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* En-tête personnalisé avec bouton de retour */}
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { borderBottomColor: colors.border }]}>
         <TouchableOpacity 
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={24} color="#000" />
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Paramètres</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>Paramètres</Text>
       </View> 
       <ScrollView>
-        <Text style={styles.sectionHeader}>Compte</Text>
-        <View style={styles.sectionContainer}>
+        <Text style={[styles.sectionHeader, { color: colors.text }]}>Compte</Text>
+        <View style={[styles.sectionContainer, { backgroundColor: colors.surface }]}>
           <SettingItem 
             icon="person-outline" 
             title="Profil" 
             value="Gérez vos informations personnelles"
-            onPress={() => {}}
+            onPress={() => navigation.navigate('UserProfile')}
           />
           <SettingItem 
             icon="key-outline" 
@@ -98,12 +105,13 @@ export const SettingsScreen = () => {
           <SettingItem 
             icon="card-outline" 
             title="Moyens de paiement" 
+            value="Ajoutez une carte"
             onPress={() => {}}
           />
         </View>
 
-        <Text style={styles.sectionHeader}>Préférences</Text>
-        <View style={styles.sectionContainer}>
+        <Text style={[styles.sectionHeader, { color: colors.text }]}>Préférences</Text>
+        <View style={[styles.sectionContainer, { backgroundColor: colors.surface }]}>
           <SettingItem 
             icon="notifications-outline" 
             title="Notifications" 
@@ -115,8 +123,8 @@ export const SettingsScreen = () => {
             icon="moon-outline" 
             title="Mode sombre" 
             isSwitch
-            switchValue={darkMode}
-            onValueChange={setDarkMode}
+            switchValue={isDarkMode}
+            onValueChange={toggleTheme}
           />
           <SettingItem 
             icon="finger-print-outline" 
@@ -133,8 +141,8 @@ export const SettingsScreen = () => {
           />
         </View>
 
-        <Text style={styles.sectionHeader}>Aide & Support</Text>
-        <View style={styles.sectionContainer}>
+        <Text style={[styles.sectionHeader, { color: colors.text }]}>Aide & Support</Text>
+        <View style={[styles.sectionContainer, { backgroundColor: colors.surface }]}>
           <SettingItem 
             icon="help-circle-outline" 
             title="Centre d'aide" 
@@ -157,16 +165,8 @@ export const SettingsScreen = () => {
           />
         </View>
 
-        <TouchableOpacity 
-          style={styles.logoutButton}
-          onPress={handleLogout}
-        >
-          <Ionicons name="log-out-outline" size={22} color="#FF3B30" />
-          <Text style={styles.logoutText}>Déconnexion</Text>
-        </TouchableOpacity>
-
-        <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>Version 1.0.0</Text>
+        <View style={[styles.versionContainer, { backgroundColor: colors.surface }]}>
+          <Text style={[styles.versionText, { color: colors.textSecondary }]}>Version 1.0.0</Text>
         </View>
       </ScrollView>
     </View>
@@ -176,18 +176,15 @@ export const SettingsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
     paddingTop: 60,
   },
   sectionHeader: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
     paddingHorizontal: 20,
     paddingTop: 24,
     paddingBottom: 8,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   headerContainer: {
     flexDirection: 'row',
@@ -198,12 +195,10 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
   },
   sectionContainer: {
-    backgroundColor: '#fff',
     marginBottom: 16,
     borderRadius: 12,
     marginHorizontal: 16,
@@ -215,8 +210,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   settingLeft: {
     flexDirection: 'row',
@@ -228,38 +221,34 @@ const styles = StyleSheet.create({
   },
   settingTitle: {
     fontSize: 16,
-    color: '#333',
+    fontWeight: '500',
+    marginLeft: 12,
   },
   settingValue: {
     fontSize: 14,
-    color: '#999',
+    color: '#666',
     marginTop: 2,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
     marginHorizontal: 16,
     padding: 16,
     borderRadius: 12,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#FF3B30',
+    marginBottom: 16,
   },
   logoutText: {
-    color: '#FF3B30',
     fontSize: 16,
     fontWeight: '600',
     marginLeft: 8,
   },
   versionContainer: {
     alignItems: 'center',
-    marginTop: 24,
-    marginBottom: 32,
+    padding: 20,
   },
   versionText: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#999',
   },
 });

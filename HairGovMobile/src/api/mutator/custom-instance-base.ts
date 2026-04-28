@@ -31,8 +31,8 @@ export const createInstance = async (url: string, options: RequestInit = {}) => 
     throw new Error(error.message || 'Une erreur est survenue');
   }
   
-  // Si la réponse est 204 (No Content), on ne tente pas de parser le JSON
-  if (response.status === 204) {
+  // Si la réponse est 204 (No Content) ou 304 (Not Modified), on ne tente pas de parser le JSON
+  if (response.status === 204 || response.status === 304) {
     return null;
   }
   

@@ -767,3 +767,101 @@ exports.registerAdmin = async (req, res) => {
     });
   }
 };
+
+/**
+ * Mettre à jour le profil utilisateur
+ */
+exports.updateProfile = async (req, res) => {
+  try {
+    const { User } = require('../models');
+    const userId = req.userId;
+    
+    console.log('🔍 Mise à jour du profil pour utilisateur:', userId);
+    console.log('📁 Fichier reçu:', req.file ? 'Oui' : 'Non');
+    if (req.file) {
+      console.log('📸 Détails du fichier:', {
+        filename: req.file.filename,
+        mimetype: req.file.mimetype,
+        size: req.file.size
+      });
+    }
+
+    // Trouver l'utilisateur
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: {
+          code: 'USER_NOT_FOUND',
+          message: 'Utilisateur non trouvé'
+        }
+      });
+    }
+
+    console.log('👤 Utilisateur trouvé:', user.full_name);
+    console.log('📷 Photo actuelle:', user.profile_photo);
+
+    // Gérer l'upload de la photo de profil
+    if (req.file) {
+      console.log('📤 Fichier reçu:', req.file.originalname);
+      
+      // Validation du fichier
+      if (!req.file.mimetype.startsWith('image/')) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_FILE_TYPE',
+            message: 'Le fichier doit être une image'
+          }
+        });
+      }
+      
+      // Utiliser le service d'upload S3
+      const uploadedFile = await uploadService.uploadFile(req.file, 'profiles');
+      console.log('☁️ Upload S3 réussi:', uploadedFile.url);
+      
+      user.profile_photo = uploadedFile.url;
+    }
+
+    // Mettre à jour les autres champs si fournis
+    const { full_name, email, phone } = req.body;
+    
+    if (full_name) user.full_name = full_name;
+    if (email) user.email = email;
+    if (phone) user.phone = phone;
+
+    user.updated_at = new Date();
+    await user.save();
+
+    console.log('✅ Profil mis à jour avec succès');
+    console.log('📷 Photo finale dans la réponse:', user.profile_photo);
+
+    res.status(200).json({
+      success: true,
+      message: 'Profil mis à jour avec succès',
+      data: {
+        user: {
+          id: user.id,
+          full_name: user.full_name,
+          email: user.email,
+          phone: user.phone,
+          profile_photo: user.profile_photo,
+          user_type: user.user_type,
+          is_verified: user.is_verified,
+          is_active: user.is_active
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({
+      success: false,
+      error: {
+        code: 'UPDATE_PROFILE_ERROR',
+        message: 'Erreur lors de la mise à jour du profil',
+        details: error.message
+      }
+    });
+  }
+};

@@ -4,15 +4,21 @@ import { Platform } from 'react-native';
 
 // Configuration de l'URL de l'API en fonction de la plateforme
 const getApiUrl = () => {
-  if (__DEV__) {
-    if (Platform.OS === 'android') {
-      return 'http://10.0.2.2:3000/api/v1'; // Pour émulateur Android
-    } else {
-      return 'http://localhost:3001/api/v1'; // Pour émulateur iOS
-    }
-  } else {
-    return 'https://votre-api-production.com/api/v1'; // Pour la production
-  }
+  // Utiliser toujours l'URL de production pour éviter les problèmes de connexion
+  return 'https://hairgov2.onrender.com/api/v1';
+  
+  // Ancienne logique (commentée)
+  // if (__DEV__) {
+  //   if (Platform.OS === 'android') {
+  //     return 'http://10.0.2.2:3001/api/v1'; // Pour émulateur Android (port 3001)
+  //   } else if (Platform.OS === 'ios') {
+  //     return 'http://localhost:3001/api/v1'; // Pour émulateur iOS
+  //   } else {
+  //     return 'http://localhost:3001/api/v1'; // Pour développement web
+  //   }
+  // } else {
+  //   return 'https://hairgov2.onrender.com/api/v1'; // Pour la production
+  // }
 };
 
 const API_URL = getApiUrl();
@@ -25,7 +31,7 @@ interface LoginData {
 
 interface RegisterClientData {
   full_name: string;
-  email: string;
+  email?: string; // email optionnel pour les clients
   phone: string;
   password: string;
 }
@@ -45,6 +51,8 @@ export const AuthService = {
   // Connexion utilisateur
   async login(phone: string, password: string) {
     try {
+      console.log('🔑 Login attempt:', { phone, passwordLength: password.length });
+      
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {
