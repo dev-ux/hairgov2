@@ -81,11 +81,8 @@ const HairstyleDetailScreen = () => {
   };
 
   const handleBooking = () => {
-    Alert.alert(
-      'Réservation',
-      'Cette fonctionnalité sera bientôt disponible !',
-      [{ text: 'OK', style: 'default' }]
-    );
+    // Naviguer vers l'écran de création de réservation
+    navigation.navigate('CreateBooking');
   };
 
   if (loading) {
@@ -190,11 +187,17 @@ const HairstyleDetailScreen = () => {
 
         {/* Bouton d'action */}
         <TouchableOpacity 
-          style={[styles.bookingButton, { backgroundColor: colors.primary }]}
+          style={[styles.bookingButton, { backgroundColor: hairstyle.is_active ? colors.primary : colors.border }]}
           onPress={handleBooking}
           disabled={!hairstyle.is_active}
         >
-          <Text style={styles.bookingButtonText}>
+          <Ionicons 
+            name="calendar-outline" 
+            size={20} 
+            color={hairstyle.is_active ? '#fff' : colors.textSecondary} 
+            style={styles.bookingButtonIcon}
+          />
+          <Text style={[styles.bookingButtonText, { color: hairstyle.is_active ? '#fff' : colors.textSecondary }]}>
             {hairstyle.is_active ? 'Réserver maintenant' : 'Indisponible'}
           </Text>
         </TouchableOpacity>
@@ -215,6 +218,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+    marginTop: 80,
   },
   headerTitle: {
     fontSize: 18,
@@ -316,6 +320,11 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
+  },
+  bookingButtonIcon: {
+    marginRight: 8,
   },
   bookingButtonText: {
     color: 'white',
