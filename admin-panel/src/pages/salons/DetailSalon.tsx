@@ -2,19 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../../config/api';
 import {
-  Box,
-  Typography,
-  Paper,
-  Button,
-  Grid,
-  Divider,
-  Chip,
-  CircularProgress,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
+  Box, Typography, Paper, Button, Grid, Chip, CircularProgress,
+  IconButton, Dialog, DialogTitle, DialogContent, DialogActions,
+  Avatar, Divider, Stack,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
@@ -24,8 +14,18 @@ import {
   Phone as PhoneIcon,
   Email as EmailIcon,
   AccessTime as AccessTimeIcon,
-  Star as StarIcon,
+  Person as PersonIcon,
+  CheckCircle as CheckCircleIcon,
+  Cancel as CancelIcon,
+  PhotoLibrary as GalleryIcon,
+  Store as StoreIcon,
 } from '@mui/icons-material';
+
+interface BusinessHours {
+  open: string;
+  close: string;
+  closed?: boolean;
+}
 
 interface Salon {
   id: string;
@@ -43,11 +43,35 @@ interface Salon {
     full_name: string;
     email: string;
     phone: string;
-    first_name?: string;
-    last_name?: string;
     profile_photo?: string;
   };
-  business_hours?: Record<string, string>;
+  business_hours?: Record<string, BusinessHours | string>;
+}
+
+const DAYS_FR: Record<string, string> = {
+  monday: 'Lundi',
+  tuesday: 'Mardi',
+  wednesday: 'Mercredi',
+  thursday: 'Jeudi',
+  friday: 'Vendredi',
+  saturday: 'Samedi',
+  sunday: 'Dimanche',
+};
+
+const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+function formatHours(value: BusinessHours | string | undefined): string {
+  if (!value) return 'Fermé';
+  if (typeof value === 'string') return value || 'Fermé';
+  if (value.closed) return 'Fermé';
+  return `${value.open} – ${value.close}`;
+}
+
+function formatImageUrl(url: string): string {
+  if (!url) return '';
+  if (url.startsWith('http')) return url;
+  if (url.startsWith('/uploads/')) return `https://hairgov2.onrender.com${url}`;
+  return '';
 }
 
 const DetailSalon: React.FC = () => {
@@ -58,41 +82,29 @@ const DetailSalon: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
 
   useEffect(() => {
+    const controller = new AbortController();
     const fetchSalon = async () => {
       try {
         setLoading(true);
-        // Utiliser la route publique pour récupérer les détails du salon
-        // L'URL de base contient déjà /api/v1, donc on utilise directement /salons/${id}
-        const response = await api.get(`/salons/${id}`);
-        console.log('Réponse API:', response);
-        
+        const response = await api.get(`/salons/${id}`, { signal: controller.signal });
         if (response.data.success) {
-          console.log('Détails du salon:', response.data.data);
-          console.log('Données du coiffeur:', response.data.data.hairdresser);
-          console.log('Logo du salon:', response.data.data.logo);
-          setSalon({
-            ...response.data.data,
-            // S'assurer que les photos sont toujours un tableau
-            photos: response.data.data.photos || []
-          });
+          setSalon({ ...response.data.data, photos: response.data.data.photos || [] });
         } else {
-          setError(response.data.message || 'Impossible de charger les détails du salon');
+          setError(response.data.message || 'Impossible de charger le salon');
         }
       } catch (err: any) {
-        console.error('Erreur lors du chargement du salon:', err);
-        setError(
-          err.response?.data?.message || 
-          'Une erreur est survenue lors du chargement des détails du salon. ' +
-          'Veuillez vérifier votre connexion et réessayer.'
-        );
+        if (err?.name !== 'AbortError' && err?.code !== 'ERR_CANCELED') {
+          setError(err.response?.data?.message || 'Erreur lors du chargement');
+        }
       } finally {
         setLoading(false);
       }
     };
-
     fetchSalon();
+    return () => controller.abort();
   }, [id]);
 
   const handleDelete = async () => {
@@ -100,71 +112,13 @@ const DetailSalon: React.FC = () => {
       setDeleting(true);
       await api.delete(`/admin/salons/${id}`);
       navigate('/salons');
-    } catch (err) {
-      console.error('Erreur lors de la suppression du salon:', err);
-      setError('Une erreur est survenue lors de la suppression du salon');
+    } catch {
+      setError('Erreur lors de la suppression');
+      setDeleteDialogOpen(false);
     } finally {
       setDeleting(false);
-      setDeleteDialogOpen(false);
     }
   };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
-
-  // Fonction pour formater l'URL de l'image
-  const formatImageUrl = (url: string) => {
-    console.log('🔍 URL originale:', url);
-    if (!url) {
-      console.log('❌ URL vide');
-      return '';
-    }
-    
-    // Si c'est déjà une URL complète (Cloudinary, http, https), la retourner telle quelle
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      console.log('✅ URL complète détectée, retour direct:', url);
-      return url;
-    }
-    
-    // Si c'est une URL locale, ne pas essayer de la charger
-    if (url.startsWith('/uploads/') || url.startsWith('uploads/')) {
-      console.log('⚠️ URL locale détectée, ne pas charger:', url);
-      return ''; // Retourner vide pour éviter NS_BINDING_ABORTED
-    }
-    
-    // Supprimer les accolades si présentes
-    let cleanUrl = url.replace(/[{}]/g, '');
-    console.log('URL après suppression des accolades:', cleanUrl);
-    
-    // Supprimer le slash initial s'il y en a un
-    if (cleanUrl.startsWith('/')) {
-      cleanUrl = cleanUrl.substring(1);
-    }
-    
-    // Construire l'URL complète pour les chemins locaux uniquement
-    const baseUrl = api.defaults.baseURL || 'https://hairgov2.onrender.com/api/v1';
-    console.log('URL de base de l\'API:', baseUrl);
-    
-    // S'assurer qu'il n'y a pas de double slash
-    const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-    const finalUrl = `${base.replace('/api/v1', '')}/${cleanUrl}`;
-    
-    console.log('URL finale de l\'image:', finalUrl);
-    return finalUrl;
-  };
-
-  // Afficher les données du salon dans la console pour le débogage
-  useEffect(() => {
-    if (salon) {
-      console.log('Données du salon:', salon);
-      console.log('Photos du salon:', salon.photos);
-    }
-  }, [salon]);
 
   if (loading) {
     return (
@@ -174,249 +128,326 @@ const DetailSalon: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error || !salon) {
     return (
       <Box p={3}>
-        <Typography color="error">{error}</Typography>
+        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate('/salons')} sx={{ mb: 2 }}>
+          Retour
+        </Button>
+        <Typography color="error">{error || 'Salon non trouvé'}</Typography>
       </Box>
     );
   }
 
-  if (!salon) {
-    return (
-      <Box p={3}>
-        <Typography>Salon non trouvé</Typography>
-      </Box>
-    );
-  }
+  const logoUrl = salon.logo ? formatImageUrl(salon.logo) : '';
+  const sortedDays = DAY_ORDER.filter(d => salon.business_hours && d in salon.business_hours);
 
   return (
-    <Box p={3}>
-      <Box mb={3} display="flex" alignItems="center">
-        <IconButton onClick={() => navigate(-1)} sx={{ mr: 2 }}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Box sx={{ mr: 3 }}>
-          {salon.logo ? (
-            <img
-              src={salon.logo.startsWith('http') ? salon.logo : formatImageUrl(salon.logo)}
-              alt={`Logo ${salon.name}`}
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.onerror = null;
-                target.src = 'https://via.placeholder.com/80x80?text=Logo';
-              }}
-              style={{
-                width: 80,
-                height: 80,
-                objectFit: 'cover',
-                borderRadius: '50%',
-                border: '2px solid #e0e0e0'
-              }}
-            />
-          ) : (
-            <Box
-              sx={{
-                width: 80,
-                height: 80,
-                borderRadius: '50%',
-                backgroundColor: '#f5f5f5',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '2px dashed #ccc'
-              }}
-            >
-              <Typography variant="caption" color="textSecondary">
-                Pas de logo
+    <Box sx={{ pb: 4 }}>
+      {/* ─── Hero banner ─── */}
+      <Box
+        sx={{
+          position: 'relative',
+          height: 220,
+          borderRadius: 3,
+          overflow: 'hidden',
+          mb: 3,
+          background: 'linear-gradient(135deg, #1a237e 0%, #6C63FF 100%)',
+        }}
+      >
+        {salon.photos[0] && (
+          <Box
+            component="img"
+            src={formatImageUrl(salon.photos[0])}
+            alt={salon.name}
+            sx={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%',
+              objectFit: 'cover', opacity: 0.35,
+            }}
+            onError={(e: any) => { e.target.style.display = 'none'; }}
+          />
+        )}
+        <Box
+          sx={{
+            position: 'absolute', inset: 0, px: 4,
+            display: 'flex', alignItems: 'center', gap: 3,
+          }}
+        >
+          <Avatar
+            src={logoUrl || undefined}
+            sx={{
+              width: 88, height: 88,
+              border: '3px solid rgba(255,255,255,0.8)',
+              bgcolor: 'rgba(255,255,255,0.15)',
+              fontSize: 32,
+            }}
+          >
+            {!logoUrl && <StoreIcon sx={{ fontSize: 40, color: '#fff' }} />}
+          </Avatar>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h4" fontWeight={700} color="#fff">
+              {salon.name}
+            </Typography>
+            <Box display="flex" alignItems="center" gap={1} mt={0.5}>
+              <LocationIcon sx={{ fontSize: 16, color: 'rgba(255,255,255,0.75)' }} />
+              <Typography variant="body2" color="rgba(255,255,255,0.85)">
+                {salon.address}
               </Typography>
             </Box>
-          )}
+          </Box>
+          <Stack direction="row" spacing={1}>
+            <Chip
+              icon={salon.is_validated ? <CheckCircleIcon /> : <CancelIcon />}
+              label={salon.is_validated ? 'Validé' : 'Non validé'}
+              color={salon.is_validated ? 'success' : 'warning'}
+              size="small"
+              sx={{ fontWeight: 600 }}
+            />
+          </Stack>
         </Box>
-        <Typography variant="h4" component="h1">
-          {salon.name}
-        </Typography>
-        <Box flexGrow={1} />
-        <Box>
+        {/* Actions */}
+        <Box sx={{ position: 'absolute', top: 12, right: 16, display: 'flex', gap: 1 }}>
           <Button
             variant="contained"
-            color="primary"
+            size="small"
             startIcon={<EditIcon />}
             onClick={() => navigate(`/salons/edit/${salon.id}`)}
-            sx={{ mr: 1 }}
+            sx={{ bgcolor: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(6px)', fontWeight: 600 }}
           >
             Modifier
           </Button>
           <Button
             variant="outlined"
-            color="error"
+            size="small"
             startIcon={<DeleteIcon />}
             onClick={() => setDeleteDialogOpen(true)}
+            sx={{ borderColor: 'rgba(255,100,100,0.7)', color: '#ffcdd2', fontWeight: 600 }}
           >
             Supprimer
           </Button>
         </Box>
+        <IconButton
+          onClick={() => navigate(-1)}
+          sx={{ position: 'absolute', top: 12, left: 12, color: '#fff', bgcolor: 'rgba(0,0,0,0.25)' }}
+        >
+          <ArrowBackIcon />
+        </IconButton>
       </Box>
 
       <Grid container spacing={3}>
-        {/* Photos du salon */}
+        {/* ─── Colonne gauche ─── */}
         <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 2, mb: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Galerie
-            </Typography>
-            {salon.photos && salon.photos.length > 0 ? (
-              <Box display="flex" flexWrap="wrap" gap={2}>
-                {salon.photos.map((photo, index) => {
-                  const isLocalFile = photo.startsWith('file://');
-                  const imageUrl = isLocalFile ? null : formatImageUrl(photo);
-                  
-                  return (
-                    <Box key={index}>
-                      {isLocalFile ? (
-                        // Affichage pour les fichiers locaux
-                        <Box
-                          sx={{
-                            width: 200,
-                            height: 150,
-                            borderRadius: 1,
-                            backgroundColor: '#f5f5f5',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            border: '2px dashed #ccc',
-                          }}
-                        >
-                          <Typography variant="body2" color="text.secondary" align="center">
-                            Photo locale
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" align="center">
-                            (Non accessible depuis le web)
-                          </Typography>
-                        </Box>
-                      ) : (
-                        // Affichage normal pour les URLs web
-                        <img
-                          src={imageUrl || ''}
-                          alt={`${salon.name} ${index + 1}`}
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.onerror = null;
-                            target.src = 'https://via.placeholder.com/200x150?text=Image+non+disponible';
-                          }}
-                          style={{
-                            width: 200,
-                            height: 150,
-                            objectFit: 'cover',
-                            borderRadius: 4,
-                            border: '1px solid #eee',
-                          }}
-                        />
-                      )}
-                    </Box>
-                  );
+
+          {/* Galerie */}
+          <Paper sx={{ p: 3, mb: 3, borderRadius: 3 }} elevation={0} variant="outlined">
+            <Box display="flex" alignItems="center" gap={1} mb={2}>
+              <GalleryIcon color="primary" />
+              <Typography variant="h6" fontWeight={600}>Galerie photos</Typography>
+              <Chip label={`${salon.photos.length} photo${salon.photos.length !== 1 ? 's' : ''}`} size="small" sx={{ ml: 'auto' }} />
+            </Box>
+            {salon.photos.length > 0 ? (
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+                  gap: 1.5,
+                }}
+              >
+                {salon.photos.map((photo, i) => {
+                  const url = formatImageUrl(photo);
+                  return url ? (
+                    <Box
+                      key={i}
+                      component="img"
+                      src={url}
+                      alt={`${salon.name} ${i + 1}`}
+                      onClick={() => setSelectedPhoto(url)}
+                      onError={(e: any) => { e.target.style.display = 'none'; }}
+                      sx={{
+                        width: '100%', height: 130, objectFit: 'cover',
+                        borderRadius: 2, cursor: 'pointer',
+                        transition: 'transform .2s, box-shadow .2s',
+                        '&:hover': { transform: 'scale(1.03)', boxShadow: 4 },
+                      }}
+                    />
+                  ) : null;
                 })}
               </Box>
             ) : (
-              <Typography color="textSecondary">Aucune photo disponible</Typography>
-            )}
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 2, mb: 3 }}>
-            <Box display="flex" alignItems="center" mb={2}>
-              <LocationIcon color="primary" sx={{ mr: 1 }} />
-              <Typography variant="subtitle1">Adresse</Typography>
-            </Box>
-            <Typography variant="body1" paragraph>
-              {salon.address}
-            </Typography>
-            <Typography variant="body2" color="textSecondary">
-              Coordonnées: {salon.latitude}, {salon.longitude}
-            </Typography>
-          </Paper>
-
-          <Paper sx={{ p: 2, mb: 3 }}>
-            <Box display="flex" alignItems="center" mb={2}>
-              <AccessTimeIcon color="primary" sx={{ mr: 1 }} />
-              <Typography variant="subtitle1">Horaires d'ouverture</Typography>
-            </Box>
-            {salon.business_hours && Object.keys(salon.business_hours).length > 0 ? (
-              <Box>
-                {Object.entries(salon.business_hours).map(([day, hours]) => (
-                  <Box key={day} display="flex" justifyContent="space-between" mb={1}>
-                    <Typography variant="body2">
-                      {day.charAt(0).toUpperCase() + day.slice(1)}:
-                    </Typography>
-                    <Typography variant="body2" fontWeight="medium">
-                      {hours || 'Fermé'}
-                    </Typography>
-                  </Box>
-                ))}
+              <Box
+                sx={{
+                  height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  bgcolor: '#f5f5f5', borderRadius: 2, border: '2px dashed #ddd',
+                }}
+              >
+                <Typography color="text.secondary">Aucune photo disponible</Typography>
               </Box>
-            ) : (
-              <Typography variant="body2" color="textSecondary">
-                Aucun horaire défini
-              </Typography>
             )}
           </Paper>
+
+          {/* Informations du coiffeur */}
+          {salon.hairdresser && (
+            <Paper sx={{ p: 3, borderRadius: 3 }} elevation={0} variant="outlined">
+              <Box display="flex" alignItems="center" gap={1} mb={2}>
+                <PersonIcon color="primary" />
+                <Typography variant="h6" fontWeight={600}>Coiffeur propriétaire</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" gap={2}>
+                <Avatar
+                  src={salon.hairdresser.profile_photo ? formatImageUrl(salon.hairdresser.profile_photo) : undefined}
+                  sx={{ width: 56, height: 56, bgcolor: '#6C63FF' }}
+                >
+                  {salon.hairdresser.full_name?.charAt(0).toUpperCase()}
+                </Avatar>
+                <Box flex={1}>
+                  <Typography fontWeight={600} variant="body1">
+                    {salon.hairdresser.full_name}
+                  </Typography>
+                  <Stack direction="row" spacing={2} mt={0.5} flexWrap="wrap">
+                    {salon.hairdresser.phone && (
+                      <Box display="flex" alignItems="center" gap={0.5}>
+                        <PhoneIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                        <Typography variant="body2" color="text.secondary">{salon.hairdresser.phone}</Typography>
+                      </Box>
+                    )}
+                    {salon.hairdresser.email && (
+                      <Box display="flex" alignItems="center" gap={0.5}>
+                        <EmailIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                        <Typography variant="body2" color="text.secondary">{salon.hairdresser.email}</Typography>
+                      </Box>
+                    )}
+                  </Stack>
+                </Box>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => navigate(`/hairdressers/${salon.hairdresser!.id}`)}
+                >
+                  Voir le profil
+                </Button>
+              </Box>
+            </Paper>
+          )}
         </Grid>
 
-        <Grid item xs={12}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Informations du coiffeur
-            </Typography>
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6} md={4}>
-                <Box display="flex" alignItems="center" mb={1}>
-                  <Typography variant="subtitle2" sx={{ minWidth: 100 }}>Nom:</Typography>
-                  <Typography>{salon.hairdresser?.full_name || 'Non spécifié'}</Typography>
-                </Box>
-                <Box display="flex" alignItems="center" mb={1}>
-                  <PhoneIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-                  <Typography variant="body2" color="textSecondary">
-                    {salon.hairdresser?.phone || 'Non spécifié'}
-                  </Typography>
-                </Box>
-                <Box display="flex" alignItems="center">
-                  <EmailIcon fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
-                  <Typography variant="body2" color="textSecondary">
-                    {salon.hairdresser?.email || 'Non spécifié'}
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
+        {/* ─── Colonne droite ─── */}
+        <Grid item xs={12} md={4}>
+
+          {/* Localisation */}
+          <Paper sx={{ p: 3, mb: 3, borderRadius: 3 }} elevation={0} variant="outlined">
+            <Box display="flex" alignItems="center" gap={1} mb={2}>
+              <LocationIcon color="primary" />
+              <Typography variant="h6" fontWeight={600}>Localisation</Typography>
+            </Box>
+            <Typography variant="body1" sx={{ mb: 1 }}>{salon.address}</Typography>
+            <Divider sx={{ my: 1.5 }} />
+            <Box display="flex" justifyContent="space-between">
+              <Box>
+                <Typography variant="caption" color="text.secondary">Latitude</Typography>
+                <Typography variant="body2" fontWeight={500}>{Number(salon.latitude).toFixed(6)}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Longitude</Typography>
+                <Typography variant="body2" fontWeight={500}>{Number(salon.longitude).toFixed(6)}</Typography>
+              </Box>
+            </Box>
+          </Paper>
+
+          {/* Horaires */}
+          <Paper sx={{ p: 3, borderRadius: 3 }} elevation={0} variant="outlined">
+            <Box display="flex" alignItems="center" gap={1} mb={2}>
+              <AccessTimeIcon color="primary" />
+              <Typography variant="h6" fontWeight={600}>Horaires</Typography>
+              <Button
+                size="small"
+                startIcon={<EditIcon />}
+                onClick={() => navigate(`/salons/edit/${salon.id}`)}
+                sx={{ ml: 'auto', fontSize: 12 }}
+              >
+                Modifier
+              </Button>
+            </Box>
+            {sortedDays.length > 0 ? (
+              <Stack spacing={0.5}>
+                {sortedDays.map(day => {
+                  const hours = salon.business_hours![day];
+                  const isClosed = !hours || (typeof hours === 'object' && hours.closed);
+                  return (
+                    <Box
+                      key={day}
+                      display="flex"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      sx={{
+                        py: 0.75,
+                        px: 1.5,
+                        borderRadius: 1.5,
+                        bgcolor: isClosed ? 'transparent' : 'rgba(108,99,255,0.06)',
+                      }}
+                    >
+                      <Typography variant="body2" fontWeight={500}>
+                        {DAYS_FR[day]}
+                      </Typography>
+                      <Chip
+                        label={formatHours(hours)}
+                        size="small"
+                        color={isClosed ? 'default' : 'primary'}
+                        variant={isClosed ? 'outlined' : 'filled'}
+                        sx={{ fontSize: 11, height: 22 }}
+                      />
+                    </Box>
+                  );
+                })}
+              </Stack>
+            ) : (
+              <Box
+                sx={{
+                  py: 3, textAlign: 'center', bgcolor: '#f9f9f9',
+                  borderRadius: 2, border: '1px dashed #ddd',
+                }}
+              >
+                <AccessTimeIcon sx={{ color: '#ccc', fontSize: 32, mb: 1 }} />
+                <Typography variant="body2" color="text.secondary">
+                  Aucun horaire défini
+                </Typography>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  sx={{ mt: 1 }}
+                  onClick={() => navigate(`/salons/edit/${salon.id}`)}
+                >
+                  Ajouter des horaires
+                </Button>
+              </Box>
+            )}
           </Paper>
         </Grid>
       </Grid>
 
-      {/* Boîte de dialogue de confirmation de suppression */}
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>Confirmer la suppression</DialogTitle>
+      {/* Lightbox photo */}
+      <Dialog open={!!selectedPhoto} onClose={() => setSelectedPhoto(null)} maxWidth="md">
+        <DialogContent sx={{ p: 0 }}>
+          {selectedPhoto && (
+            <Box
+              component="img"
+              src={selectedPhoto}
+              alt="Agrandissement"
+              sx={{ width: '100%', maxHeight: '80vh', objectFit: 'contain', display: 'block' }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation suppression */}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Supprimer ce salon ?</DialogTitle>
         <DialogContent>
-          <Typography>
-            Êtes-vous sûr de vouloir supprimer ce salon ? Cette action est irréversible.
-          </Typography>
+          <Typography>Cette action est irréversible. Le salon <strong>{salon.name}</strong> sera définitivement supprimé.</Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
-            Annuler
-          </Button>
-          <Button
-            onClick={handleDelete}
-            color="error"
-            variant="contained"
-            disabled={deleting}
-            startIcon={deleting ? <CircularProgress size={20} /> : null}
-          >
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>Annuler</Button>
+          <Button onClick={handleDelete} color="error" variant="contained" disabled={deleting}
+            startIcon={deleting ? <CircularProgress size={16} /> : <DeleteIcon />}>
             {deleting ? 'Suppression...' : 'Supprimer'}
           </Button>
         </DialogActions>

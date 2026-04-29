@@ -1,185 +1,173 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  Box,
-  Typography,
-  Button,
-  Paper,
-  TextField,
-  InputAdornment,
-  CircularProgress,
-  Alert,
-  Grid,
-  IconButton,
+  Box, Typography, Button, Paper, TextField, CircularProgress,
+  Alert, Grid, IconButton, Switch, FormControlLabel, Stack,
+  Divider, Snackbar,
 } from '@mui/material';
 import {
   Save as SaveIcon,
   ArrowBack as ArrowBackIcon,
   LocationOn as LocationIcon,
-  Phone as PhoneIcon,
-  Email as EmailIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
+  AccessTime as AccessTimeIcon,
+  Store as StoreIcon,
+  PhotoLibrary as GalleryIcon,
 } from '@mui/icons-material';
 import api from '../../services/api';
 
-interface Salon {
-  id: string;
+interface BusinessHours {
+  open: string;
+  close: string;
+  closed: boolean;
+}
+
+interface SalonForm {
   name: string;
   address: string;
   latitude: string;
   longitude: string;
-  photos: string[];
-  is_validated: boolean;
-  hairdresser: {
-    user: {
-      full_name: string;
-      email: string;
-      phone: string;
-    };
-  };
+  business_hours: Record<string, BusinessHours>;
+}
+
+const DAYS = [
+  { key: 'monday',    label: 'Lundi' },
+  { key: 'tuesday',   label: 'Mardi' },
+  { key: 'wednesday', label: 'Mercredi' },
+  { key: 'thursday',  label: 'Jeudi' },
+  { key: 'friday',    label: 'Vendredi' },
+  { key: 'saturday',  label: 'Samedi' },
+  { key: 'sunday',    label: 'Dimanche' },
+];
+
+const DEFAULT_HOURS: BusinessHours = { open: '09:00', close: '18:00', closed: false };
+
+function toBusinessHours(raw: Record<string, any> | undefined): Record<string, BusinessHours> {
+  const result: Record<string, BusinessHours> = {};
+  DAYS.forEach(({ key }) => {
+    const val = raw?.[key];
+    if (!val) {
+      result[key] = { ...DEFAULT_HOURS };
+    } else if (typeof val === 'string') {
+      if (val === 'Fermé' || !val) {
+        result[key] = { open: '09:00', close: '18:00', closed: true };
+      } else {
+        const [open, close] = val.split(/[-–]/);
+        result[key] = { open: open?.trim() || '09:00', close: close?.trim() || '18:00', closed: false };
+      }
+    } else {
+      result[key] = { open: val.open || '09:00', close: val.close || '18:00', closed: !!val.closed };
+    }
+  });
+  return result;
 }
 
 const EditSalon: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [salon, setSalon] = useState<Salon | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formData, setFormData] = useState({
+  const [success, setSuccess] = useState(false);
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
+  const [newPhotos, setNewPhotos] = useState<File[]>([]);
+  const [salonName, setSalonName] = useState('');
+
+  const [form, setForm] = useState<SalonForm>({
     name: '',
     address: '',
     latitude: '',
     longitude: '',
+    business_hours: toBusinessHours(undefined),
   });
-  const [newPhotos, setNewPhotos] = useState<File[]>([]);
-
-  // Fonction pour formater les URLs des photos
-  const formatPhotoUrl = (photo: string) => {
-    if (!photo) return '';
-    
-    // Si l'URL est déjà complète, la retourner telle quelle
-    if (photo.startsWith('http')) {
-      return photo;
-    }
-    
-    // Si l'URL commence par /uploads/, construire l'URL complète
-    if (photo.startsWith('/uploads/')) {
-      return `https://hairgov2.onrender.com${photo}`;
-    }
-    
-    // Sinon, construire l'URL complète
-    return `https://hairgov2.onrender.com/uploads/photos/${photo}`;
-  };
 
   useEffect(() => {
+    const fetchSalon = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get(`/admin/salons/${id}`);
+        if (response.data.success) {
+          const s = response.data.data;
+          setSalonName(s.name || '');
+          setExistingPhotos(s.photos || []);
+          setForm({
+            name: s.name || '',
+            address: s.address || '',
+            latitude: String(s.latitude || ''),
+            longitude: String(s.longitude || ''),
+            business_hours: toBusinessHours(s.business_hours),
+          });
+        } else {
+          setError('Salon non trouvé');
+        }
+      } catch {
+        setError('Erreur lors du chargement');
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchSalon();
   }, [id]);
 
-  const fetchSalon = async () => {
-    try {
-      setLoading(true);
-      const response = await api.get(`/admin/salons/${id}`);
-      
-      if (response.data.success) {
-        const salonData = response.data.data;
-        setSalon(salonData);
-        setFormData({
-          name: salonData.name || '',
-          address: salonData.address || '',
-          latitude: salonData.latitude || '',
-          longitude: salonData.longitude || '',
-        });
-      } else {
-        setError('Salon non trouvé');
-      }
-    } catch (err) {
-      console.error('Error fetching salon:', err);
-      setError('Erreur lors du chargement du salon');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleInputChange = (field: string) => (event: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
+  const setHours = (day: string, field: keyof BusinessHours, value: string | boolean) => {
+    setForm(prev => ({
       ...prev,
-      [field]: event.target.value
+      business_hours: {
+        ...prev.business_hours,
+        [day]: { ...prev.business_hours[day], [field]: value },
+      },
     }));
   };
 
-  const handlePhotoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files) {
-      setNewPhotos(prev => [...prev, ...Array.from(files)]);
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) setNewPhotos(prev => [...prev, ...Array.from(e.target.files!)]);
+  };
+
+  const handleDeleteExistingPhoto = async (index: number) => {
+    if (!window.confirm('Supprimer cette photo ?')) return;
+    const updated = existingPhotos.filter((_, i) => i !== index);
+    try {
+      await api.put(`/admin/salons/${id}`, { photos: updated });
+      setExistingPhotos(updated);
+    } catch {
+      setError('Erreur lors de la suppression de la photo');
     }
   };
 
-  const handleRemoveNewPhoto = (index: number) => {
-    setNewPhotos(prev => prev.filter((_, i) => i !== index));
-  };
-
   const handleSave = async () => {
-    if (!salon) return;
-
     try {
       setSaving(true);
-      
-      // Créer FormData pour gérer l'upload des fichiers
-      const formDataToSend = new FormData();
-      formDataToSend.append('name', formData.name);
-      formDataToSend.append('address', formData.address);
-      formDataToSend.append('latitude', formData.latitude);
-      formDataToSend.append('longitude', formData.longitude);
-      
-      // Ajouter les nouvelles photos
-      newPhotos.forEach((photo) => {
-        formDataToSend.append('photos', photo);
+      setError(null);
+      const fd = new FormData();
+      fd.append('name', form.name);
+      fd.append('address', form.address);
+      fd.append('latitude', form.latitude);
+      fd.append('longitude', form.longitude);
+      fd.append('business_hours', JSON.stringify(form.business_hours));
+      newPhotos.forEach(p => fd.append('photos', p));
+      const response = await api.put(`/admin/salons/${id}`, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-
-      const response = await api.put(`/admin/salons/${salon.id}`, formDataToSend, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      
       if (response.data.success) {
-        alert('Salon mis à jour avec succès');
-        navigate(`/salons/${salon.id}`);
+        setSuccess(true);
+        setNewPhotos([]);
+        setTimeout(() => navigate(`/salons/${id}`), 1200);
       } else {
-        setError('Erreur lors de la mise à jour du salon');
+        setError('Erreur lors de la mise à jour');
       }
-    } catch (err) {
-      console.error('Error updating salon:', err);
-      setError('Une erreur est survenue lors de la mise à jour');
+    } catch {
+      setError('Une erreur est survenue');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeletePhoto = async (photoIndex: number) => {
-    if (!salon) return;
-
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette photo ?')) {
-      try {
-        const updatedPhotos = salon.photos.filter((_, index) => index !== photoIndex);
-        const response = await api.put(`/admin/salons/${salon.id}`, {
-          photos: updatedPhotos
-        });
-        
-        if (response.data.success) {
-          setSalon(prev => prev ? {
-            ...prev,
-            photos: updatedPhotos
-          } : null);
-          alert('Photo supprimée avec succès');
-        }
-      } catch (err) {
-        console.error('Error deleting photo:', err);
-        alert('Erreur lors de la suppression de la photo');
-      }
-    }
+  const formatPhotoUrl = (url: string) => {
+    if (!url) return '';
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads/')) return `https://hairgov2.onrender.com${url}`;
+    return '';
   };
 
   if (loading) {
@@ -190,256 +178,230 @@ const EditSalon: React.FC = () => {
     );
   }
 
-  if (error || !salon) {
-    return (
-      <Box p={3}>
-        <Alert severity="error">{error || 'Salon non trouvé'}</Alert>
-      </Box>
-    );
-  }
-
   return (
-    <Box>
+    <Box sx={{ pb: 4 }}>
       {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-        <IconButton onClick={() => navigate(`/salons/${salon.id}`)} sx={{ mr: 2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
+        <IconButton onClick={() => navigate(`/salons/${id}`)} sx={{ bgcolor: '#f5f5f5' }}>
           <ArrowBackIcon />
         </IconButton>
-        <Typography variant="h4" component="h1">
-          Modifier le salon
-        </Typography>
+        <Box>
+          <Typography variant="h5" fontWeight={700}>Modifier le salon</Typography>
+          <Typography variant="body2" color="text.secondary">{salonName}</Typography>
+        </Box>
+        <Box sx={{ ml: 'auto', display: 'flex', gap: 1 }}>
+          <Button variant="outlined" onClick={() => navigate(`/salons/${id}`)} disabled={saving}>
+            Annuler
+          </Button>
+          <Button
+            variant="contained" startIcon={saving ? <CircularProgress size={18} color="inherit" /> : <SaveIcon />}
+            onClick={handleSave} disabled={saving}
+          >
+            {saving ? 'Enregistrement...' : 'Enregistrer'}
+          </Button>
+        </Box>
       </Box>
 
+      {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>{error}</Alert>}
+
       <Grid container spacing={3}>
-        {/* Informations principales */}
+        {/* ─── Infos principales ─── */}
         <Grid item xs={12} md={8}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Informations du salon
-            </Typography>
-            
-            <Grid container spacing={3}>
+          <Paper sx={{ p: 3, mb: 3, borderRadius: 3 }} elevation={0} variant="outlined">
+            <Box display="flex" alignItems="center" gap={1} mb={2.5}>
+              <StoreIcon color="primary" />
+              <Typography variant="h6" fontWeight={600}>Informations générales</Typography>
+            </Box>
+            <Grid container spacing={2}>
               <Grid item xs={12}>
                 <TextField
-                  fullWidth
-                  label="Nom du salon"
-                  value={formData.name}
-                  onChange={handleInputChange('name')}
-                  variant="outlined"
+                  fullWidth label="Nom du salon" value={form.name}
+                  onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
                 />
               </Grid>
-              
               <Grid item xs={12}>
                 <TextField
-                  fullWidth
-                  label="Adresse"
-                  value={formData.address}
-                  onChange={handleInputChange('address')}
-                  variant="outlined"
-                  multiline
-                  rows={3}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LocationIcon color="action" />
-                      </InputAdornment>
-                    ),
-                  }}
+                  fullWidth label="Adresse" value={form.address} multiline rows={2}
+                  onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
+                  InputProps={{ startAdornment: <LocationIcon color="action" sx={{ mr: 1 }} /> }}
                 />
               </Grid>
-              
-              <Grid item xs={12} md={6}>
+              <Grid item xs={6}>
                 <TextField
-                  fullWidth
-                  label="Latitude"
-                  value={formData.latitude}
-                  onChange={handleInputChange('latitude')}
-                  variant="outlined"
-                  type="number"
+                  fullWidth label="Latitude" type="number" value={form.latitude}
+                  onChange={e => setForm(p => ({ ...p, latitude: e.target.value }))}
                 />
               </Grid>
-              
-              <Grid item xs={12} md={6}>
+              <Grid item xs={6}>
                 <TextField
-                  fullWidth
-                  label="Longitude"
-                  value={formData.longitude}
-                  onChange={handleInputChange('longitude')}
-                  variant="outlined"
-                  type="number"
+                  fullWidth label="Longitude" type="number" value={form.longitude}
+                  onChange={e => setForm(p => ({ ...p, longitude: e.target.value }))}
                 />
               </Grid>
             </Grid>
-
-            <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-              <Button
-                variant="contained"
-                startIcon={<SaveIcon />}
-                onClick={handleSave}
-                disabled={saving}
-              >
-                {saving ? 'Enregistrement...' : 'Enregistrer'}
-              </Button>
-              <Button
-                variant="outlined"
-                onClick={() => navigate(`/salons/${salon.id}`)}
-              >
-                Annuler
-              </Button>
-            </Box>
           </Paper>
-        </Grid>
 
-        {/* Informations du coiffeur */}
-        <Grid item xs={12} md={4}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Coiffeur propriétaire
-            </Typography>
-            
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                Nom complet
-              </Typography>
-              <Typography variant="body1">
-                {salon.hairdresser?.user?.full_name || 'N/A'}
-              </Typography>
+          {/* ─── Horaires ─── */}
+          <Paper sx={{ p: 3, borderRadius: 3 }} elevation={0} variant="outlined">
+            <Box display="flex" alignItems="center" gap={1} mb={2.5}>
+              <AccessTimeIcon color="primary" />
+              <Typography variant="h6" fontWeight={600}>Horaires d'ouverture</Typography>
             </Box>
-            
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                Email
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <EmailIcon fontSize="small" color="action" />
-                <Typography variant="body1">
-                  {salon.hairdresser?.user?.email || 'N/A'}
-                </Typography>
-              </Box>
-            </Box>
-            
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                Téléphone
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <PhoneIcon fontSize="small" color="action" />
-                <Typography variant="body1">
-                  {salon.hairdresser?.user?.phone || 'N/A'}
-                </Typography>
-              </Box>
-            </Box>
-            
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="body2" color="text.secondary">
-                Statut
-              </Typography>
-              <Typography variant="body1">
-                {salon.is_validated ? 'Validé' : 'En attente'}
-              </Typography>
-            </Box>
-          </Paper>
-        </Grid>
-
-        {/* Photos */}
-        <Grid item xs={12}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Photos du salon
-            </Typography>
-            
-            {salon.photos && salon.photos.length > 0 ? (
-              <Grid container spacing={2}>
-                {salon.photos.map((photo, index) => (
-                  <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
-                    <Box sx={{ position: 'relative' }}>
-                      <img
-                        src={formatPhotoUrl(photo)}
-                        alt={`Photo ${index + 1}`}
-                        style={{
-                          width: '100%',
-                          height: 200,
-                          objectFit: 'cover',
-                          borderRadius: 8,
-                        }}
-                      />
-                      <IconButton
-                        sx={{
-                          position: 'absolute',
-                          top: 8,
-                          right: 8,
-                          backgroundColor: 'rgba(255, 255, 255, 0.8)',
-                        }}
-                        onClick={() => handleDeletePhoto(index)}
+            <Stack spacing={1}>
+              {DAYS.map(({ key, label }) => {
+                const h = form.business_hours[key];
+                return (
+                  <Box key={key}>
+                    <Box
+                      sx={{
+                        display: 'flex', alignItems: 'center', gap: 2,
+                        p: 1.5, borderRadius: 2,
+                        bgcolor: h.closed ? '#fafafa' : 'rgba(108,99,255,0.04)',
+                        border: '1px solid',
+                        borderColor: h.closed ? '#eee' : 'rgba(108,99,255,0.15)',
+                      }}
+                    >
+                      <Typography
+                        sx={{ width: 95, fontWeight: h.closed ? 400 : 600, color: h.closed ? 'text.disabled' : 'text.primary' }}
                       >
-                        <DeleteIcon color="error" />
-                      </IconButton>
+                        {label}
+                      </Typography>
+
+                      {h.closed ? (
+                        <Typography variant="body2" color="text.disabled" sx={{ flex: 1 }}>
+                          Fermé
+                        </Typography>
+                      ) : (
+                        <Stack direction="row" spacing={1.5} alignItems="center" flex={1}>
+                          <TextField
+                            size="small" type="time" label="Ouverture"
+                            value={h.open}
+                            onChange={e => setHours(key, 'open', e.target.value)}
+                            InputLabelProps={{ shrink: true }}
+                            sx={{ width: 140 }}
+                          />
+                          <Typography color="text.secondary">–</Typography>
+                          <TextField
+                            size="small" type="time" label="Fermeture"
+                            value={h.close}
+                            onChange={e => setHours(key, 'close', e.target.value)}
+                            InputLabelProps={{ shrink: true }}
+                            sx={{ width: 140 }}
+                          />
+                        </Stack>
+                      )}
+
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={!h.closed}
+                            onChange={e => setHours(key, 'closed', !e.target.checked)}
+                            color="primary" size="small"
+                          />
+                        }
+                        label={<Typography variant="caption">{h.closed ? 'Fermé' : 'Ouvert'}</Typography>}
+                        sx={{ mr: 0, ml: 'auto' }}
+                      />
                     </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            ) : (
-              <Typography color="text.secondary">
-                Aucune photo disponible pour ce salon
-              </Typography>
-            )}
-            
-            {/* Ajouter de nouvelles photos */}
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Ajouter de nouvelles photos
-              </Typography>
-              <Button
-                variant="outlined"
-                component="label"
-                startIcon={<AddIcon />}
-                sx={{ mb: 2 }}
-              >
-                Choisir des photos
-                <input
-                  type="file"
-                  hidden
-                  multiple
-                  accept="image/*"
-                  onChange={handlePhotoUpload}
-                />
-              </Button>
-              
-              {newPhotos.length > 0 && (
-                <Grid container spacing={2}>
-                  {newPhotos.map((photo, index) => (
-                    <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
-                      <Box sx={{ position: 'relative' }}>
-                        <img
-                          src={URL.createObjectURL(photo)}
-                          alt={`Nouvelle photo ${index + 1}`}
-                          style={{
-                            width: '100%',
-                            height: 200,
-                            objectFit: 'cover',
-                            borderRadius: 8,
-                          }}
+                  </Box>
+                );
+              })}
+            </Stack>
+          </Paper>
+        </Grid>
+
+        {/* ─── Colonne droite ─── */}
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 3, borderRadius: 3 }} elevation={0} variant="outlined">
+            <Box display="flex" alignItems="center" gap={1} mb={2.5}>
+              <GalleryIcon color="primary" />
+              <Typography variant="h6" fontWeight={600}>Photos</Typography>
+            </Box>
+
+            {/* Photos existantes */}
+            {existingPhotos.length > 0 && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2" color="text.secondary" mb={1}>
+                  Photos actuelles
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                  {existingPhotos.map((photo, i) => {
+                    const url = formatPhotoUrl(photo);
+                    return url ? (
+                      <Box key={i} sx={{ position: 'relative' }}>
+                        <Box
+                          component="img" src={url} alt={`Photo ${i + 1}`}
+                          onError={(e: any) => { e.target.style.display = 'none'; }}
+                          sx={{ width: '100%', height: 110, objectFit: 'cover', borderRadius: 2 }}
                         />
                         <IconButton
+                          size="small"
+                          onClick={() => handleDeleteExistingPhoto(i)}
                           sx={{
-                            position: 'absolute',
-                            top: 8,
-                            right: 8,
-                            backgroundColor: 'rgba(255, 255, 255, 0.8)',
+                            position: 'absolute', top: 4, right: 4,
+                            bgcolor: 'rgba(0,0,0,0.55)', color: '#fff',
+                            '&:hover': { bgcolor: '#d32f2f' },
+                            width: 26, height: 26,
                           }}
-                          onClick={() => handleRemoveNewPhoto(index)}
                         >
-                          <DeleteIcon color="error" />
+                          <DeleteIcon sx={{ fontSize: 14 }} />
                         </IconButton>
                       </Box>
-                    </Grid>
-                  ))}
-                </Grid>
-              )}
-            </Box>
+                    ) : null;
+                  })}
+                </Box>
+              </Box>
+            )}
+
+            <Divider sx={{ my: 2 }} />
+
+            {/* Nouvelles photos */}
+            <Typography variant="body2" color="text.secondary" mb={1}>
+              Ajouter des photos
+            </Typography>
+            <Button
+              variant="outlined" component="label" startIcon={<AddIcon />}
+              fullWidth sx={{ mb: newPhotos.length > 0 ? 1.5 : 0 }}
+            >
+              Choisir des images
+              <input type="file" hidden multiple accept="image/*" onChange={handlePhotoUpload} />
+            </Button>
+
+            {newPhotos.length > 0 && (
+              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                {newPhotos.map((f, i) => (
+                  <Box key={i} sx={{ position: 'relative' }}>
+                    <Box
+                      component="img" src={URL.createObjectURL(f)} alt={`Nouvelle ${i + 1}`}
+                      sx={{ width: '100%', height: 110, objectFit: 'cover', borderRadius: 2 }}
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={() => setNewPhotos(prev => prev.filter((_, j) => j !== i))}
+                      sx={{
+                        position: 'absolute', top: 4, right: 4,
+                        bgcolor: 'rgba(0,0,0,0.55)', color: '#fff',
+                        '&:hover': { bgcolor: '#d32f2f' },
+                        width: 26, height: 26,
+                      }}
+                    >
+                      <DeleteIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </Box>
+                ))}
+              </Box>
+            )}
           </Paper>
         </Grid>
       </Grid>
+
+      <Snackbar
+        open={success}
+        autoHideDuration={2000}
+        onClose={() => setSuccess(false)}
+        message="Salon mis à jour avec succès"
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      />
     </Box>
   );
 };
