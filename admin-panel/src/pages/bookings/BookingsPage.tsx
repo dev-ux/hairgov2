@@ -1,540 +1,325 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Card, 
-  CardContent, 
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Chip,
-  IconButton,
-  Tooltip,
-  Alert,
-  CircularProgress,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  Grid,
-  Divider
+import {
+  Box, Typography, Paper, Table, TableBody, TableCell, TableContainer,
+  TableHead, TableRow, Chip, IconButton, Tooltip, Alert, CircularProgress,
+  Dialog, DialogTitle, DialogContent, DialogActions, Button, Grid, Divider, Avatar,
 } from '@mui/material';
-import { 
+import {
   CalendarToday as CalendarIcon,
   Phone as PhoneIcon,
   Person as PersonIcon,
   AccessTime as TimeIcon,
   LocationOn as LocationIcon,
   Refresh as RefreshIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+  Home as HomeIcon,
+  Store as StoreIcon,
 } from '@mui/icons-material';
 import { getAllBookings, Booking, deleteBooking } from '../../services/booking.service';
+
+const STATUS_MAP: Record<string, { label: string; color: 'warning' | 'info' | 'primary' | 'success' | 'error' | 'default' }> = {
+  pending:     { label: 'En attente', color: 'warning'  },
+  confirmed:   { label: 'Confirmé',   color: 'info'     },
+  in_progress: { label: 'En cours',   color: 'primary'  },
+  completed:   { label: 'Terminé',    color: 'success'  },
+  cancelled:   { label: 'Annulé',     color: 'error'    },
+};
+
+function formatDate(d: string) {
+  if (!d) return '–';
+  return new Date(d).toLocaleString('fr-FR', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
 
 const BookingsPage: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
+  const [selected, setSelected] = useState<Booking | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Booking | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const fetchBookings = async () => {
+  const fetchBookings = async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getAllBookings();
+      const response = await getAllBookings(signal);
       if (response.success) {
         setBookings(response.data);
       } else {
         setError(response.message || 'Erreur lors de la récupération des réservations');
       }
-    } catch (err) {
-      setError('Erreur de connexion au serveur');
-      console.error('Error fetching bookings:', err);
+    } catch (err: any) {
+      if (err?.name !== 'AbortError' && err?.code !== 'ERR_CANCELED') {
+        setError('Erreur de connexion au serveur');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleRowClick = (booking: Booking) => {
-    setSelectedBooking(booking);
-    setDetailsOpen(true);
-  };
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchBookings(controller.signal);
+    return () => controller.abort();
+  }, []);
 
-  const handleCloseDetails = () => {
-    setDetailsOpen(false);
-    setSelectedBooking(null);
-  };
-
-  const handleDeleteClick = (booking: Booking, event: React.MouseEvent) => {
-    event.stopPropagation();
-    setBookingToDelete(booking);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!bookingToDelete) return;
-
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
     try {
       setDeleting(true);
-      const response = await deleteBooking(bookingToDelete.id);
-      
+      const response = await deleteBooking(deleteTarget.id);
       if (response.success) {
-        setBookings(prev => prev.filter(b => b.id !== bookingToDelete.id));
-        setDeleteDialogOpen(false);
-        setBookingToDelete(null);
+        setBookings(prev => prev.filter(b => b.id !== deleteTarget.id));
+        setDeleteTarget(null);
       } else {
-        setError('Erreur lors de la suppression de la réservation');
+        setError('Erreur lors de la suppression');
       }
-    } catch (err) {
-      console.error('Error deleting booking:', err);
-      setError('Erreur lors de la suppression de la réservation');
+    } catch {
+      setError('Erreur lors de la suppression');
     } finally {
       setDeleting(false);
     }
   };
 
-  const handleDeleteCancel = () => {
-    setDeleteDialogOpen(false);
-    setBookingToDelete(null);
-  };
-
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'warning';
-      case 'confirmed':
-        return 'info';
-      case 'in_progress':
-        return 'primary';
-      case 'completed':
-        return 'success';
-      case 'cancelled':
-        return 'error';
-      default:
-        return 'default';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'En attente';
-      case 'confirmed':
-        return 'Confirmé';
-      case 'in_progress':
-        return 'En cours';
-      case 'completed':
-        return 'Terminé';
-      case 'cancelled':
-        return 'Annulé';
-      default:
-        return status;
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return '-';
-    return new Date(dateString).toLocaleString('fr-FR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          flexGrow: 1,
-          width: '100%',
-          px: { xs: 2, md: 4 },
-          py: 3,
-          bgcolor: '#f5f6fa',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '400px'
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
-
   return (
-    <Box
-      sx={{
-        flexGrow: 1,
-        width: '100%',
-        px: { xs: 2, md: 4 },
-        py: 3,
-        bgcolor: '#f5f6fa',
-      }}
-    >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" fontWeight="bold">
-          Gestion des Réservations
-        </Typography>
+    <Box>
+      {/* Header */}
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+        <Box>
+          <Typography variant="h4">Réservations</Typography>
+          <Typography variant="body2" color="text.secondary" mt={0.5}>
+            {bookings.length} réservation{bookings.length !== 1 ? 's' : ''}
+          </Typography>
+        </Box>
         <Tooltip title="Actualiser">
-          <IconButton onClick={fetchBookings} color="primary">
-            <RefreshIcon />
+          <IconButton onClick={() => fetchBookings()} size="small" sx={{ bgcolor: '#F0F2F8' }}>
+            <RefreshIcon fontSize="small" />
           </IconButton>
         </Tooltip>
       </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError(null)}>
-          {error}
-        </Alert>
-      )}
+      {error && <Alert severity="error" sx={{ mb: 2.5 }} onClose={() => setError(null)}>{error}</Alert>}
 
-      <Card>
-        <CardContent sx={{ p: 0 }}>
-          <TableContainer component={Paper} sx={{ maxHeight: 'calc(100vh - 200px)' }}>
-            <Table stickyHeader>
-              <TableHead>
+      <Paper variant="outlined">
+        <TableContainer>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>Client</TableCell>
+                <TableCell>Service</TableCell>
+                <TableCell>Coiffeur</TableCell>
+                <TableCell>Date prévue</TableCell>
+                <TableCell>Montant</TableCell>
+                <TableCell>Statut</TableCell>
+                <TableCell align="center">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {loading ? (
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Client</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Service</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Statut</TableCell>
-                  <TableCell sx={{ fontWeight: 'bold' }}>Actions</TableCell>
+                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                    <CircularProgress size={32} />
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {bookings.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} align="center" sx={{ py: 8 }}>
-                      <Box sx={{ textAlign: 'center', color: 'text.secondary' }}>
-                        <CalendarIcon sx={{ fontSize: 64, mb: 2 }} />
-                        <Typography variant="h6">Aucune réservation</Typography>
-                        <Typography>Aucune réservation trouvée dans le système</Typography>
-                      </Box>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  bookings.map((booking) => (
-                    <TableRow 
-                      key={booking.id} 
-                      hover
-                      sx={{ cursor: 'pointer' }}
-                      onClick={() => handleRowClick(booking)}
+              ) : bookings.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                    <CalendarIcon sx={{ fontSize: 48, color: '#C7D2FE', mb: 1, display: 'block', mx: 'auto' }} />
+                    <Typography color="text.secondary">Aucune réservation</Typography>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                bookings.map(booking => {
+                  const s = STATUS_MAP[booking.status] || { label: booking.status, color: 'default' as const };
+                  return (
+                    <TableRow
+                      key={booking.id} hover sx={{ cursor: 'pointer' }}
+                      onClick={() => setSelected(booking)}
                     >
                       <TableCell>
-                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <PersonIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                          {booking.client_name}
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Avatar sx={{ width: 32, height: 32, bgcolor: '#6C63FF', fontSize: 12 }}>
+                            {booking.client_name?.charAt(0).toUpperCase()}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="subtitle2">{booking.client_name}</Typography>
+                            <Typography variant="caption" color="text.secondary">{booking.client_phone}</Typography>
+                          </Box>
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Chip 
-                          label={booking.service_type === 'home' ? 'À domicile' : 'En salon'} 
-                          size="small" 
-                          variant="outlined"
+                        <Chip
+                          icon={booking.service_type === 'home' ? <HomeIcon /> : <StoreIcon />}
+                          label={booking.service_type === 'home' ? 'À domicile' : 'En salon'}
+                          size="small" variant="outlined"
                         />
                       </TableCell>
                       <TableCell>
-                        <Chip 
-                          label={getStatusText(booking.status)} 
-                          color={getStatusColor(booking.status) as any}
-                          size="small"
-                        />
+                        <Typography variant="body2">
+                          {booking.hairdresser?.full_name || '–'}
+                        </Typography>
                       </TableCell>
                       <TableCell>
-                        <Tooltip title="Supprimer la réservation">
-                          <IconButton 
-                            onClick={(e) => handleDeleteClick(booking, e)}
-                            color="error"
-                            size="small"
+                        <Typography variant="body2">{formatDate(booking.scheduled_time)}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={500}>
+                          {booking.client_price ? `${Number(booking.client_price).toLocaleString('fr-FR')} FCFA` : '–'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip label={s.label} color={s.color as any} size="small" />
+                      </TableCell>
+                      <TableCell align="center">
+                        <Tooltip title="Supprimer">
+                          <IconButton
+                            size="small" color="error"
+                            onClick={e => { e.stopPropagation(); setDeleteTarget(booking); }}
                           >
-                            <DeleteIcon />
+                            <DeleteIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Paper>
 
-      <Box sx={{ mt: 2, textAlign: 'center' }}>
-        <Typography variant="body2" color="text.secondary">
-          Total: {bookings.length} réservation{bookings.length > 1 ? 's' : ''}
-        </Typography>
-      </Box>
-
-      {/* Modal pour les détails de la réservation */}
-      <Dialog 
-        open={detailsOpen} 
-        onClose={handleCloseDetails}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle>
-          <Typography variant="h6" fontWeight="bold">
-            Détails de la réservation
-          </Typography>
-        </DialogTitle>
+      {/* Détails dialog */}
+      <Dialog open={!!selected} onClose={() => setSelected(null)} maxWidth="md" fullWidth>
+        <DialogTitle fontWeight={700}>Détails de la réservation</DialogTitle>
         <DialogContent>
-          {selectedBooking && (
-            <Grid container spacing={3}>
+          {selected && (
+            <Grid container spacing={2.5} sx={{ pt: 1 }}>
               <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  ID Réservation
-                </Typography>
-                <Typography variant="body1" sx={{ fontFamily: 'monospace', fontSize: '0.9rem' }}>
-                  {selectedBooking.id}
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Client
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <PersonIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                  <Typography variant="body1">{selectedBooking.client_name}</Typography>
+                <Typography variant="caption" color="text.secondary">Client</Typography>
+                <Box display="flex" alignItems="center" gap={1} mt={0.5}>
+                  <PersonIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                  <Typography variant="body2" fontWeight={500}>{selected.client_name}</Typography>
                 </Box>
               </Grid>
-              
               <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Téléphone
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <PhoneIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                  <Typography variant="body1">{selectedBooking.client_phone}</Typography>
+                <Typography variant="caption" color="text.secondary">Téléphone</Typography>
+                <Box display="flex" alignItems="center" gap={1} mt={0.5}>
+                  <PhoneIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                  <Typography variant="body2" fontWeight={500}>{selected.client_phone}</Typography>
                 </Box>
               </Grid>
-              
               <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Service
-                </Typography>
-                <Chip 
-                  label={selectedBooking.service_type === 'home' ? 'À domicile' : 'En salon'} 
-                  size="small" 
-                  variant="outlined"
-                />
-              </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Frais service
-                </Typography>
-                <Typography variant="body1">
-                  {selectedBooking.service_fee ? `${Number(selectedBooking.service_fee).toFixed(2)} €` : '-'}
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Prix client
-                </Typography>
-                <Typography variant="body1">
-                  {selectedBooking.client_price ? `${Number(selectedBooking.client_price).toFixed(2)} €` : '-'}
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Statut
-                </Typography>
-                <Chip 
-                  label={getStatusText(selectedBooking.status)} 
-                  color={getStatusColor(selectedBooking.status) as any}
-                  size="small"
-                />
-              </Grid>
-              
-              <Grid item xs={12}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Adresse
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
-                  <LocationIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary', mt: 0.5 }} />
-                  <Typography variant="body1">{selectedBooking.location_address}</Typography>
-                </Box>
-                
-                {/* Carte Google Maps */}
-                <Box sx={{ mt: 2, borderRadius: 1, overflow: 'hidden', border: '1px solid #ddd' }}>
-                  <iframe
-                    width="100%"
-                    height="300"
-                    frameBorder="0"
-                    style={{ border: 0 }}
-                    src={`https://maps.google.com/maps?q=${encodeURIComponent(selectedBooking.location_address)}&output=embed`}
-                    allowFullScreen
+                <Typography variant="caption" color="text.secondary">Service</Typography>
+                <Box mt={0.5}>
+                  <Chip
+                    icon={selected.service_type === 'home' ? <HomeIcon /> : <StoreIcon />}
+                    label={selected.service_type === 'home' ? 'À domicile' : 'En salon'}
+                    size="small" variant="outlined"
                   />
                 </Box>
               </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Statut</Typography>
+                <Box mt={0.5}>
+                  <Chip
+                    label={(STATUS_MAP[selected.status] || { label: selected.status }).label}
+                    color={(STATUS_MAP[selected.status]?.color || 'default') as any}
+                    size="small"
+                  />
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Date prévue</Typography>
+                <Box display="flex" alignItems="center" gap={1} mt={0.5}>
+                  <CalendarIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                  <Typography variant="body2" fontWeight={500}>{formatDate(selected.scheduled_time)}</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Durée estimée</Typography>
+                <Box display="flex" alignItems="center" gap={1} mt={0.5}>
+                  <TimeIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                  <Typography variant="body2" fontWeight={500}>{selected.estimated_duration} min</Typography>
+                </Box>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Frais service</Typography>
+                <Typography variant="body2" fontWeight={500} mt={0.5}>
+                  {selected.service_fee ? `${Number(selected.service_fee).toLocaleString('fr-FR')} FCFA` : '–'}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="caption" color="text.secondary">Prix client</Typography>
+                <Typography variant="body2" fontWeight={500} mt={0.5}>
+                  {selected.client_price ? `${Number(selected.client_price).toLocaleString('fr-FR')} FCFA` : '–'}
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="caption" color="text.secondary">Adresse</Typography>
+                <Box display="flex" alignItems="flex-start" gap={1} mt={0.5}>
+                  <LocationIcon fontSize="small" sx={{ color: 'text.secondary', mt: 0.25 }} />
+                  <Typography variant="body2" fontWeight={500}>{selected.location_address}</Typography>
+                </Box>
+              </Grid>
 
-              {/* Section Coiffeur */}
-              {selectedBooking.hairdresser && (
+              {selected.hairdresser && (
                 <>
-                  <Grid item xs={12}>
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="h6" fontWeight="bold" gutterBottom>
-                      Informations du Coiffeur
-                    </Typography>
-                  </Grid>
-                  
+                  <Grid item xs={12}><Divider /></Grid>
                   <Grid item xs={12} sm={6}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                      Nom du coiffeur
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <PersonIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                      <Typography variant="body1">
-                        {selectedBooking.hairdresser.full_name || 'Non spécifié'}
+                    <Typography variant="caption" color="text.secondary">Coiffeur</Typography>
+                    <Box display="flex" alignItems="center" gap={1} mt={0.5}>
+                      {selected.hairdresser.profile_photo ? (
+                        <Avatar src={selected.hairdresser.profile_photo} sx={{ width: 28, height: 28 }} />
+                      ) : (
+                        <PersonIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+                      )}
+                      <Typography variant="body2" fontWeight={500}>
+                        {selected.hairdresser.full_name || '–'}
                       </Typography>
                     </Box>
                   </Grid>
-                  
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                      Photo de profil
-                    </Typography>
-                    {selectedBooking.hairdresser.profile_photo ? (
-                      <Box
-                        component="img"
-                        src={selectedBooking.hairdresser.profile_photo}
-                        alt="Photo du coiffeur"
-                        sx={{ width: 50, height: 50, borderRadius: '50%', objectFit: 'cover' }}
-                      />
-                    ) : (
-                      <Typography variant="body2" color="text.secondary">
-                        Aucune photo
-                      </Typography>
-                    )}
-                  </Grid>
                 </>
               )}
 
-              {/* Section Service */}
-              {selectedBooking.hairstyle && (
+              {selected.hairstyle && (
                 <>
-                  <Grid item xs={12}>
-                    <Divider sx={{ my: 2 }} />
-                    <Typography variant="h6" fontWeight="bold" gutterBottom>
-                      Détails du Service
-                    </Typography>
-                  </Grid>
-                  
+                  <Grid item xs={12}><Divider /></Grid>
                   <Grid item xs={12} sm={6}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                      Nom du service
-                    </Typography>
-                    <Typography variant="body1" fontWeight="medium">
-                      {selectedBooking.hairstyle.name}
-                    </Typography>
+                    <Typography variant="caption" color="text.secondary">Coiffure</Typography>
+                    <Typography variant="body2" fontWeight={500} mt={0.5}>{selected.hairstyle.name}</Typography>
                   </Grid>
-                  
                   <Grid item xs={12} sm={6}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                      Catégorie
-                    </Typography>
-                    <Typography variant="body1">
-                      {selectedBooking.hairstyle.category || 'Non spécifiée'}
-                    </Typography>
-                  </Grid>
-                  
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                      Description
-                    </Typography>
-                    <Typography variant="body1">
-                      {selectedBooking.hairstyle.description || 'Aucune description'}
-                    </Typography>
+                    <Typography variant="caption" color="text.secondary">Catégorie</Typography>
+                    <Typography variant="body2" fontWeight={500} mt={0.5}>{selected.hairstyle.category || '–'}</Typography>
                   </Grid>
                 </>
               )}
-              
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Durée estimée
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <TimeIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                  <Typography variant="body1">{selectedBooking.estimated_duration} minutes</Typography>
-                </Box>
-              </Grid>
-              
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Date prévue
-                </Typography>
-                <Typography variant="body1">
-                  {formatDate(selectedBooking.scheduled_time)}
-                </Typography>
-              </Grid>
-              
-              <Grid item xs={12}>
-                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                  Créé le
-                </Typography>
-                <Typography variant="body1">
-                  {formatDate(selectedBooking.created_at)}
-                </Typography>
-              </Grid>
             </Grid>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDetails}>Fermer</Button>
+          <Button onClick={() => setSelected(null)}>Fermer</Button>
         </DialogActions>
       </Dialog>
 
-      {/* Dialog de confirmation de suppression */}
-      <Dialog 
-        open={deleteDialogOpen} 
-        onClose={handleDeleteCancel}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          <Typography variant="h6" color="error" fontWeight="bold">
-            Confirmer la suppression
-          </Typography>
-        </DialogTitle>
+      {/* Delete dialog */}
+      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>Supprimer cette réservation ?</DialogTitle>
         <DialogContent>
           <Typography>
-            Êtes-vous sûr de vouloir supprimer la réservation de{' '}
-            <strong>{bookingToDelete?.client_name}</strong> ?
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            Cette action est irréversible et supprimera définitivement la réservation du système.
+            La réservation de <strong>{deleteTarget?.client_name}</strong> sera définitivement supprimée.
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button 
-            onClick={handleDeleteCancel} 
-            disabled={deleting}
-          >
-            Annuler
-          </Button>
-          <Button 
-            onClick={handleDeleteConfirm} 
-            variant="contained" 
-            color="error"
-            disabled={deleting}
-            startIcon={<DeleteIcon />}
+          <Button onClick={() => setDeleteTarget(null)} disabled={deleting}>Annuler</Button>
+          <Button
+            variant="contained" color="error" disabled={deleting}
+            startIcon={deleting ? <CircularProgress size={16} /> : <DeleteIcon />}
+            onClick={handleDelete}
           >
             {deleting ? 'Suppression...' : 'Supprimer'}
           </Button>

@@ -44,14 +44,9 @@ export interface BookingResponse {
 }
 
 // Récupérer toutes les réservations
-export const getAllBookings = async (): Promise<BookingResponse> => {
-  try {
-    const response = await api.get('/bookings');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching bookings:', error);
-    throw error;
-  }
+export const getAllBookings = async (signal?: AbortSignal): Promise<BookingResponse> => {
+  const response = await api.get('/bookings', { signal });
+  return response.data;
 };
 
 // Récupérer une réservation par ID
