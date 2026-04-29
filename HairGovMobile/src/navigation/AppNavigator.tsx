@@ -226,11 +226,11 @@ export const AppNavigator = () => {
             headerShown: false,
           }}
         />
-        <Stack.Screen 
-          name="Profile" 
+        <Stack.Screen
+          name="Profile"
           component={ProfileScreen}
           options={{
-            headerShown: true,
+            headerShown: false,
             animation: 'slide_from_right',
           }}
         />
