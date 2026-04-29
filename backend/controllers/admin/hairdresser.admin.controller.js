@@ -336,3 +336,61 @@ exports.toggleHairdresserStatus = async (req, res) => {
     });
   }
 };
+
+/**
+ * Mettre à jour les informations d'un coiffeur
+ */
+exports.updateHairdresser = async (req, res) => {
+  const transaction = await db.sequelize.transaction();
+  try {
+    const { id } = req.params;
+    const {
+      full_name, email, phone,
+      profession, residential_address, description,
+      registration_status
+    } = req.body;
+
+    let hairdresser = await db.Hairdresser.findByPk(id, {
+      include: [{ model: db.User, as: 'user' }],
+      transaction
+    });
+
+    if (!hairdresser) {
+      hairdresser = await db.Hairdresser.findOne({
+        where: { user_id: id },
+        include: [{ model: db.User, as: 'user' }],
+        transaction
+      });
+    }
+
+    if (!hairdresser) {
+      await transaction.rollback();
+      return res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Coiffeur non trouvé' } });
+    }
+
+    const userUpdates = {};
+    if (full_name !== undefined) userUpdates.full_name = full_name;
+    if (email !== undefined) userUpdates.email = email;
+    if (phone !== undefined) userUpdates.phone = phone;
+    if (Object.keys(userUpdates).length > 0) {
+      await hairdresser.user.update(userUpdates, { transaction });
+    }
+
+    const hairdresserUpdates = {};
+    if (profession !== undefined) hairdresserUpdates.profession = profession;
+    if (residential_address !== undefined) hairdresserUpdates.residential_address = residential_address;
+    if (description !== undefined) hairdresserUpdates.description = description;
+    if (registration_status !== undefined) hairdresserUpdates.registration_status = registration_status;
+    if (Object.keys(hairdresserUpdates).length > 0) {
+      await hairdresser.update(hairdresserUpdates, { transaction });
+    }
+
+    await transaction.commit();
+    await hairdresser.reload({ include: [{ model: db.User, as: 'user' }] });
+
+    res.status(200).json({ success: true, data: hairdresser });
+  } catch (error) {
+    await transaction.rollback();
+    res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: error.message } });
+  }
+};

@@ -32,7 +32,9 @@ import {
   HourglassEmpty as PendingIcon
 } from '@mui/icons-material';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { hairdresserService } from '../../services/hairdresser.service';
+import { hairdresserService, UpdateHairdresserPayload } from '../../services/hairdresser.service';
+import EditHairdresserForm from '../../components/hairdressers/EditHairdresserForm';
+import { useSnackbar } from 'notistack';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
@@ -65,9 +67,11 @@ interface Hairdresser {
 
 const DetailHairdresser: React.FC = () => {
   const navigate = useNavigate();
+  const { enqueueSnackbar } = useSnackbar();
   const [hairdresser, setHairdresser] = useState<Hairdresser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   // Récupérer l'ID du coiffeur depuis l'URL
   const hairdresserId = window.location.pathname.split('/').pop();
@@ -139,6 +143,17 @@ const DetailHairdresser: React.FC = () => {
     }
   };
 
+  const handleSave = async (id: string, payload: UpdateHairdresserPayload) => {
+    const response = await hairdresserService.updateHairdresser(id, payload);
+    if (response.success) {
+      setHairdresser(response.data);
+      setEditOpen(false);
+      enqueueSnackbar('Coiffeur mis à jour avec succès', { variant: 'success' });
+    } else {
+      enqueueSnackbar(response.error?.message || 'Erreur lors de la mise à jour', { variant: 'error' });
+    }
+  };
+
   if (loading) {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -183,10 +198,7 @@ const DetailHairdresser: React.FC = () => {
           <Button
             variant="contained"
             startIcon={<EditIcon />}
-            onClick={() => {
-              // TODO: Implémenter la modification
-              console.log('Modifier le coiffeur:', hairdresser.id);
-            }}
+            onClick={() => setEditOpen(true)}
           >
             Modifier
           </Button>
@@ -345,6 +357,13 @@ const DetailHairdresser: React.FC = () => {
           </StyledPaper>
         </Grid>
       </Grid>
+
+      <EditHairdresserForm
+        open={editOpen}
+        hairdresser={hairdresser}
+        onClose={() => setEditOpen(false)}
+        onSave={handleSave}
+      />
     </Box>
   );
 };

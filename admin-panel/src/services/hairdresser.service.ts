@@ -40,7 +40,23 @@ export const getHairdresserById = async (id: string) => {
   }
 };
 
+export interface UpdateHairdresserPayload {
+  full_name?: string;
+  email?: string;
+  phone?: string;
+  profession?: string;
+  residential_address?: string;
+  description?: string;
+  registration_status?: 'pending' | 'approved' | 'rejected';
+}
+
+export const updateHairdresser = async (id: string, payload: UpdateHairdresserPayload) => {
+  const response = await api.put(`/admin/hairdressers/${id}`, payload);
+  return response.data;
+};
+
 export const hairdresserService = {
   getActiveHairdressers,
   getHairdresserById,
+  updateHairdresser,
 };

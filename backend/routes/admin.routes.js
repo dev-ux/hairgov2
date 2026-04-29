@@ -4,11 +4,12 @@ const { authenticate, isAdmin } = require('../middleware/auth.middleware');
 const { getUsersList } = require('../controllers/admin.controller');
 const { getDashboardStats } = require('../controllers/dashboard.controller');
 const { createSalon, updateSalon, validateSalon } = require('../controllers/admin/salon.admin.controller');
-const { 
-  validateHairdresser, 
+const {
+  validateHairdresser,
   getHairdressers: getHairdressersAdmin,
   toggleHairdresserStatus,
-  getHairdresserById 
+  getHairdresserById,
+  updateHairdresser
 } = require('../controllers/admin/hairdresser.admin.controller');
 const {
   addTrendingHairstyle,
@@ -67,6 +68,7 @@ router.put('/hairdressers/:id/approve', validateHairdresser);
  * @access  Private/Admin
  */
 router.patch('/hairdressers/:id/status', toggleHairdresserStatus);
+router.put('/hairdressers/:id', updateHairdresser);
 
 /**
  * @route   GET /api/v1/admin/dashboard/stats
