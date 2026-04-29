@@ -1,247 +1,192 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { favoriteService } from '../services/favoriteService';
 import { FavoriteButton } from '../components/FavoriteButton';
 
-type FavoritesScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Favorites'>;
+type Nav = NativeStackNavigationProp<RootStackParamList, 'Favorites'>;
 
 export const FavoritesScreen = () => {
-    const navigation = useNavigation<FavoritesScreenNavigationProp>();
-    const [favorites, setFavorites] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+  const navigation = useNavigation<Nav>();
+  const [favorites, setFavorites] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        loadFavorites();
-    }, []);
-
-    const loadFavorites = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const favoritesData = await favoriteService.getFavorites();
-            // Filtrer uniquement les favoris de coiffeurs
-            const hairdresserFavorites = favoritesData.filter((fav: any) =>
-                fav.favorite_type === 'hairdresser' && fav.hairdresser
-            );
-            setFavorites(hairdresserFavorites);
-        } catch (err) {
-            setError('Erreur de chargement des favoris');
-            console.error('Error loading favorites:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const renderFavoriteItem = ({ item }: { item: any }) => {
-        const hairdresser = item.hairdresser;
-        return (
-            <TouchableOpacity
-                style={styles.favoriteCard}
-                onPress={() => {
-                    navigation.navigate('BarberDetail' as any, { barberId: hairdresser.id });
-                }}
-            >
-                <Image
-                    source={hairdresser.user?.profile_photo ? { uri: hairdresser.user.profile_photo } : require('../assets/default-avatar.png')}
-                    style={styles.favoriteImage}
-                    resizeMode="cover"
-                />
-                <View style={styles.favoriteInfo}>
-                    <Text style={styles.favoriteName}>{hairdresser.user?.full_name || 'Nom inconnu'}</Text>
-                    <Text style={styles.favoriteProfession}>{hairdresser.profession || 'Coiffeur'}</Text>
-                    <View style={styles.ratingContainer}>
-                        <Ionicons name="star" size={14} color="#FFD700" />
-                        <Text style={styles.ratingText}>
-                            {typeof hairdresser.average_rating === 'number'
-                                ? hairdresser.average_rating.toFixed(1)
-                                : parseFloat(hairdresser.average_rating || '0').toFixed(1)
-                            }
-                        </Text>
-                    </View>
-                </View>
-                <View style={styles.favoriteButtonContainer}>
-                    <FavoriteButton itemId={hairdresser.id} itemType="hairdresser" size={20} />
-                </View>
-            </TouchableOpacity>
-        );
-    };
-
-    if (loading) {
-        return (
-            <View style={styles.container}>
-                <View style={styles.headerContainer}>
-                    <TouchableOpacity
-                        onPress={() => navigation.goBack()}
-                        style={styles.backButton}
-                    >
-                        <Ionicons name="arrow-back" size={24} color="#000" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Mes Favoris</Text>
-                    <View style={{ width: 24 }} />
-                </View>
-                <View style={styles.centered}>
-                    <ActivityIndicator size="large" color="#FF6B6B" />
-                </View>
-            </View>
-        );
+  const loadFavorites = async () => {
+    try {
+      setError(null);
+      const data = await favoriteService.getFavorites();
+      setFavorites(data.filter((f: any) => f.favorite_type === 'hairdresser' && f.hairdresser));
+    } catch {
+      setError('Impossible de charger les favoris');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
+  };
 
-    if (error) {
-        return (
-            <View style={styles.container}>
-                <View style={styles.headerContainer}>
-                    <TouchableOpacity
-                        onPress={() => navigation.goBack()}
-                        style={styles.backButton}
-                    >
-                        <Ionicons name="arrow-back" size={24} color="#000" />
-                    </TouchableOpacity>
-                    <Text style={styles.headerTitle}>Mes Favoris</Text>
-                    <View style={{ width: 24 }} />
-                </View>
-                <View style={styles.centered}>
-                    <Ionicons name="sad-outline" size={50} color="#999" />
-                    <Text style={styles.errorText}>{error}</Text>
-                </View>
-            </View>
-        );
-    }
+  useFocusEffect(useCallback(() => { loadFavorites(); }, []));
+
+  const onRefresh = () => { setRefreshing(true); loadFavorites(); };
+
+  const renderItem = ({ item }: { item: any }) => {
+    const h = item.hairdresser;
+    const photoUri = h.user?.profile_photo && !h.user.profile_photo.startsWith('file://')
+      ? h.user.profile_photo : null;
+    const rating = typeof h.average_rating === 'number'
+      ? h.average_rating : parseFloat(h.average_rating || '0');
 
     return (
-        <View style={styles.container}>
-            {/* En-tête personnalisé avec bouton de retour */}
-            <View style={styles.headerContainer}>
-                <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    style={styles.backButton}
-                >
-                    <Ionicons name="arrow-back" size={24} color="#000" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Mes Favoris</Text>
-                <View style={{ width: 24 }} /> // Pour équilibrer le flexbox
-            </View>
-
-            {favorites.length === 0 ? (
-                <View style={styles.centered}>
-                    <Ionicons name="heart-outline" size={50} color="#999" />
-                    <Text style={styles.emptyText}>Aucun favori pour le moment</Text>
-                    <Text style={styles.emptySubtext}>Ajoutez des coiffeurs à vos favoris pour les retrouver facilement</Text>
-                </View>
-            ) : (
-                <FlatList
-                    data={favorites}
-                    renderItem={renderFavoriteItem}
-                    keyExtractor={(item) => item.id || item.hairdresser?.id || Math.random().toString()}
-                    contentContainerStyle={styles.listContainer}
-                    showsVerticalScrollIndicator={false}
-                />
-            )}
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate('BarberDetail' as any, { barberId: h.id })}
+        activeOpacity={0.85}
+      >
+        {/* Avatar */}
+        <View style={styles.avatarWrap}>
+          {photoUri ? (
+            <Image source={{ uri: photoUri }} style={styles.avatar} resizeMode="cover" />
+          ) : (
+            <LinearGradient colors={['#EEF0FF', '#D8D5FF']} style={styles.avatarPlaceholder}>
+              <Ionicons name="person" size={26} color="#6C63FF" />
+            </LinearGradient>
+          )}
         </View>
+
+        {/* Info */}
+        <View style={styles.info}>
+          <Text style={styles.name} numberOfLines={1}>{h.user?.full_name || 'Nom inconnu'}</Text>
+          <View style={styles.profChip}>
+            <Ionicons name="cut" size={10} color="#6C63FF" />
+            <Text style={styles.profText}>{h.profession || 'Coiffeur'}</Text>
+          </View>
+          <View style={styles.ratingRow}>
+            <Ionicons name="star" size={13} color="#FF9800" />
+            <Text style={styles.ratingNum}>{rating.toFixed(1)}</Text>
+            {h.total_jobs !== undefined && (
+              <Text style={styles.ratingJobs}>· {h.total_jobs} prestations</Text>
+            )}
+          </View>
+        </View>
+
+        {/* Favorite + arrow */}
+        <View style={styles.actions}>
+          <FavoriteButton itemId={h.id} itemType="hairdresser" size={18} />
+          <Ionicons name="chevron-forward" size={18} color="#ccc" style={{ marginTop: 8 }} />
+        </View>
+      </TouchableOpacity>
     );
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <LinearGradient colors={['#6C63FF', '#8B84FF']} style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color="#fff" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Mes Favoris</Text>
+          <View style={{ width: 38 }} />
+        </LinearGradient>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#6C63FF" />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <LinearGradient colors={['#6C63FF', '#8B84FF']} style={styles.header} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={22} color="#fff" />
+        </TouchableOpacity>
+        <View>
+          <Text style={styles.headerTitle}>Mes Favoris</Text>
+          <Text style={styles.headerSub}>{favorites.length} coiffeur{favorites.length > 1 ? 's' : ''} sauvegardé{favorites.length > 1 ? 's' : ''}</Text>
+        </View>
+        <View style={{ width: 38 }} />
+      </LinearGradient>
+
+      {error ? (
+        <View style={styles.centered}>
+          <View style={styles.iconWrap}><Ionicons name="wifi-outline" size={36} color="#6C63FF" /></View>
+          <Text style={styles.emptyTitle}>Impossible de charger</Text>
+          <Text style={styles.emptySubtext}>{error}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={loadFavorites}>
+            <Text style={styles.retryText}>Réessayer</Text>
+          </TouchableOpacity>
+        </View>
+      ) : favorites.length === 0 ? (
+        <View style={styles.centered}>
+          <View style={styles.iconWrap}><Ionicons name="heart-outline" size={36} color="#6C63FF" /></View>
+          <Text style={styles.emptyTitle}>Aucun favori</Text>
+          <Text style={styles.emptySubtext}>Ajoutez des coiffeurs à vos favoris pour les retrouver facilement</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => navigation.navigate('Barber' as any)}>
+            <Text style={styles.retryText}>Découvrir les coiffeurs</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={favorites}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id || item.hairdresser?.id || Math.random().toString()}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#6C63FF']} />}
+        />
+      )}
+    </SafeAreaView>
+  );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
-    headerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: 16,
-        paddingTop: 50,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
-        backgroundColor: '#fff',
-    },
-    backButton: {
-        padding: 8,
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#333',
-        flex: 1,
-        textAlign: 'center',
-    },
-    centered: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-    },
-    errorText: {
-        color: '#FF6B6B',
-        marginTop: 10,
-        textAlign: 'center',
-    },
-    emptyText: {
-        color: '#999',
-        fontSize: 18,
-        marginTop: 10,
-        textAlign: 'center',
-    },
-    emptySubtext: {
-        color: '#666',
-        fontSize: 14,
-        marginTop: 5,
-        textAlign: 'center',
-    },
-    listContainer: {
-        padding: 16,
-    },
-    favoriteCard: {
-        flexDirection: 'row',
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    favoriteImage: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
-        marginRight: 16,
-    },
-    favoriteInfo: {
-        flex: 1,
-        justifyContent: 'center',
-    },
-    favoriteName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 4,
-    },
-    favoriteProfession: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 8,
-    },
-    ratingContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    ratingText: {
-        fontSize: 12,
-        color: '#666',
-        marginLeft: 4,
-    },
-    favoriteButtonContainer: {
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+  container: { flex: 1, backgroundColor: '#f5f6fa' },
+
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14 },
+  backBtn: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: '#fff', textAlign: 'center' },
+  headerSub: { fontSize: 12, color: 'rgba(255,255,255,0.8)', textAlign: 'center', marginTop: 2 },
+
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, gap: 12 },
+  iconWrap: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#EEF0FF', justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
+  emptyTitle: { fontSize: 18, fontWeight: '700', color: '#333' },
+  emptySubtext: { fontSize: 13, color: '#999', textAlign: 'center', paddingHorizontal: 24 },
+  retryBtn: { backgroundColor: '#6C63FF', paddingHorizontal: 24, paddingVertical: 10, borderRadius: 20, marginTop: 4 },
+  retryText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+
+  list: { padding: 16, gap: 12, paddingBottom: 32 },
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 14,
+    shadowColor: '#6C63FF',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.07,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  avatarWrap: { marginRight: 14 },
+  avatar: { width: 58, height: 58, borderRadius: 29, borderWidth: 2, borderColor: '#EEF0FF' },
+  avatarPlaceholder: { width: 58, height: 58, borderRadius: 29, justifyContent: 'center', alignItems: 'center' },
+
+  info: { flex: 1 },
+  name: { fontSize: 15, fontWeight: '700', color: '#1a1a2e', marginBottom: 5 },
+  profChip: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#EEF0FF', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 10, alignSelf: 'flex-start', marginBottom: 6 },
+  profText: { fontSize: 11, color: '#6C63FF', fontWeight: '600' },
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  ratingNum: { fontSize: 13, fontWeight: '700', color: '#1a1a2e' },
+  ratingJobs: { fontSize: 11, color: '#aaa' },
+
+  actions: { alignItems: 'center' },
 });
 
 export default FavoritesScreen;
