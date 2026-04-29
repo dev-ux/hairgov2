@@ -63,9 +63,13 @@ const BookingFormScreen = ({ navigation }: any) => {
       
       const response = await fetch(`${API_URL}/hairstyles`);
       const result = await response.json();
-      
+
       if (result.success && result.data) {
-        setHairstyles(result.data);
+        // API returns { data: { hairstyles: [...] } } or { data: [...] }
+        const list = Array.isArray(result.data)
+          ? result.data
+          : result.data.hairstyles ?? [];
+        setHairstyles(list);
       }
     } catch (err) {
       console.error('Erreur API hairstyles:', err);
@@ -176,7 +180,7 @@ const BookingFormScreen = ({ navigation }: any) => {
       <View style={styles.hairstyleInfo}>
         <Text style={styles.hairstyleName}>{item.name}</Text>
         <Text style={styles.hairstyleCategory}>{item.category}</Text>
-        <Text style={styles.hairstyleDuration}>{item.estimated_duration} min</Text>
+        <Text style={styles.hairstyleDuration}>{`${item.estimated_duration} min`}</Text>
       </View>
       <View style={styles.hairstyleRight}>
         {selectedHairstyle?.id === item.id && (
@@ -268,7 +272,7 @@ const BookingFormScreen = ({ navigation }: any) => {
               <View style={styles.hairstyleInfo}>
                 <Text style={styles.hairstyleName}>{hairstyle.name}</Text>
                 <Text style={styles.hairstyleCategory}>{hairstyle.category}</Text>
-                <Text style={styles.hairstyleDuration}>{hairstyle.estimated_duration} min</Text>
+                <Text style={styles.hairstyleDuration}>{`${hairstyle.estimated_duration} min`}</Text>
               </View>
               <View style={styles.hairstyleRight}>
                 {selectedHairstyle?.id === hairstyle.id && (
@@ -314,12 +318,12 @@ const BookingFormScreen = ({ navigation }: any) => {
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Durée:</Text>
-              <Text style={styles.summaryValue}>{selectedHairstyle.estimated_duration} minutes</Text>
+              <Text style={styles.summaryValue}>{`${selectedHairstyle.estimated_duration} minutes`}</Text>
             </View>
             <View style={styles.summaryItem}>
               <Text style={styles.summaryLabel}>Prix estimé:</Text>
               <Text style={styles.summaryPrice}>
-                {(selectedHairstyle.estimated_duration * 0.5).toFixed(2)}€
+                {`${(selectedHairstyle.estimated_duration * 0.5).toFixed(2)} FCFA`}
               </Text>
             </View>
           </View>
