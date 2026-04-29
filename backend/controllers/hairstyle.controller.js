@@ -172,7 +172,62 @@ exports.seedHairstyles = async (req, res) => {
         category: 'homme',
         is_active: true
       },
-      // ... autres hairstyles
+      {
+        name: 'Coupe Femme',
+        description: 'Coupe et coiffage pour femmes avec brushing',
+        photo: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=400&h=400&fit=crop',
+        estimated_duration: 60,
+        category: 'femme',
+        is_active: true
+      },
+      {
+        name: 'Coloration',
+        description: 'Coloration complète avec soin protecteur',
+        photo: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=400&fit=crop',
+        estimated_duration: 90,
+        category: 'femme',
+        is_active: true
+      },
+      {
+        name: 'Mèches',
+        description: 'Mèches balayage pour un effet naturel',
+        photo: 'https://images.unsplash.com/photo-1605497788044-5a32c7078486?w=400&h=400&fit=crop',
+        estimated_duration: 120,
+        category: 'femme',
+        is_active: true
+      },
+      {
+        name: 'Brushing',
+        description: 'Brushing professionnel pour cheveux longs',
+        photo: 'https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?w=400&h=400&fit=crop',
+        estimated_duration: 45,
+        category: 'femme',
+        is_active: true
+      },
+      {
+        name: 'Coupe Enfant',
+        description: 'Coupe adaptée aux enfants avec patience',
+        photo: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&h=400&fit=crop',
+        estimated_duration: 25,
+        category: 'enfant',
+        is_active: true
+      },
+      {
+        name: 'Barbe',
+        description: 'Taille et entretien de la barbe',
+        photo: 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=400&h=400&fit=crop',
+        estimated_duration: 30,
+        category: 'homme',
+        is_active: true
+      },
+      {
+        name: 'Soin',
+        description: 'Soin profond pour cheveux abîmés',
+        photo: 'https://images.unsplash.com/photo-1527799820374-dcf8d9d4a388?w=400&h=400&fit=crop',
+        estimated_duration: 40,
+        category: 'mixte',
+        is_active: true
+      }
     ];
 
     const insertedHairstyles = [];
