@@ -37,12 +37,12 @@ const PRICE_PER_MIN = 200;
 export default function HairdresserBookingScreen() {
   const route = useRoute<RouteProps>();
   const navigation = useNavigation<NavProps>();
-  const { hairdresserId, hairdresserName } = route.params;
+  const { hairdresserId, hairdresserName, serviceType: initialServiceType } = route.params;
 
   const [hairstyles, setHairstyles] = useState<Hairstyle[]>([]);
   const [loadingHairstyles, setLoadingHairstyles] = useState(true);
   const [selectedHairstyle, setSelectedHairstyle] = useState<Hairstyle | null>(null);
-  const [serviceType, setServiceType] = useState<'home' | 'salon'>('salon');
+  const [serviceType, setServiceType] = useState<'home' | 'salon'>(initialServiceType ?? 'salon');
   const [address, setAddress] = useState('');
   const [scheduledTime, setScheduledTime] = useState(new Date(Date.now() + 3600000));
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -58,7 +58,12 @@ export default function HairdresserBookingScreen() {
       const response = await fetch(`${API_URL}/hairstyles`);
       const result = await response.json();
       if (result.success && result.data) {
-        setHairstyles(result.data);
+        const list = Array.isArray(result.data.hairstyles)
+          ? result.data.hairstyles
+          : Array.isArray(result.data)
+          ? result.data
+          : [];
+        setHairstyles(list);
       }
     } catch {
       Alert.alert('Erreur', 'Impossible de charger les services disponibles');
