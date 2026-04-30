@@ -281,29 +281,53 @@ const BarberDetailScreen = () => {
 
       {/* ── Sticky CTA ── */}
       <View style={styles.ctaWrapper}>
-        <TouchableOpacity
-          style={[styles.ctaBtn, !barber.is_available && styles.ctaBtnDisabled]}
-          disabled={!barber.is_available}
-          onPress={() =>
-            navigation.navigate('HairdresserBooking', {
-              hairdresserId: barber.id,
-              hairdresserName: barber.user.full_name,
-            })
-          }
-          activeOpacity={0.85}
-        >
-          <LinearGradient
-            colors={barber.is_available ? ['#6C63FF', '#8B84FF'] : ['#ccc', '#bbb']}
-            style={styles.ctaGrad}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+        <View style={styles.ctaRow}>
+          <TouchableOpacity
+            style={[styles.ctaBtn, styles.ctaBtnSalon, !barber.is_available && styles.ctaBtnDisabled]}
+            disabled={!barber.is_available}
+            onPress={() =>
+              navigation.navigate('HairdresserBooking', {
+                hairdresserId: barber.id,
+                hairdresserName: barber.user.full_name,
+                serviceType: 'salon',
+              })
+            }
+            activeOpacity={0.85}
           >
-            <Ionicons name="calendar-outline" size={20} color="#fff" />
-            <Text style={styles.ctaText}>
-              {barber.is_available ? 'Prendre rendez-vous' : 'Indisponible pour le moment'}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
+            <LinearGradient
+              colors={barber.is_available ? ['#6C63FF', '#8B84FF'] : ['#ccc', '#bbb']}
+              style={styles.ctaGrad}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Ionicons name="business-outline" size={18} color="#fff" />
+              <Text style={styles.ctaText}>En salon</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.ctaBtn, styles.ctaBtnHome, !barber.is_available && styles.ctaBtnDisabled]}
+            disabled={!barber.is_available}
+            onPress={() =>
+              navigation.navigate('HairdresserBooking', {
+                hairdresserId: barber.id,
+                hairdresserName: barber.user.full_name,
+                serviceType: 'home',
+              })
+            }
+            activeOpacity={0.85}
+          >
+            <LinearGradient
+              colors={barber.is_available ? ['#FF6B6B', '#FF8E53'] : ['#ccc', '#bbb']}
+              style={styles.ctaGrad}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Ionicons name="home-outline" size={18} color="#fff" />
+              <Text style={styles.ctaText}>À domicile</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -471,13 +495,16 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 8,
   },
-  ctaBtn: { borderRadius: 16, overflow: 'hidden' },
+  ctaRow: { flexDirection: 'row', gap: 10 },
+  ctaBtn: { borderRadius: 16, overflow: 'hidden', flex: 1 },
+  ctaBtnSalon: {},
+  ctaBtnHome: {},
   ctaBtnDisabled: { opacity: 0.7 },
   ctaGrad: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 10, paddingVertical: 16,
+    gap: 8, paddingVertical: 16,
   },
-  ctaText: { fontSize: 16, fontWeight: '800', color: '#fff' },
+  ctaText: { fontSize: 15, fontWeight: '800', color: '#fff' },
 });
 
 export default BarberDetailScreen;
