@@ -83,7 +83,7 @@ export type RootStackParamList = {
   History: undefined;
   Statistics: undefined;
   Bookings: undefined;
-  HairdresserBooking: { hairdresserId: string; hairdresserName: string };
+  HairdresserBooking: { hairdresserId: string; hairdresserName: string; serviceType?: 'home' | 'salon' };
   Payments: undefined;
   Settings: undefined;
   // Autres écrans
