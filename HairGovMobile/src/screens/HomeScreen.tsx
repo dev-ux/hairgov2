@@ -351,60 +351,7 @@ export default function HomeScreen() {
             </LinearGradient>
           </TouchableOpacity>
         </View>
-
-        {/* ── PRÈS DE VOUS ── */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>Près de vous</Text>
-            <TouchableOpacity><Text style={[styles.seeAll, { color: colors.primary }]}>Plus</Text></TouchableOpacity>
-          </View>
-
-          {loadingNearby ? (
-            <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 16 }} />
-          ) : locationError ? (
-            <TouchableOpacity style={[styles.locationErrorBox, { backgroundColor: colors.surface }]} onPress={() => getUserLocation()}>
-              <Ionicons name="location-outline" size={18} color={colors.primary} />
-              <Text style={[styles.locationErrorText, { color: colors.textSecondary }]}>{locationError} — Appuyer pour réessayer</Text>
-            </TouchableOpacity>
-          ) : !nearbySalons || nearbySalons.length === 0 ? (
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Aucun salon à proximité (50km)</Text>
-          ) : (
-            <FlatList
-              data={nearbySalons}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyExtractor={(s) => s.id}
-              contentContainerStyle={styles.salonList}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={[styles.salonCard, { backgroundColor: colors.card }]} onPress={() => navigation.navigate('SalonDetail', { salonId: item.id })}>
-                  <View style={styles.salonImgWrap}>
-                    <Image
-                      source={item.photos?.[0] && formatImageUrl(item.photos[0]) ? { uri: formatImageUrl(item.photos[0])! } : defaultSalonImage}
-                      style={styles.salonImg}
-                      resizeMode="cover"
-                      defaultSource={defaultSalonImage}
-                    />
-                    <View style={styles.salonRatingBadge}>
-                      <Ionicons name="star" size={10} color="#FFD700" />
-                      <Text style={styles.salonRatingText}>{item.average_rating > 0 ? item.average_rating.toFixed(1) : 'Nouveau'}</Text>
-                    </View>
-                    {item.distance !== undefined && (
-                      <View style={[styles.distanceBadge, { backgroundColor: colors.primary }]}>
-                        <Text style={styles.distanceText}>{item.distance < 1 ? `${Math.round(item.distance * 1000)}m` : `${item.distance.toFixed(1)}km`}</Text>
-                      </View>
-                    )}
-                  </View>
-                  <View style={styles.salonInfo}>
-                    <Text style={[styles.salonName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
-                    <Text style={[styles.salonAddr, { color: colors.textSecondary }]} numberOfLines={1}>{item.address}</Text>
-                    <Text style={[styles.salonHairdresser, { color: colors.primary }]} numberOfLines={1}>{item.hairdresser?.full_name || 'Coiffeur'}</Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
-          )}
-        </View>
-
+        
         {/* ── NOS SALONS ── */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
