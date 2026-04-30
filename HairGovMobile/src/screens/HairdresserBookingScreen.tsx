@@ -48,10 +48,26 @@ export default function HairdresserBookingScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const [clientId, setClientId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchHairstyles();
+    loadClientData();
   }, []);
+
+  const loadClientData = async () => {
+    try {
+      const raw = await AsyncStorage.getItem('userData');
+      if (raw) {
+        const u = JSON.parse(raw);
+        setClientName(u.full_name || '');
+        setClientPhone(u.phone || '');
+        setClientId(u.id || null);
+      }
+    } catch { /* silent */ }
+  };
 
   const fetchHairstyles = async () => {
     try {
@@ -102,8 +118,8 @@ export default function HairdresserBookingScreen() {
 
     try {
       setSubmitting(true);
-      const token = await AsyncStorage.getItem('userToken');
-      if (!token) {
+
+      if (!clientName || !clientPhone) {
         Alert.alert('Connexion requise', 'Veuillez vous connecter pour réserver');
         navigation.navigate('Login');
         return;
@@ -111,6 +127,9 @@ export default function HairdresserBookingScreen() {
 
       const bookingData = {
         hairdresser_id: hairdresserId,
+        client_id: clientId,
+        client_name: clientName,
+        client_phone: clientPhone,
         hairstyle_id: selectedHairstyle.id,
         service_type: serviceType,
         scheduled_time: scheduledTime.toISOString(),
@@ -122,12 +141,9 @@ export default function HairdresserBookingScreen() {
         estimated_duration: selectedHairstyle.estimated_duration,
       };
 
-      const response = await fetch(`${API_URL}/bookings`, {
+      const response = await fetch(`${API_URL}/bookings/public`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(bookingData),
       });
 
