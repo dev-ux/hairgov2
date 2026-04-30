@@ -149,7 +149,7 @@ const ProfileScreen = () => {
       const data = await response.json();
 
       if (data.success) {
-        updateUser(data.data || { full_name: editName, email: editEmail, phone: editPhone });
+        updateUser(data.data?.user ?? data.data ?? { full_name: editName, email: editEmail, phone: editPhone });
         setPhotoVersion(v => v + 1);
         setEditModal(false);
         Alert.alert('Succès', 'Profil mis à jour avec succès !');
