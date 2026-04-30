@@ -95,7 +95,8 @@ exports.createBookingPublic = async (req, res) => {
       longitude,
       scheduled_time,
       client_id,
-      salon_id, // Ajouté pour récupérer le hairdresser du salon
+      hairdresser_id: directHairdresserId,
+      salon_id,
       service_fee = 25,
       client_price,
       estimated_duration
@@ -114,10 +115,10 @@ exports.createBookingPublic = async (req, res) => {
       });
     }
 
-    let hairdresser_id = null;
-    
-    // Si salon_id est fourni, récupérer le hairdresser_id du salon
-    if (salon_id) {
+    let hairdresser_id = directHairdresserId || null;
+
+    // Si salon_id est fourni et qu'aucun coiffeur direct n'est spécifié, récupérer le hairdresser_id du salon
+    if (!hairdresser_id && salon_id) {
       const { Salon } = require('../models');
       const salon = await Salon.findByPk(salon_id);
       if (salon && salon.hairdresser_id) {
