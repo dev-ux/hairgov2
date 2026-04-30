@@ -78,6 +78,16 @@ interface Trend {
 
 interface UserData { full_name: string }
 
+interface Hairdresser {
+  id: string;
+  full_name: string;
+  profile_photo: string | null;
+  average_rating: number;
+  total_jobs: number;
+  is_available: boolean;
+  profession: string;
+}
+
 export default function HomeScreen() {
   type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
   const navigation = useNavigation<NavigationProp>();
@@ -88,6 +98,8 @@ export default function HomeScreen() {
   const [nearbySalons, setNearbySalons] = useState<Salon[] | null>(null);
   const [hairstyles, setHairstyles] = useState<Hairstyle[] | null>(null);
   const [trends, setTrends] = useState<Trend[]>([]);
+  const [hairdressers, setHairdressers] = useState<Hairdresser[]>([]);
+  const [loadingHairdressers, setLoadingHairdressers] = useState(true);
   const [loading, setLoading] = useState(true);
   const [loadingNearby, setLoadingNearby] = useState(true);
   const [loadingHairstyles, setLoadingHairstyles] = useState(true);
@@ -183,6 +195,29 @@ export default function HomeScreen() {
       } catch { /* silent */ } finally { setLoadingTrends(false); }
     };
 
+    const fetchHairdressers = async () => {
+      try {
+        const res = await fetch(`${API_URL}/hairdressers`);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.data?.hairdressers)) {
+          setHairdressers(
+            data.data.hairdressers
+              .filter((h: any) => h.is_available)
+              .slice(0, 6)
+              .map((h: any) => ({
+                id: h.user?.id || h.id,
+                full_name: h.user?.full_name || 'Coiffeur',
+                profile_photo: h.user?.profile_photo || null,
+                average_rating: h.average_rating || 0,
+                total_jobs: h.total_jobs || 0,
+                is_available: h.is_available || false,
+                profession: h.profession || 'Coiffeur',
+              }))
+          );
+        }
+      } catch { /* silent */ } finally { setLoadingHairdressers(false); }
+    };
+
     const loadUser = async () => {
       try {
         const raw = await AsyncStorage.getItem('userData');
@@ -193,6 +228,7 @@ export default function HomeScreen() {
     fetchSalons();
     fetchHairstyles();
     fetchTrends();
+    fetchHairdressers();
     loadUser();
   }, []);
 
@@ -399,6 +435,64 @@ export default function HomeScreen() {
           )}
         </View>
 
+        {/* ── COIFFEURS À DOMICILE ── */}
+        <View style={styles.section}>
+          <LinearGradient colors={['#6C63FF', '#9B94FF']} style={styles.homeBanner} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}>
+            <View style={styles.homeBannerLeft}>
+              <Text style={styles.homeBannerTag}>NOUVEAU</Text>
+              <Text style={styles.homeBannerTitle}>Coiffeur à domicile</Text>
+              <Text style={styles.homeBannerDesc}>Réservez un coiffeur qui se déplace chez vous</Text>
+              <TouchableOpacity style={styles.homeBannerBtn} onPress={() => navigation.navigate('Barber' as never)}>
+                <Text style={styles.homeBannerBtnText}>Voir les coiffeurs</Text>
+                <Ionicons name="arrow-forward" size={14} color="#6C63FF" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.homeBannerIcon}>
+              <Ionicons name="home" size={48} color="rgba(255,255,255,0.25)" />
+            </View>
+          </LinearGradient>
+
+          {loadingHairdressers ? (
+            <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 16 }} />
+          ) : hairdressers.length === 0 ? (
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Aucun coiffeur disponible pour le moment</Text>
+          ) : (
+            <FlatList
+              data={hairdressers}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              keyExtractor={(h) => h.id}
+              contentContainerStyle={[styles.salonList, { marginTop: 14 }]}
+              renderItem={({ item }) => (
+                <View style={[styles.barberCard, { backgroundColor: colors.card }]}>
+                  <TouchableOpacity onPress={() => navigation.navigate('BarberDetail', { barberId: item.id })}>
+                    {item.profile_photo ? (
+                      <Image source={{ uri: item.profile_photo }} style={styles.barberAvatar} resizeMode="cover" />
+                    ) : (
+                      <LinearGradient colors={['#EEF0FF', '#D8D5FF']} style={styles.barberAvatar}>
+                        <Ionicons name="person" size={28} color="#6C63FF" />
+                      </LinearGradient>
+                    )}
+                    <View style={styles.barberAvailDot} />
+                    <Text style={[styles.barberName, { color: colors.text }]} numberOfLines={1}>{item.full_name}</Text>
+                    <View style={styles.barberRatingRow}>
+                      <Ionicons name="star" size={11} color="#FF9800" />
+                      <Text style={[styles.barberRating, { color: colors.textSecondary }]}>{item.average_rating.toFixed(1)}</Text>
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.barberBookBtn}
+                    onPress={() => navigation.navigate('HairdresserBooking', { hairdresserId: item.id, hairdresserName: item.full_name, serviceType: 'home' })}
+                  >
+                    <Ionicons name="home-outline" size={12} color="#fff" />
+                    <Text style={styles.barberBookBtnText}>À domicile</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            />
+          )}
+        </View>
+
         {/* ── TENDANCES ── */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -585,4 +679,24 @@ const styles = StyleSheet.create({
   hairstyleGrad: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 70, padding: 10, justifyContent: 'flex-end' },
   hairstyleName: { fontSize: 13, fontWeight: '700', color: '#fff', marginBottom: 2 },
   hairstyleMeta: { fontSize: 11, color: 'rgba(255,255,255,0.8)' },
+
+  // Coiffeur à domicile banner
+  homeBanner: { borderRadius: 18, padding: 20, flexDirection: 'row', alignItems: 'center', overflow: 'hidden' },
+  homeBannerLeft: { flex: 1 },
+  homeBannerTag: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.8)', letterSpacing: 1.2, marginBottom: 6 },
+  homeBannerTitle: { fontSize: 20, fontWeight: '800', color: '#fff', marginBottom: 4 },
+  homeBannerDesc: { fontSize: 13, color: 'rgba(255,255,255,0.85)', marginBottom: 14, lineHeight: 18 },
+  homeBannerBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#fff', alignSelf: 'flex-start', paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20 },
+  homeBannerBtnText: { fontSize: 13, fontWeight: '700', color: '#6C63FF' },
+  homeBannerIcon: { marginLeft: 12 },
+
+  // Barber cards (à domicile section)
+  barberCard: { width: 130, borderRadius: 16, padding: 12, alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.07, shadowRadius: 6, elevation: 3 },
+  barberAvatar: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginBottom: 4 },
+  barberAvailDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#4CAF50', borderWidth: 2, borderColor: '#fff', position: 'absolute', top: 50, right: 30 },
+  barberName: { fontSize: 13, fontWeight: '700', textAlign: 'center', marginBottom: 3, marginTop: 6 },
+  barberRatingRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginBottom: 8 },
+  barberRating: { fontSize: 11 },
+  barberBookBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#6C63FF', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 10 },
+  barberBookBtnText: { fontSize: 11, fontWeight: '700', color: '#fff' },
 });
