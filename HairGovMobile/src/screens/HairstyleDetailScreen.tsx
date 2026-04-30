@@ -19,6 +19,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/AppNavigator';
 import { useTheme } from '../contexts/ThemeContext';
+import { FavoriteButton } from '../components/FavoriteButton';
 
 const API_BASE_URL = 'https://hairgov2.onrender.com';
 const { width, height } = Dimensions.get('window');
@@ -54,7 +55,6 @@ const HairstyleDetailScreen = () => {
   const [hairstyle, setHairstyle] = useState<Hairstyle | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isFav, setIsFav] = useState(false);
 
   const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -179,9 +179,12 @@ const HairstyleDetailScreen = () => {
             <TouchableOpacity style={styles.iconBtn} onPress={handleShare}>
               <Ionicons name="share-outline" size={22} color="white" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconBtn} onPress={() => setIsFav(v => !v)}>
-              <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={22} color={isFav ? '#FF6B6B' : 'white'} />
-            </TouchableOpacity>
+            <FavoriteButton
+              itemId={hairstyleId}
+              itemType="hairstyle"
+              size={22}
+              style={styles.iconBtn}
+            />
           </View>
         </View>
       </SafeAreaView>
