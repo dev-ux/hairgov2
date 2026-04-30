@@ -103,7 +103,7 @@ const QUICK_SERVICES = [
   { label: 'Salons', icon: 'storefront', colors: ['#6C63FF', '#8B84FF'] as [string, string], route: 'AllSalons' },
   { label: 'Coiffeurs', icon: 'cut', colors: ['#FF6B6B', '#FF8E53'] as [string, string], route: 'Barber' },
   { label: 'Galerie', icon: 'images', colors: ['#4CAF50', '#66BB6A'] as [string, string], route: 'HairstylesGallery' },
-  { label: 'Offres', icon: 'pricetag', colors: ['#FF9800', '#FFB74D'] as [string, string], route: 'SpecialOffers' },
+  { label: 'Tendances', icon: 'flame', colors: ['#FF9800', '#FFB74D'] as [string, string], route: 'TrendingHairstyles' },
 ];
 
 export default function HomeScreen() {
@@ -249,13 +249,11 @@ export default function HomeScreen() {
     return !isNaN(lat) && !isNaN(lon);
   });
 
-  const mapRegion = (() => {
-    if (userLocation) return { ...userLocation, latitudeDelta: 0.04, longitudeDelta: 0.04 };
-    if (mapSalons.length > 0) {
-      return { latitude: parseFloat(mapSalons[0].latitude as string), longitude: parseFloat(mapSalons[0].longitude as string), latitudeDelta: 0.06, longitudeDelta: 0.06 };
-    }
-    return { latitude: 5.36, longitude: -4.0083, latitudeDelta: 0.06, longitudeDelta: 0.06 };
-  })();
+  const ABIDJAN = { latitude: 5.3600, longitude: -4.0083 };
+
+  const mapRegion = userLocation
+    ? { ...userLocation, latitudeDelta: 0.04, longitudeDelta: 0.04 }
+    : { ...ABIDJAN, latitudeDelta: 0.06, longitudeDelta: 0.06 };
 
   const displaySalons = salons ?? [];
 

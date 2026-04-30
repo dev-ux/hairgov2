@@ -1,15 +1,27 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, ActivityIndicator } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  StatusBar,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { API_URL } from '../config/constants';
+import { useTheme } from '../contexts/ThemeContext';
 
 type RootStackParamList = {
   Home: undefined;
-  NotificationDetail: { notification: any };
-  // Ajoutez d'autres écrans si nécessaire
+  NotificationDetail: { notification: Notification };
 };
+
+type NotificationType = 'booking' | 'appointment' | 'promotion' | 'system' | 'payment';
 
 type Notification = {
   id: string;
@@ -17,357 +29,351 @@ type Notification = {
   message: string;
   time: string;
   read: boolean;
+  type?: NotificationType;
+  content?: string;
+  date?: string;
 };
 
-const NotificationsScreen = () => {
+type Filter = 'all' | 'unread' | 'read';
+
+const TYPE_CONFIG: Record<string, { icon: string; colors: [string, string]; label: string }> = {
+  booking:     { icon: 'calendar',            colors: ['#6C63FF', '#8B84FF'], label: 'Réservation' },
+  appointment: { icon: 'calendar',            colors: ['#6C63FF', '#8B84FF'], label: 'Rendez-vous' },
+  promotion:   { icon: 'pricetag',            colors: ['#FF9800', '#FFB74D'], label: 'Promotion' },
+  system:      { icon: 'information-circle',  colors: ['#4CAF50', '#66BB6A'], label: 'Système' },
+  payment:     { icon: 'card',                colors: ['#00BCD4', '#26C6DA'], label: 'Paiement' },
+  default:     { icon: 'notifications',       colors: ['#6C63FF', '#8B84FF'], label: 'Notification' },
+};
+
+const getConfig = (type?: string) => TYPE_CONFIG[type ?? ''] ?? TYPE_CONFIG.default;
+
+const formatRelativeTime = (time: string) => {
+  const date = new Date(time);
+  if (isNaN(date.getTime())) return time;
+  const diff = Date.now() - date.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1)  return 'À l\'instant';
+  if (mins < 60) return `Il y a ${mins} min`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `Il y a ${hours}h`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Hier';
+  if (days < 7)  return `Il y a ${days} jours`;
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+};
+
+export default function NotificationsScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<Filter>('all');
 
-  // Récupérer les notifications depuis l'API
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch(`${API_URL}/notifications`);
-      const result = await response.json();
-      
+      const res = await fetch(`${API_URL}/notifications`);
+      const result = await res.json();
       if (result.success && result.data) {
         setNotifications(result.data);
       } else {
-        setError('Erreur lors de la récupération des notifications');
+        setError('Impossible de charger les notifications');
       }
-    } catch (err) {
-      console.error('Erreur API notifications:', err);
-      setError('Impossible de charger les notifications');
+    } catch {
+      setError('Vérifiez votre connexion et réessayez');
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
+
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  const filtered = notifications.filter(n => {
+    if (filter === 'unread') return !n.read;
+    if (filter === 'read')   return  n.read;
+    return true;
+  });
+
+  const handlePress = async (item: Notification) => {
+    if (!item.read) {
+      try {
+        await fetch(`${API_URL}/notifications/${item.id}/read`, { method: 'PUT' });
+        setNotifications(prev => prev.map(n => n.id === item.id ? { ...n, read: true } : n));
+      } catch { /* silent */ }
+    }
+    navigation.navigate('NotificationDetail', { notification: { ...item, read: true } });
   };
 
-  // Séparer les notifications lues et non lues
-  const unreadNotifications = notifications.filter(notif => !notif.read);
-  const readNotifications = notifications.filter(notif => notif.read);
-
-  const handleNotificationPress = async (notification: Notification) => {
+  const handleMarkAll = async () => {
     try {
-      // Marquer comme lu dans la base de données
-      if (!notification.read) {
-        const response = await fetch(`${API_URL}/notifications/${notification.id}/read`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (response.ok) {
-          // Marquer comme lu localement si l'API a réussi
-          setNotifications(prev => 
-            prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
-          );
-        }
-      }
-      
-      // Naviguer vers les détails
-      navigation.navigate('NotificationDetail', { notification });
-    } catch (error) {
-      console.error('Erreur lors du marquage comme lu:', error);
-      // Même en cas d'erreur, on navigue vers les détails
-      navigation.navigate('NotificationDetail', { notification });
-    }
+      await fetch(`${API_URL}/notifications/read-all`, { method: 'PUT' });
+    } catch { /* silent */ }
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
-  const handleMarkAllAsRead = async () => {
-    try {
-      // Marquer toutes comme lu dans la base de données
-      const response = await fetch(`${API_URL}/notifications/read-all`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+  const renderItem = ({ item }: { item: Notification }) => {
+    const cfg = getConfig(item.type);
+    return (
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: colors.card }, !item.read && styles.cardUnread]}
+        onPress={() => handlePress(item)}
+        activeOpacity={0.88}
+      >
+        {!item.read && <View style={styles.cardAccent} />}
 
-      if (response.ok) {
-        // Marquer toutes comme lu localement
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-      }
-    } catch (error) {
-      console.error('Erreur lors du marquage de toutes comme lues:', error);
-      // En cas d'erreur, on fait quand même la mise à jour locale
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-    }
-  };
+        <LinearGradient colors={cfg.colors} style={styles.iconCircle}>
+          <Ionicons name={cfg.icon as any} size={20} color="white" />
+        </LinearGradient>
 
-  const renderNotificationItem = ({ item }: { item: Notification }) => (
-    <TouchableOpacity 
-      style={[styles.notificationItem, !item.read && styles.unreadNotification]}
-      onPress={() => handleNotificationPress(item)}
-    >
-      <View style={styles.notificationIcon}>
-        <Ionicons 
-          name="notifications" 
-          size={24} 
-          color={!item.read ? "#6C63FF" : "#999"} 
-        />
-      </View>
-      <View style={styles.notificationContent}>
-        <Text style={[styles.notificationTitle, !item.read && styles.boldText]}>{item.title}</Text>
-        <Text style={styles.notificationMessage}>{item.message}</Text>
-        <Text style={styles.notificationTime}>{item.time}</Text>
-      </View>
-      {!item.read && (
-        <View style={styles.unreadDot} />
-      )}
-    </TouchableOpacity>
-  );
-
-  const renderSectionHeader = (title: string, count: number) => (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <Text style={styles.sectionCount}>{count}</Text>
-    </View>
-  );
-
-  const renderNotificationList = () => {
-    const data = [];
-    
-    if (unreadNotifications.length > 0) {
-      data.push(
-        { key: 'unread-header', type: 'header', title: 'Non lues', count: unreadNotifications.length },
-        ...unreadNotifications.map(notif => ({ key: notif.id, type: 'notification', data: notif }))
-      );
-    }
-    
-    if (readNotifications.length > 0) {
-      data.push(
-        { key: 'read-header', type: 'header', title: 'Lues', count: readNotifications.length },
-        ...readNotifications.map(notif => ({ key: notif.id, type: 'notification', data: notif }))
-      );
-    }
-    
-    return data;
-  };
-
-  const renderItem = ({ item }: { item: any }) => {
-    if (item.type === 'header') {
-      return renderSectionHeader(item.title, item.count);
-    }
-    return renderNotificationItem({ item: item.data });
+        <View style={styles.cardBody}>
+          <View style={styles.cardTop}>
+            <Text style={[styles.cardTitle, { color: colors.text }, !item.read && styles.cardTitleBold]} numberOfLines={1}>
+              {item.title}
+            </Text>
+            <Text style={styles.cardTime}>{formatRelativeTime(item.date ?? item.time)}</Text>
+          </View>
+          <Text style={[styles.cardMessage, { color: colors.textSecondary }]} numberOfLines={2}>
+            {item.message}
+          </Text>
+          <View style={styles.cardFooter}>
+            <View style={[styles.typePill, { backgroundColor: cfg.colors[0] + '18' }]}>
+              <Text style={[styles.typePillText, { color: cfg.colors[0] }]}>{cfg.label}</Text>
+            </View>
+            {!item.read && <View style={styles.unreadDot} />}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        {unreadNotifications.length > 0 && (
-          <TouchableOpacity style={styles.markAllButton} onPress={handleMarkAllAsRead}>
-            <Text style={styles.markAllText}>Tout marquer comme lu</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <StatusBar barStyle="light-content" backgroundColor="#6C63FF" />
 
+      {/* ── Header gradient ── */}
+      <LinearGradient
+        colors={['#6C63FF', '#8B84FF', '#B0AAFF']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.header, { paddingTop: insets.top + 10 }]}
+      >
+        <View style={styles.heroBg1} />
+        <View style={styles.heroBg2} />
+
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={22} color="white" />
+          </TouchableOpacity>
+
+          <View style={styles.headerCenter}>
+            <Text style={styles.headerTitle}>Notifications</Text>
+            {unreadCount > 0 && (
+              <View style={styles.badgePill}>
+                <Text style={styles.badgePillText}>{unreadCount} nouvelles</Text>
+              </View>
+            )}
+          </View>
+
+          {unreadCount > 0 ? (
+            <TouchableOpacity style={styles.markAllBtn} onPress={handleMarkAll}>
+              <Ionicons name="checkmark-done" size={20} color="white" />
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 40 }} />
+          )}
+        </View>
+
+        {/* Filter tabs */}
+        <View style={styles.filterRow}>
+          {(['all', 'unread', 'read'] as Filter[]).map(f => {
+            const labels = { all: 'Toutes', unread: 'Non lues', read: 'Lues' };
+            const active = filter === f;
+            return (
+              <TouchableOpacity
+                key={f}
+                style={[styles.filterTab, active && styles.filterTabActive]}
+                onPress={() => setFilter(f)}
+              >
+                <Text style={[styles.filterTabText, active && styles.filterTabTextActive]}>
+                  {labels[f]}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </LinearGradient>
+
+      {/* ── Content ── */}
       {loading ? (
-        <View style={styles.loadingContainer}>
+        <View style={styles.center}>
           <ActivityIndicator size="large" color="#6C63FF" />
-          <Text style={styles.loadingText}>Chargement des notifications...</Text>
+          <Text style={[styles.centerText, { color: colors.textSecondary }]}>Chargement…</Text>
         </View>
       ) : error ? (
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={64} color="#ff6b6b" />
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchNotifications}>
-            <Text style={styles.retryButtonText}>Réessayer</Text>
+        <View style={styles.center}>
+          <LinearGradient colors={['#FF6B6B22', '#FF6B6B11']} style={styles.errorIcon}>
+            <Ionicons name="cloud-offline-outline" size={36} color="#FF6B6B" />
+          </LinearGradient>
+          <Text style={[styles.centerTitle, { color: colors.text }]}>Oups !</Text>
+          <Text style={[styles.centerText, { color: colors.textSecondary }]}>{error}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={fetchNotifications}>
+            <LinearGradient colors={['#6C63FF', '#8B84FF']} style={styles.retryGrad}>
+              <Ionicons name="refresh" size={16} color="white" />
+              <Text style={styles.retryText}>Réessayer</Text>
+            </LinearGradient>
           </TouchableOpacity>
+        </View>
+      ) : filtered.length === 0 ? (
+        <View style={styles.center}>
+          <LinearGradient colors={['#EEF0FF', '#D8D5FF']} style={styles.emptyIcon}>
+            <Ionicons name="notifications-off-outline" size={36} color="#6C63FF" />
+          </LinearGradient>
+          <Text style={[styles.centerTitle, { color: colors.text }]}>Tout est calme ici</Text>
+          <Text style={[styles.centerText, { color: colors.textSecondary }]}>
+            {filter === 'unread' ? 'Aucune notification non lue' : 'Vous n\'avez aucune notification'}
+          </Text>
         </View>
       ) : (
         <FlatList
-          data={renderNotificationList()}
+          data={filtered}
           renderItem={renderItem}
-          keyExtractor={(item) => item.key}
-          contentContainerStyle={styles.notificationList}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="notifications-off-outline" size={64} color="#ccc" />
-              <Text style={styles.emptyText}>Aucune notification</Text>
-            </View>
-          }
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         />
       )}
-    </SafeAreaView>
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
+  /* ── Header ── */
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    backgroundColor: '#fff',
-    marginTop: 30,
-  },
-  backButton: {
-    padding: 5,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    flex: 1,
-    textAlign: 'center',
-    marginLeft: -24, 
-  },
-  markAllButton: {
-    padding: 5,
-  },
-  markAllText: {
-    color: '#6C63FF',
-    fontSize: 14,
-  },
-  notificationList: {
-    padding: 10,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 5,
-    paddingVertical: 10,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  sectionCount: {
-    fontSize: 12,
-    color: '#6C63FF',
-    backgroundColor: '#f0f5ff',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-    fontWeight: '600',
-  },
-  notificationItem: {
-    flexDirection: 'row',
-    padding: 15,
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-    alignItems: 'center',
-  },
-  unreadNotification: {
-    backgroundColor: '#f8f5ff',
-    borderLeftWidth: 3,
-    borderLeftColor: '#6C63FF',
-  },
-  notificationIcon: {
-    marginRight: 15,
-    justifyContent: 'center',
-  },
-  notificationContent: {
-    flex: 1,
-  },
-  notificationTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-    marginBottom: 4,
-  },
-  notificationMessage: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-    lineHeight: 20,
-  },
-  notificationTime: {
-    fontSize: 12,
-    color: '#999',
-  },
-  boldText: {
-    fontWeight: 'bold',
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    backgroundColor: '#6C63FF',
-    borderRadius: 4,
-    marginLeft: 8,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#999',
-    textAlign: 'center',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  errorText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#ff6b6b',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  retryButton: {
-    backgroundColor: '#6C63FF',
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingBottom: 20,
+    overflow: 'hidden',
   },
-  retryButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
+  heroBg1: {
+    position: 'absolute', width: 200, height: 200, borderRadius: 100,
+    backgroundColor: 'rgba(255,255,255,0.06)', top: -80, right: -50,
   },
-});
+  heroBg2: {
+    position: 'absolute', width: 130, height: 130, borderRadius: 65,
+    backgroundColor: 'rgba(255,255,255,0.05)', bottom: -40, left: -30,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 18,
+  },
+  backBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  headerCenter: { flex: 1, alignItems: 'center' },
+  headerTitle: { fontSize: 20, fontWeight: '800', color: 'white' },
+  badgePill: {
+    marginTop: 4, backgroundColor: 'rgba(255,255,255,0.25)',
+    borderRadius: 10, paddingHorizontal: 10, paddingVertical: 2,
+  },
+  badgePillText: { fontSize: 11, color: 'white', fontWeight: '700' },
+  markAllBtn: {
+    width: 40, height: 40, borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    justifyContent: 'center', alignItems: 'center',
+  },
 
-export default NotificationsScreen;
+  /* ── Filter tabs ── */
+  filterRow: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 14,
+    padding: 4,
+    gap: 4,
+  },
+  filterTab: {
+    flex: 1, paddingVertical: 8, borderRadius: 10, alignItems: 'center',
+  },
+  filterTabActive: { backgroundColor: 'white' },
+  filterTabText: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.75)' },
+  filterTabTextActive: { color: '#6C63FF' },
+
+  /* ── List ── */
+  list: { padding: 16, paddingTop: 14 },
+
+  /* ── Card ── */
+  card: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    borderRadius: 18,
+    padding: 14,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 8,
+    elevation: 3,
+    overflow: 'hidden',
+  },
+  cardUnread: {
+    borderWidth: 1,
+    borderColor: '#6C63FF18',
+  },
+  cardAccent: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 3,
+    backgroundColor: '#6C63FF',
+    borderTopLeftRadius: 18,
+    borderBottomLeftRadius: 18,
+  },
+  iconCircle: {
+    width: 44, height: 44, borderRadius: 14,
+    justifyContent: 'center', alignItems: 'center',
+    flexShrink: 0,
+  },
+  cardBody: { flex: 1 },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
+  cardTitle: { fontSize: 14, fontWeight: '600', flex: 1, marginRight: 8 },
+  cardTitleBold: { fontWeight: '800' },
+  cardTime: { fontSize: 11, color: '#999', flexShrink: 0 },
+  cardMessage: { fontSize: 13, lineHeight: 18, marginBottom: 8 },
+  cardFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  typePill: {
+    borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3,
+  },
+  typePillText: { fontSize: 11, fontWeight: '700' },
+  unreadDot: {
+    width: 8, height: 8, borderRadius: 4, backgroundColor: '#6C63FF',
+  },
+
+  /* ── States ── */
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40, gap: 12 },
+  emptyIcon: {
+    width: 80, height: 80, borderRadius: 28,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  errorIcon: {
+    width: 80, height: 80, borderRadius: 28,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  centerTitle: { fontSize: 18, fontWeight: '800', marginTop: 4 },
+  centerText: { fontSize: 14, textAlign: 'center', lineHeight: 20 },
+  retryBtn: { borderRadius: 14, overflow: 'hidden', marginTop: 8 },
+  retryGrad: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    paddingHorizontal: 20, paddingVertical: 12,
+  },
+  retryText: { color: 'white', fontSize: 14, fontWeight: '700' },
+});
