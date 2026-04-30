@@ -345,20 +345,53 @@ export const salonFavoriteService = {
   }
 };
 
-// Gérer les favoris de coiffures (à implémenter plus tard)
+// Gérer les favoris de coiffures
 export const hairstyleFavoriteService = {
   addToFavorites: async (hairstyleId: string): Promise<FavoriteResponse> => {
-    // TODO: Implémenter quand l'API sera prête
-    return { success: false, error: { code: 'NOT_IMPLEMENTED', message: 'Non implémenté' } };
+    try {
+      const userToken = await AsyncStorage.getItem('userToken');
+      if (!userToken) return { success: false, error: { code: 'NO_TOKEN', message: 'Veuillez vous connecter pour ajouter des favoris' } };
+
+      const response = await fetch(`${API_URL}/favorites/hairstyles/${hairstyleId}/favorite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${userToken}` },
+      });
+      if (response.status === 401) { await AsyncStorage.removeItem('userToken'); return { success: false, error: { code: 'INVALID_TOKEN', message: 'Session expirée, veuillez vous reconnecter' } }; }
+      return await response.json();
+    } catch {
+      return { success: false, error: { code: 'NETWORK_ERROR', message: 'Erreur réseau' } };
+    }
   },
 
   removeFromFavorites: async (hairstyleId: string): Promise<FavoriteResponse> => {
-    // TODO: Implémenter quand l'API sera prête
-    return { success: false, error: { code: 'NOT_IMPLEMENTED', message: 'Non implémenté' } };
+    try {
+      const userToken = await AsyncStorage.getItem('userToken');
+      if (!userToken) return { success: false, error: { code: 'NO_TOKEN', message: 'Veuillez vous connecter pour gérer vos favoris' } };
+
+      const response = await fetch(`${API_URL}/favorites/hairstyles/${hairstyleId}/favorite`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${userToken}` },
+      });
+      if (response.status === 401) { await AsyncStorage.removeItem('userToken'); return { success: false, error: { code: 'INVALID_TOKEN', message: 'Session expirée, veuillez vous reconnecter' } }; }
+      return await response.json();
+    } catch {
+      return { success: false, error: { code: 'NETWORK_ERROR', message: 'Erreur réseau' } };
+    }
   },
 
   checkFavorite: async (hairstyleId: string): Promise<boolean> => {
-    // TODO: Implémenter quand l'API sera prête
-    return false;
-  }
+    try {
+      const userToken = await AsyncStorage.getItem('userToken');
+      if (!userToken) return false;
+
+      const response = await fetch(`${API_URL}/favorites/hairstyles/${hairstyleId}/favorite`, {
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${userToken}` },
+      });
+      if (response.status === 401) { await AsyncStorage.removeItem('userToken'); return false; }
+      const data = await response.json();
+      return data.success ? data.data.isFavorite : false;
+    } catch {
+      return false;
+    }
+  },
 };
