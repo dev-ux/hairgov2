@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate, isAdmin } = require('../middleware/auth.middleware');
 const { getUsersList } = require('../controllers/admin.controller');
-const { getDashboardStats } = require('../controllers/dashboard.controller');
+const { getDashboardStats, getRecentActivity } = require('../controllers/dashboard.controller');
 const { createSalon, updateSalon, validateSalon } = require('../controllers/admin/salon.admin.controller');
 const {
   validateHairdresser,
@@ -76,6 +76,7 @@ router.put('/hairdressers/:id', updateHairdresser);
  * @access  Privé (Admin)
  */
 router.get('/dashboard/stats', getDashboardStats);
+router.get('/dashboard/activity', getRecentActivity);
 
 /**
  * @route   GET /admin/salons/:id
