@@ -33,6 +33,7 @@ router.get('/', async (req, res) => {
     // Transformer les données pour correspondre au format attendu par le frontend
     const formattedTrends = trendingHairstyles.map(trend => ({
       id: trend.id,
+      hairstyle_id: trend.hairstyle_id,
       name: trend.hairstyle?.name || 'Coiffure inconnue',
       description: trend.hairstyle?.description || 'Description non disponible',
       image: trend.hairstyle?.photo || 'https://images.unsplash.com/photo-1560069492856-cc730e8775d5?w=500',
