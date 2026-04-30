@@ -68,6 +68,7 @@ const EditSalon: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
@@ -132,6 +133,28 @@ const EditSalon: React.FC = () => {
       setExistingPhotos(updated);
     } catch {
       setError('Erreur lors de la suppression de la photo');
+    }
+  };
+
+  const handleGeocode = async () => {
+    if (!form.address.trim()) { setError('Entrez une adresse avant de géolocaliser.'); return; }
+    setGeocoding(true);
+    setError(null);
+    try {
+      const q   = encodeURIComponent(form.address.replace(/📍/g, '').trim());
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1`, {
+        headers: { 'Accept-Language': 'fr', 'User-Agent': 'HairGovAdmin/1.0' },
+      });
+      const data = await res.json();
+      if (data.length > 0) {
+        setForm(p => ({ ...p, latitude: data[0].lat, longitude: data[0].lon }));
+      } else {
+        setError('Adresse introuvable. Essayez une formulation plus précise (ex: "Yopougon, Abidjan, Côte d\'Ivoire").');
+      }
+    } catch {
+      setError('Erreur de géolocalisation. Vérifiez votre connexion.');
+    } finally {
+      setGeocoding(false);
     }
   };
 
@@ -225,6 +248,18 @@ const EditSalon: React.FC = () => {
                   onChange={e => setForm(p => ({ ...p, address: e.target.value }))}
                   InputProps={{ startAdornment: <LocationIcon color="action" sx={{ mr: 1 }} /> }}
                 />
+              </Grid>
+              <Grid item xs={12}>
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  startIcon={geocoding ? <CircularProgress size={16} color="inherit" /> : <LocationIcon />}
+                  onClick={handleGeocode}
+                  disabled={geocoding || !form.address.trim()}
+                  sx={{ borderStyle: 'dashed' }}
+                >
+                  {geocoding ? 'Géolocalisation…' : 'Détecter les coordonnées depuis l\'adresse'}
+                </Button>
               </Grid>
               <Grid item xs={6}>
                 <TextField
