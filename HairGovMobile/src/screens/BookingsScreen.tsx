@@ -80,8 +80,8 @@ export const BookingsScreen = () => {
         setError('Vous devez être connecté pour voir vos réservations');
         return;
       }
-      const response = await fetch(`${API_URL}/bookings`, {
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch(`${API_URL}/bookings/client`, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
       });
       if (!response.ok) {
         setError(`Erreur: ${response.status}`);
@@ -89,7 +89,7 @@ export const BookingsScreen = () => {
       }
       const data = await response.json();
       if (data.success) {
-        const bookingsData = data.data || [];
+        const bookingsData = data.data?.bookings ?? data.data ?? [];
         setBookings(Array.isArray(bookingsData) ? bookingsData : []);
       } else {
         setError(data.message || 'Impossible de charger les réservations');
@@ -222,9 +222,9 @@ export const BookingsScreen = () => {
             </View>
           </View>
 
-          {(item.status === 'pending' || item.status === 'accepted' || item.status === 'completed') && (
+          {(item.status === 'pending' || item.status === 'completed') && (
             <View style={styles.cardActions}>
-              {(item.status === 'pending' || item.status === 'accepted') && (
+              {item.status === 'pending' && (
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => handleCancelBooking(item.id)}>
                   <Ionicons name="close-outline" size={14} color="#F44336" />
                   <Text style={styles.cancelBtnText}>Annuler</Text>

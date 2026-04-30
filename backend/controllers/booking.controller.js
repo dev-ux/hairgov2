@@ -1231,14 +1231,27 @@ exports.cancelBooking = async (req, res) => {
 exports.getClientBookings = async (req, res) => {
   try {
     const clientId = req.userId;
-    console.log('🔍 getClientBookings - Client ID:', clientId);
 
-    // D'abord, tester une requête simple sans jointures
     const bookings = await Booking.findAll({
-      where: { client_id: clientId }
+      where: { client_id: clientId },
+      include: [
+        {
+          model: Hairdresser,
+          as: 'hairdresser',
+          include: [{
+            model: User,
+            as: 'user',
+            attributes: ['id', 'full_name', 'profile_photo']
+          }]
+        },
+        {
+          model: Hairstyle,
+          as: 'hairstyle',
+          attributes: ['id', 'name', 'description', 'estimated_duration', 'category']
+        }
+      ],
+      order: [['created_at', 'DESC']]
     });
-
-    console.log('📊 getClientBookings - Réservations trouvées (simple):', bookings.length);
 
     res.status(200).json({
       success: true,

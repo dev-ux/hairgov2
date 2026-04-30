@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { API_URL } from '../config/constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL, STORAGE_KEYS } from '../config/constants';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 interface RouteParams {
@@ -113,29 +114,37 @@ const BookingFormScreen = ({ navigation }: any) => {
 
     try {
       setSubmitting(true);
-      
+
+      const [token, userDataStr] = await Promise.all([
+        AsyncStorage.getItem(STORAGE_KEYS.USER_TOKEN),
+        AsyncStorage.getItem(STORAGE_KEYS.USER_DATA),
+      ]);
+      const userData = userDataStr ? JSON.parse(userDataStr) : null;
+      const clientId = userData?.id ?? null;
+
       const bookingData = {
         client_name: formData.client_name,
         client_phone: formData.client_phone,
-        hairdresser_id: null, // Sera assigné depuis le salon
+        hairdresser_id: null,
         hairstyle_id: selectedHairstyle.id,
         service_type: formData.service_type,
         service_fee: 25,
-        client_price: selectedHairstyle.estimated_duration * 0.5, // Prix calculé
+        client_price: selectedHairstyle.estimated_duration * 0.5,
         estimated_duration: selectedHairstyle.estimated_duration,
         scheduled_time: formData.scheduled_time.toISOString(),
         location_address: formData.location_address,
         latitude: formData.latitude,
         longitude: formData.longitude,
-        salon_id: salon.id, // Ajouté pour récupérer le hairdresser du salon
-        client_id: null, // Ajouté pour la validation
+        salon_id: salon.id,
+        client_id: clientId,
       };
+
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
 
       const response = await fetch(`${API_URL}/bookings/public`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify(bookingData),
       });
 
