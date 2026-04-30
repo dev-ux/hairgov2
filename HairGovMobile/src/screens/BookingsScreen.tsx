@@ -268,6 +268,9 @@ export const BookingsScreen = () => {
       {/* Header */}
       <LinearGradient colors={['#6C63FF', '#8B84FF']} style={styles.headerGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}>
         <View style={styles.headerRow}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+            <Ionicons name="arrow-back" size={20} color="#fff" />
+          </TouchableOpacity>
           <Text style={styles.headerTitle}>Mes Réservations</Text>
           <TouchableOpacity onPress={onRefresh} style={styles.refreshBtn}>
             <Ionicons name="refresh-outline" size={20} color="#fff" />
@@ -421,6 +424,14 @@ const styles = StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#fff' },
   refreshBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backBtn: {
     width: 36,
     height: 36,
     borderRadius: 18,

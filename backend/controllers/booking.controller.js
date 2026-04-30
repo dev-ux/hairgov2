@@ -426,6 +426,20 @@ exports.acceptBooking = async (req, res) => {
       });
     }
 
+    // Si la réservation n'a pas de coiffeur assigné, assigner le coiffeur connecté
+    if (!booking.hairdresser) {
+      const hairdresser = await Hairdresser.findOne({ where: { user_id: req.userId } });
+      if (!hairdresser) {
+        await transaction.rollback();
+        return res.status(403).json({
+          success: false,
+          error: { code: 'UNAUTHORIZED', message: 'Profil coiffeur introuvable' }
+        });
+      }
+      await booking.update({ hairdresser_id: hairdresser.id }, { transaction });
+      booking.hairdresser = hairdresser;
+    }
+
     // Vérifier que c'est le bon coiffeur
     if (booking.hairdresser.user_id !== req.userId) {
       await transaction.rollback();
@@ -1083,6 +1097,10 @@ exports.getPendingBookings = async (req, res) => {
     const hairdresser = await Hairdresser.findOne({
       where: { user_id: req.userId }
     });
+
+    if (!hairdresser) {
+      return res.status(200).json({ success: true, data: { bookings: [] } });
+    }
 
     const bookings = await Booking.findAll({
       where: {

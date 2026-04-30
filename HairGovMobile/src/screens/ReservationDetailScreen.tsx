@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { startBooking, completeBooking } from '../services/hairdresser.service';
+import { acceptBooking, startBooking, completeBooking } from '../services/hairdresser.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../config/constants';
 
@@ -66,6 +66,33 @@ export default function ReservationDetailScreen({ route }: Props) {
     if (reservation.phoneNumber) {
       Linking.openURL(`tel:${reservation.phoneNumber}`);
     }
+  };
+
+  const handleAcceptBooking = async () => {
+    Alert.alert(
+      'Accepter la réservation',
+      'Confirmez-vous l\'acceptation de cette réservation ?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Accepter',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              const response = await acceptBooking(reservation.id);
+              if (response.success) {
+                setReservation(prev => ({ ...prev, status: 'accepted' }));
+                Alert.alert('Réservation acceptée', 'Le client a été notifié.');
+              }
+            } catch (error: any) {
+              Alert.alert('Erreur', error?.message || 'Impossible d\'accepter la réservation');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleStartBooking = async () => {
@@ -249,6 +276,23 @@ export default function ReservationDetailScreen({ route }: Props) {
 
         {/* Actions selon statut */}
         <View style={styles.actionsCard}>
+          {reservation.status === 'pending' && (
+            <TouchableOpacity
+              style={[styles.actionBtn, styles.acceptBtn]}
+              onPress={handleAcceptBooking}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Ionicons name="checkmark-circle" size={22} color="#fff" />
+                  <Text style={styles.actionBtnText}>Accepter la réservation</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          )}
+
           {reservation.status === 'accepted' && (
             <TouchableOpacity
               style={[styles.actionBtn, styles.startBtn]}
@@ -395,6 +439,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
   },
+  acceptBtn: { backgroundColor: '#6C63FF' },
   startBtn: { backgroundColor: '#2196F3' },
   completeBtn: { backgroundColor: '#4CAF50' },
   cancelBtn: { backgroundColor: '#FFF0F0', borderWidth: 1, borderColor: '#F44336' },

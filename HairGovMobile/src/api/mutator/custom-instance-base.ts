@@ -26,9 +26,14 @@ export const createInstance = async (url: string, options: RequestInit = {}) => 
   console.log('Response status:', response.status);
   
   if (!response.ok) {
+    if (response.status === 502 || response.status === 503) {
+      throw new Error('Le serveur démarre, veuillez réessayer dans quelques secondes');
+    }
     const error = await response.json().catch(() => ({}));
     console.log('Error response:', error);
-    throw new Error(error.message || 'Une erreur est survenue');
+    throw new Error(
+      error?.error?.message || error?.message || 'Une erreur est survenue'
+    );
   }
   
   // Si la réponse est 204 (No Content) ou 304 (Not Modified), on ne tente pas de parser le JSON

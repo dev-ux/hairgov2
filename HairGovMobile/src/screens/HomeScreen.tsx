@@ -205,7 +205,7 @@ export default function HomeScreen() {
               .filter((h: any) => h.is_available)
               .slice(0, 6)
               .map((h: any) => ({
-                id: h.user?.id || h.id,
+                id: h.id,
                 full_name: h.user?.full_name || 'Coiffeur',
                 profile_photo: h.user?.profile_photo || null,
                 average_rating: h.average_rating || 0,
