@@ -317,6 +317,64 @@ exports.getFavorites = async (req, res) => {
 };
 
 // ==========================================
+// Gestion des favoris de coiffures
+// ==========================================
+
+exports.addHairstyleToFavorites = async (req, res) => {
+  try {
+    const { hairstyleId } = req.params;
+    const clientId = req.userId;
+
+    const hairstyle = await Hairstyle.findByPk(hairstyleId);
+    if (!hairstyle) {
+      return res.status(404).json({ success: false, error: { code: 'HAIRSTYLE_NOT_FOUND', message: 'Coiffure introuvable' } });
+    }
+
+    const existing = await FavoriteHairstyle.findOne({ where: { client_id: clientId, hairstyle_id: hairstyleId } });
+    if (existing) {
+      return res.status(400).json({ success: false, error: { code: 'ALREADY_FAVORITE', message: 'Cette coiffure est déjà dans vos favoris' } });
+    }
+
+    const favorite = await FavoriteHairstyle.create({ client_id: clientId, hairstyle_id: hairstyleId, is_favorite: true });
+    res.status(201).json({ success: true, data: { favorite }, message: 'Coiffure ajoutée aux favoris' });
+  } catch (error) {
+    console.error('Add hairstyle to favorites error:', error);
+    res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Erreur lors de l\'ajout aux favoris' } });
+  }
+};
+
+exports.removeHairstyleFromFavorites = async (req, res) => {
+  try {
+    const { hairstyleId } = req.params;
+    const clientId = req.userId;
+
+    const favorite = await FavoriteHairstyle.findOne({ where: { client_id: clientId, hairstyle_id: hairstyleId } });
+    if (!favorite) {
+      return res.status(404).json({ success: false, error: { code: 'FAVORITE_NOT_FOUND', message: 'Cette coiffure n\'est pas dans vos favoris' } });
+    }
+
+    await favorite.destroy();
+    res.status(200).json({ success: true, message: 'Coiffure retirée des favoris' });
+  } catch (error) {
+    console.error('Remove hairstyle from favorites error:', error);
+    res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Erreur lors du retrait des favoris' } });
+  }
+};
+
+exports.checkHairstyleFavorite = async (req, res) => {
+  try {
+    const { hairstyleId } = req.params;
+    const clientId = req.userId;
+
+    const favorite = await FavoriteHairstyle.findOne({ where: { client_id: clientId, hairstyle_id: hairstyleId, is_favorite: true } });
+    res.status(200).json({ success: true, data: { isFavorite: !!favorite } });
+  } catch (error) {
+    console.error('Check hairstyle favorite error:', error);
+    res.status(500).json({ success: false, error: { code: 'SERVER_ERROR', message: 'Erreur lors de la vérification' } });
+  }
+};
+
+// ==========================================
 // Gestion des favoris de salons
 // ==========================================
 
