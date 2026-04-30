@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  FlatList, 
-  Alert, 
-  ActivityIndicator, 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  Alert,
+  ActivityIndicator,
   SafeAreaView,
   StyleSheet,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { API_URL } from '../config/constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL, STORAGE_KEYS } from '../config/constants';
 
 interface Booking {
   id: string;
@@ -64,18 +65,20 @@ const BookingScreen = ({ navigation }: any) => {
     try {
       setLoading(true);
       setError(null);
-      
-      console.log('Tentative de connexion à:', `${API_URL}/bookings`);
-      
-      const response = await fetch(`${API_URL}/bookings`);
+
+      const token = await AsyncStorage.getItem(STORAGE_KEYS.USER_TOKEN);
+      if (!token) {
+        setError('Vous devez être connecté pour voir vos réservations');
+        return;
+      }
+
+      const response = await fetch(`${API_URL}/bookings/client`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
       const result = await response.json();
-      
-      console.log('Réponse API bookings:', result);
-      console.log('Nombre de réservations reçues:', result.data?.length || 0);
-      
+
       if (result.success && result.data) {
-        setBookings(result.data);
-        console.log('Réservations mises à jour:', result.data.length);
+        setBookings(result.data.bookings ?? result.data);
       } else {
         setError('Erreur lors de la récupération des réservations');
       }
