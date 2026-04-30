@@ -193,7 +193,9 @@ const BookingsPage: React.FC = () => {
       </Paper>
 
       {/* Détails dialog */}
-      <Dialog open={!!selected} onClose={() => setSelected(null)} maxWidth="md" fullWidth>
+      <Dialog open={!!selected} onClose={() => setSelected(null)} maxWidth="md" fullWidth
+        PaperProps={{ sx: { maxHeight: '90vh' } }}
+      >
         <DialogTitle fontWeight={700}>Détails de la réservation</DialogTitle>
         <DialogContent>
           {selected && (
@@ -265,6 +267,73 @@ const BookingsPage: React.FC = () => {
                   <Typography variant="body2" fontWeight={500}>{selected.location_address}</Typography>
                 </Box>
               </Grid>
+
+              {/* ── Carte de localisation ── */}
+              {selected.latitude && selected.longitude && (
+                <Grid item xs={12}>
+                  <Divider sx={{ mb: 2 }} />
+                  <Box display="flex" alignItems="center" justifyContent="space-between" mb={1.5}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Box sx={{
+                        width: 32, height: 32, borderRadius: '10px',
+                        background: 'linear-gradient(135deg,#6C63FF,#9D97FF)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        <LocationIcon sx={{ fontSize: 16, color: '#fff' }} />
+                      </Box>
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight={700}>Position de la réservation</Typography>
+                        <Typography variant="caption" color="text.secondary">{selected.location_address}</Typography>
+                      </Box>
+                    </Box>
+                    <Tooltip title="Ouvrir dans Google Maps">
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        startIcon={<LocationIcon />}
+                        href={`https://www.google.com/maps?q=${selected.latitude},${selected.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        component="a"
+                        sx={{ fontSize: 12, borderRadius: 2 }}
+                      >
+                        Google Maps
+                      </Button>
+                    </Tooltip>
+                  </Box>
+
+                  <Box sx={{
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    border: '1px solid #E8EAF0',
+                    position: 'relative',
+                    height: 300,
+                    boxShadow: '0 2px 12px rgba(108,99,255,0.08)',
+                  }}>
+                    <iframe
+                      title="Localisation réservation"
+                      src={`https://www.openstreetmap.org/export/embed.html?bbox=${selected.longitude - 0.008}%2C${selected.latitude - 0.008}%2C${selected.longitude + 0.008}%2C${selected.latitude + 0.008}&layer=mapnik&marker=${selected.latitude}%2C${selected.longitude}`}
+                      style={{ border: 0, width: '100%', height: '100%', display: 'block' }}
+                      loading="lazy"
+                    />
+                    {/* Badge coordonnées */}
+                    <Box sx={{
+                      position: 'absolute', bottom: 10, left: 10,
+                      bgcolor: 'rgba(255,255,255,0.92)',
+                      backdropFilter: 'blur(6px)',
+                      borderRadius: 2,
+                      px: 1.5, py: 0.75,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                      display: 'flex', alignItems: 'center', gap: 0.5,
+                    }}>
+                      <LocationIcon sx={{ fontSize: 13, color: '#6C63FF' }} />
+                      <Typography sx={{ fontSize: 11, fontWeight: 600, color: '#374151', fontFamily: 'monospace' }}>
+                        {Number(selected.latitude).toFixed(5)}, {Number(selected.longitude).toFixed(5)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Grid>
+              )}
 
               {selected.hairdresser && (
                 <>
