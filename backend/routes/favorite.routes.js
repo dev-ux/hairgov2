@@ -20,4 +20,9 @@ router.post('/salons/:salonId/favorite', favoriteController.addSalonToFavorites)
 router.delete('/salons/:salonId/favorite', favoriteController.removeSalonFromFavorites);
 router.get('/salons/:salonId/favorite', favoriteController.checkSalonFavorite);
 
+// Routes pour les favoris de coiffures
+router.post('/hairstyles/:hairstyleId/favorite', favoriteController.addHairstyleToFavorites);
+router.delete('/hairstyles/:hairstyleId/favorite', favoriteController.removeHairstyleFromFavorites);
+router.get('/hairstyles/:hairstyleId/favorite', favoriteController.checkHairstyleFavorite);
+
 module.exports = router;
