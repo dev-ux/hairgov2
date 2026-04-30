@@ -37,7 +37,7 @@ const IMAGE_PICKER_OPTIONS = ['Prendre une photo', 'Choisir depuis la galerie', 
 
 const UserProfileScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { colors } = useTheme();
   
   // States
@@ -138,26 +138,22 @@ const UserProfileScreen = () => {
         name: 'profile_photo.jpg',
       } as any);
 
+      const token = await AsyncStorage.getItem('userToken');
       const response = await fetch(`${API_BASE_URL}/api/v1/auth/update-profile`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          'Authorization': `Bearer ${await AsyncStorage.getItem('userToken')}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setProfileImage(imageUri);
+      const data = await response.json();
+
+      if (data.success) {
+        const updatedUser = data.data?.user ?? data.data ?? {};
+        const serverPhotoUrl = updatedUser.profile_photo ?? imageUri;
+        setProfileImage(serverPhotoUrl);
+        updateUser(updatedUser);
         Alert.alert('Succès', 'Photo de profil mise à jour avec succès');
-      } else if (response.status === 404) {
-        // Fallback si la route n'existe pas encore
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setProfileImage(imageUri);
-        Alert.alert('Succès', 'Photo de profil mise à jour localement (en attente du déploiement backend)');
       } else {
-        const data = await response.json();
         Alert.alert('Erreur', data.message || 'Impossible de mettre à jour la photo');
       }
     } catch (error) {
