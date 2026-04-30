@@ -314,6 +314,83 @@ app.use('/api/v1/specialists', specialistsRoutes);
 app.use('/api/v1/favorites', favoriteRoutes);
 app.use('/api/v1/history', historyRoutes);
 
+// Endpoint de seed pour les hairstyles et tendances (appeler une fois sur le serveur)
+app.get('/api/v1/seed-hairstyles', async (req, res) => {
+  try {
+    const { Hairstyle, TrendHairstyle } = require('./models');
+
+    const hairstyleData = [
+      { name: 'Coupe Femme',        description: 'Coupe tendance avec brushing soigné, adaptée à votre morphologie. Shampooing, coupe personnalisée et coiffage inclus.',                                      photo: 'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=800&q=80&fit=crop', estimated_duration: 60,  category: 'Femme',   is_active: true },
+      { name: 'Coupe Homme',        description: 'Coupe classique pour hommes, finition au rasoir et contours nets. Style professionnel ou décontracté selon vos préférences.',                                photo: 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&q=80&fit=crop', estimated_duration: 30,  category: 'Homme',   is_active: true },
+      { name: 'Coloration',         description: 'Coloration complète avec soin protecteur. Choix de couleurs tendance avec des produits professionnels respectueux de vos cheveux.',                          photo: 'https://images.unsplash.com/photo-1522337360350-c45f7e7efa0c?w=800&q=80&fit=crop', estimated_duration: 90,  category: 'Femme',   is_active: true },
+      { name: 'Mèches',             description: 'Balayage et mèches naturelles pour un effet soleil. Technique douce pour illuminer votre chevelure sans agression.',                                        photo: 'https://images.unsplash.com/photo-1522338242578-b4e75d61b94d?w=800&q=80&fit=crop', estimated_duration: 120, category: 'Femme',   is_active: true },
+      { name: 'Brushing',           description: 'Brushing professionnel pour cheveux longs, lissés et brillants. Séchage soigné avec produits coiffants de qualité.',                                       photo: 'https://images.unsplash.com/photo-1560869513-b8f91ec05e8b?w=800&q=80&fit=crop', estimated_duration: 45,  category: 'Femme',   is_active: true },
+      { name: 'Coupe Enfant',       description: 'Coupe adaptée aux enfants dans une ambiance ludique et rassurante. Patience et douceur garanties pour les plus petits.',                                    photo: 'https://images.unsplash.com/photo-1587909209111-5097be67167a?w=800&q=80&fit=crop', estimated_duration: 25,  category: 'Enfant',  is_active: true },
+      { name: 'Barbe',              description: 'Taille précise et entretien de la barbe au rasoir chaud. Modelage selon vos envies pour un look soigné et stylé.',                                         photo: 'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&q=80&fit=crop', estimated_duration: 30,  category: 'Homme',   is_active: true },
+      { name: 'Soin',               description: 'Soin profond kératine ou protéines pour cheveux abîmés et secs. Masque restructurant, brillance et douceur retrouvées.',                                   photo: 'https://images.unsplash.com/photo-1634449571010-02389ed0f9b0?w=800&q=80&fit=crop', estimated_duration: 40,  category: 'Mixte',   is_active: true },
+      { name: 'Tresses africaines', description: 'Tresses traditionnelles africaines, protectrices et élégantes. Style cornrows, tresses plaquées ou classiques selon votre choix.',                        photo: 'https://images.unsplash.com/photo-1590285185520-b06a9c568c4f?w=800&q=80&fit=crop', estimated_duration: 120, category: 'Femme',   is_active: true },
+      { name: 'Dégradé américain',  description: 'Dégradé (fade) impeccable avec contours nets au rasoir. Finition parfaite du fondu bas, moyen ou haut selon votre style.',                                photo: 'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=800&q=80&fit=crop', estimated_duration: 45,  category: 'Homme',   is_active: true },
+      { name: 'Twist / Torsades',   description: 'Torsades protectrices pour sublimer vos cheveux naturels. Style tendance qui protège vos pointes et définit vos boucles.',                                photo: 'https://images.unsplash.com/photo-1594744803329-e58b31de8bf5?w=800&q=80&fit=crop', estimated_duration: 90,  category: 'Femme',   is_active: true },
+      { name: 'Afro naturel',       description: 'Mise en valeur de votre afro naturel avec des soins adaptés. Coiffage, définition des boucles et volume maîtrisé.',                                       photo: 'https://images.unsplash.com/photo-1522337880898-5855f7bf66df?w=800&q=80&fit=crop', estimated_duration: 60,  category: 'Mixte',   is_active: true },
+      { name: 'Lissage brésilien',  description: 'Lissage semi-permanent pour des cheveux lisses et brillants pendant plusieurs mois. Formule enrichie en kératine brésilienne.',                            photo: 'https://images.unsplash.com/photo-1580618672591-eb180b1a973f?w=800&q=80&fit=crop', estimated_duration: 180, category: 'Femme',   is_active: true },
+      { name: 'Ondulations',        description: 'Ondulations naturelles ou permanentes pour apporter du volume et du mouvement à vos cheveux. Look glamour et féminin.',                                    photo: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80&fit=crop', estimated_duration: 75,  category: 'Femme',   is_active: true },
+      { name: 'Locks / Dreadlocks', description: 'Pose et entretien de locks pour un style authentique et fort. Technique soignée pour des locks bien définies et durables.',                                photo: 'https://images.unsplash.com/photo-1624561172888-ac93c696ece2?w=800&q=80&fit=crop', estimated_duration: 150, category: 'Mixte',   is_active: true },
+    ];
+
+    const trendMeta = {
+      'Coupe Femme':        { score: 4.8, difficulty: 'moyen',     duration: 60,  price: '5000-15000 FCFA' },
+      'Tresses africaines': { score: 4.7, difficulty: 'difficile', duration: 120, price: '8000-25000 FCFA' },
+      'Dégradé américain':  { score: 4.6, difficulty: 'moyen',     duration: 45,  price: '3000-6000 FCFA' },
+      'Coupe Homme':        { score: 4.5, difficulty: 'facile',     duration: 30,  price: '2000-5000 FCFA' },
+      'Twist / Torsades':   { score: 4.4, difficulty: 'moyen',     duration: 90,  price: '5000-12000 FCFA' },
+      'Afro naturel':       { score: 4.3, difficulty: 'facile',     duration: 60,  price: '3000-7000 FCFA' },
+      'Coloration':         { score: 4.2, difficulty: 'moyen',     duration: 90,  price: '5000-15000 FCFA' },
+      'Lissage brésilien':  { score: 4.1, difficulty: 'difficile', duration: 180, price: '15000-40000 FCFA' },
+      'Mèches':             { score: 3.9, difficulty: 'moyen',     duration: 120, price: '5000-15000 FCFA' },
+      'Ondulations':        { score: 3.8, difficulty: 'moyen',     duration: 75,  price: '4000-9000 FCFA' },
+      'Brushing':           { score: 3.7, difficulty: 'moyen',     duration: 45,  price: '5000-15000 FCFA' },
+      'Locks / Dreadlocks': { score: 3.6, difficulty: 'difficile', duration: 150, price: '10000-30000 FCFA' },
+      'Coupe Enfant':       { score: 3.5, difficulty: 'facile',     duration: 25,  price: '1500-3000 FCFA' },
+      'Barbe':              { score: 3.2, difficulty: 'facile',     duration: 30,  price: '2000-5000 FCFA' },
+      'Soin':               { score: 3.0, difficulty: 'moyen',     duration: 40,  price: '3000-8000 FCFA' },
+    };
+
+    // Supprimer les anciennes tendances et hairstyles
+    await TrendHairstyle.destroy({ where: {} });
+    await Hairstyle.destroy({ where: {} });
+
+    // Créer les hairstyles
+    const created = await Hairstyle.bulkCreate(hairstyleData);
+    console.log(`✅ ${created.length} hairstyles créés`);
+
+    // Créer les tendances
+    const trends = created.map(h => {
+      const meta = trendMeta[h.name] || { score: 3.0, difficulty: 'moyen', duration: h.estimated_duration, price: '3000-8000 FCFA' };
+      return {
+        hairstyle_id:     h.id,
+        trending_score:   meta.score,
+        category:         h.category,
+        difficulty:       meta.difficulty,
+        duration_minutes: meta.duration,
+        price_range:      meta.price,
+        is_active:        true,
+        start_date:       new Date(),
+      };
+    });
+
+    const createdTrends = await TrendHairstyle.bulkCreate(trends);
+    console.log(`✅ ${createdTrends.length} tendances créées`);
+
+    res.status(200).json({
+      success: true,
+      message: `${created.length} hairstyles et ${createdTrends.length} tendances créés avec succès`
+    });
+  } catch (error) {
+    console.error('❌ Seed error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 404 handler - doit être à la fin après toutes les routes
 app.use((req, res) => {
   res.status(404).json({ 
