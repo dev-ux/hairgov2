@@ -55,13 +55,14 @@ app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
 
 // Configuration CORS
 const allowedOrigins = [
-  'http://localhost:3000', // Panel admin
-  'http://localhost:3001', // Backend (si nécessaire)
-  'http://localhost:3002', // Frontend développement
-  'https://hairgov2.onrender.com', // Backend production
-  'https://scizzwebsite.vercel.app', // Frontend Vercel production ⭐
-  'exp://192.168.0.29:8081', // Expo Go local
-  'exp://192.168.0.29:19006', // Expo Go local
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:3002',
+  'https://hairgov2.onrender.com',
+  'https://scizzwebsite.vercel.app',
+  'https://admin-panel-drab-delta.vercel.app', // Admin panel Vercel
+  'exp://192.168.0.29:8081',
+  'exp://192.168.0.29:19006',
   ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [])
 ];
 
@@ -85,30 +86,30 @@ app.use(helmet({
 }));
 
 // CORS pour les API
-app.use(cors({
+const corsOptions = {
   origin: function (origin, callback) {
-    // Autoriser les requêtes sans origine (comme les applications mobiles ou Postman)
     if (!origin) return callback(null, true);
-    
-    // Vérifier si l'origine est dans la liste blanche
-    if (allowedOrigins.some(allowedOrigin => 
-      origin === allowedOrigin || 
-      origin.startsWith(allowedOrigin.replace('http', 'https'))
-    )) {
-      return callback(null, true);
-    }
-    
-    console.log('Tentative de connexion non autorisée depuis l\'origine:', origin);
-    return callback(new Error(`Cette origine n'est pas autorisée par CORS: ${origin}`), false);
+
+    const allowed =
+      allowedOrigins.includes(origin) ||
+      /\.vercel\.app$/.test(origin) ||   // toutes les preview URLs Vercel
+      /^exp:\/\//.test(origin);           // Expo Go
+
+    if (allowed) return callback(null, true);
+
+    console.log('CORS refusé pour:', origin);
+    return callback(new Error(`Origine non autorisée: ${origin}`), false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   exposedHeaders: ['Content-Range', 'X-Content-Range']
-}));
+};
+
+app.use(cors(corsOptions));
 
 // Gestion des requêtes OPTIONS (pré-vol)
-app.options('*', cors());
+app.options('*', cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
